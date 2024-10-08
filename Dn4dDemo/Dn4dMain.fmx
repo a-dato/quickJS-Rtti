@@ -1,0 +1,65 @@
+object Form1: TForm1
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 480
+  ClientWidth = 640
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  DesignerMasterStyle = 0
+  object mmLog: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Align = Bottom
+    Position.Y = 296.000000000000000000
+    Size.Width = 640.000000000000000000
+    Size.Height = 184.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Viewport.Width = 636.000000000000000000
+    Viewport.Height = 180.000000000000000000
+  end
+  object mmCode: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Lines.Strings = (
+      'p = new Project();'
+      'p.Name = '#39'Project 1'#39';'
+      'log(p.Name);'
+      ''
+      't=new Task();'
+      't.Name='#39'Task 1'#39';'
+      'log(t.Name);')
+    Align = Client
+    Size.Width = 640.000000000000000000
+    Size.Height = 259.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    Viewport.Width = 636.000000000000000000
+    Viewport.Height = 255.000000000000000000
+  end
+  object Layout1: TLayout
+    Align = Top
+    Size.Width = 640.000000000000000000
+    Size.Height = 37.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    object btnExecute: TButton
+      Position.X = 8.000000000000000000
+      Position.Y = 8.000000000000000000
+      TabOrder = 0
+      Text = 'Execute'
+      TextSettings.Trimming = None
+      OnClick = btnExecuteClick
+    end
+    object btnAddProperty: TButton
+      Position.X = 104.000000000000000000
+      Position.Y = 8.000000000000000000
+      TabOrder = 1
+      Text = 'Add property'
+      TextSettings.Trimming = None
+      OnClick = btnAddPropertyClick
+    end
+  end
+end
