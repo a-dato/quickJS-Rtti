@@ -137,7 +137,13 @@ begin
     var vt: TValue;
     TValue.Make(@ptr, descr.TypeInfo, vt);
     var o: CObject := prop.GetValue(vt.AsInterface, []);
-    Result := JSConverter.TValueToJSValue(ctx, o.AsType<TValue>);
+
+    if o.IsString then
+    begin
+      var s := AnsiString(o.ToString);
+      Result := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
+    end else
+      Result := JSConverter.TValueToJSValue(ctx, o.AsType<TValue>);
   end else
     Result := JS_UNDEFINED;
 end;

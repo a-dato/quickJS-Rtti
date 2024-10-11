@@ -55,11 +55,15 @@ type
     function  get_ID: CObject;
     procedure set_ID(const Value: CObject);
 
+    function  get_Description: CString;
+    procedure set_Description(const Value: CString);
+
     function  get_Name: string;
     procedure set_Name(const Value: string);
     function  get_Tasks: List<ITask>;
 
     property ID: CObject read get_ID write set_ID;
+    property Description: CString read get_Description write set_Description;
     property Name: string read get_Name write set_Name;
     property Tasks: List<ITask> read get_Tasks;
   end;
@@ -68,13 +72,20 @@ type
   protected
     _ID: CObject;
     _Name: string;
+    _Description: CString;
 
     function  get_ID: CObject;
     procedure set_ID(const Value: CObject);
 
+    function  get_Description: CString;
+    procedure set_Description(const Value: CString);
+
     function  get_Name: string;
     procedure set_Name(const Value: string);
     function  get_Tasks: List<ITask>;
+
+  public
+    constructor Create;
 
   published
     property ID: CObject read get_ID write set_ID;
@@ -204,6 +215,19 @@ end;
 
 { TProject }
 
+constructor TProject.Create;
+begin
+  _ID := Int64(1);
+
+  _Name := 'Project 1';
+  _Description := 'Project 1';
+end;
+
+function TProject.get_Description: CString;
+begin
+  Result := _Description;
+end;
+
 function TProject.get_ID: CObject;
 begin
   Result := _ID;
@@ -227,6 +251,11 @@ begin
   end;
 
   Result := l;
+end;
+
+procedure TProject.set_Description(const Value: CString);
+begin
+  _Description := Value;
 end;
 
 procedure TProject.set_ID(const Value: CObject);

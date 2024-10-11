@@ -144,7 +144,7 @@ type
   public
     class function GetDefaultValue(const Param: TRttiParameter) : TValue;
     class function JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo) : TValue;
-    class function TValueToJSValue(ctx: JSContext; Value: TValue) : JSValue;
+    class function TValueToJSValue(ctx: JSContext; const Value: TValue) : JSValue;
     class function TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue) : Boolean;
   end;
 
@@ -1402,7 +1402,7 @@ begin
   end;
 end;
 
-class function JSConverter.TValueToJSValue(ctx: JSContext; Value: TValue): JSValue;
+class function JSConverter.TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue;
 
   function GetRegisteredObjectFromTypeInfo(PInfo: PTypeInfo) : IRegisteredObject;
   begin
