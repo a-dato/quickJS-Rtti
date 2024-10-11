@@ -504,7 +504,7 @@ class function TJSRegister.ExtendablePropertySetter(ctx : JSContext; obj: JSValu
   func_data : PJSValue ): JSValue;
 
 begin
-  Result := 0;
+  Result := JS_UNDEFINED;
 
   if argc <> 1 then
     raise Exception.Create('Invalid number of arguments');
