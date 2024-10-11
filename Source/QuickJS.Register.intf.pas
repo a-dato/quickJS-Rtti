@@ -23,7 +23,7 @@ type
     property Value: Variant read FValue;
   end;
 
-  TMemberType = (None, Methods, Properties, InterfacePropertyGetSet);
+  TMemberType = (None, Methods, Properties, InterfacePropertyGetSet, Iterator, IteratorNext);
   TMemberTypes = set of TMemberType;
   TObjectSupportsExtension = (Unknown, Supported, NotSupported);
 
@@ -33,31 +33,37 @@ type
   IRttiCachedDescriptor = interface
     function  get_Members: TArray<PObjectMember>;
     function  get_MemberType: TMemberType;
-    function  get_Getter: TRttiMember;
-    function  get_Setter: TRttiMember;
+    function  get_Getter: PObjectMember;
+    function  get_Setter: PObjectMember;
     function  get_TypeInfo: PTypeInfo;
 
+    function IsIterator: Boolean;
+    function IsIteratorNext: Boolean;
     function IsInterfaceProperty: Boolean;
     function IsRealProperty: Boolean;
     function IsMethod: Boolean;
 
     property Members: TArray<PObjectMember> read get_Members;
     property MemberType: TMemberType read get_MemberType;
-    property Getter: TRttiMember read get_Getter;
-    property Setter: TRttiMember read get_Setter;
+    property Getter: PObjectMember read get_Getter;
+    property Setter: PObjectMember read get_Setter;
     property TypeInfo: PTypeInfo read get_TypeInfo;
   end;
 
   IRegisteredObject = interface
     function  get_IsInterface: Boolean;
+    function  get_IsIterator: Boolean;
     function  get_ClassID: JSClassID;
     procedure set_ClassID(const Value: JSClassID);
+    function  get_ObjectSupportsEnumeration: Boolean;
     function  get_ObjectSupportsExtension: TObjectSupportsExtension;
     procedure set_ObjectSupportsExtension(const Value: TObjectSupportsExtension);
 
     function  CreateInstance(ctx: JSContext; argc: Integer; argv: PJSValueConstArr): Pointer;
     procedure Finalize(Ptr: Pointer);
     function  GetMemberByName(const AName: string; MemberTypes: TMemberTypes) : IRttiCachedDescriptor;
+    function  GetIterator: IRttiCachedDescriptor;
+    function  GetIteratorNext: IRttiCachedDescriptor;
     function  GetTypeInfo: PTypeInfo;
 
     function  TryGetRttiDescriptor(Atom: JSAtom; out RttiMember: IRttiCachedDescriptor) : Boolean;
@@ -67,6 +73,8 @@ type
 
     property ClassID: JSClassID read get_ClassID write set_ClassID;
     property IsInterface: Boolean read get_IsInterface;
+    property IsIterator: Boolean read get_IsIterator;
+    property ObjectSupportsEnumeration: Boolean read get_ObjectSupportsEnumeration;
     property ObjectSupportsExtension: TObjectSupportsExtension read get_ObjectSupportsExtension write set_ObjectSupportsExtension;
   end;
 
@@ -96,6 +104,11 @@ type
     function  GetValue(const Name: string): JSValue;
     procedure SetValue(const Name: string; Value: JSValue);
   end;
+
+  TCheckSupportsEnumerationFunc = reference to function(TypeInfo: PTypeInfo) : Boolean;
+  TGetMemberByNameFunc = reference to function(TypeInfo: PTypeInfo; const AName: string; MemberTypes: TMemberTypes) : IRttiCachedDescriptor;
+  TGetIteratorFunc = reference to function(TypeInfo: PTypeInfo) : IRttiCachedDescriptor;
+  TGetIteratorNextFunc = reference to function(TypeInfo: PTypeInfo) : IRttiCachedDescriptor;
 
 implementation
 

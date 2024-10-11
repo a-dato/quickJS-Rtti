@@ -13,17 +13,25 @@ uses
   ADato.Extensions.impl,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
   FMX.Controls.Presentation, FMX.StdCtrls, QuickJS.Register.intf,
-  QuickJS.Register.impl, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo, FMX.Layouts;
+  QuickJS.Register.impl, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo, FMX.Layouts,
+  System.Collections.Generic, System.Generics.Collections;
 
 type
+  {$M+}
+  ITask = interface;
+
   TForm1 = class(TForm)
     btnExecute: TButton;
     mmLog: TMemo;
     mmCode: TMemo;
     Layout1: TLayout;
     btnAddProperty: TButton;
+    Button1: TButton;
+    Button2: TButton;
     procedure btnExecuteClick(Sender: TObject);
     procedure btnAddPropertyClick(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
   private
     { Private declarations }
 
@@ -36,7 +44,12 @@ type
     _context: IJSContext;
   end;
 
-  {$M+}
+  TEnumerableObj = class(TList<string>)
+  public
+    constructor Create;
+
+  end;
+
   IProject = interface(IBaseInterface)
     ['{95432947-A441-4022-8BDF-7D4F484755DF}']
     function  get_ID: CObject;
@@ -44,9 +57,11 @@ type
 
     function  get_Name: string;
     procedure set_Name(const Value: string);
+    function  get_Tasks: List<ITask>;
 
     property ID: CObject read get_ID write set_ID;
     property Name: string read get_Name write set_Name;
+    property Tasks: List<ITask> read get_Tasks;
   end;
 
   TProject = class(TBaseInterfacedObject, IProject)
@@ -59,6 +74,7 @@ type
 
     function  get_Name: string;
     procedure set_Name(const Value: string);
+    function  get_Tasks: List<ITask>;
 
   published
     property ID: CObject read get_ID write set_ID;
@@ -99,7 +115,7 @@ var
 implementation
 
 uses
-  quickjs, QuickJS.Register.dn4d.impl;
+  quickjs, QuickJS.Register.dn4d.impl, System.Rtti;
 
 {$R *.fmx}
 
@@ -110,10 +126,14 @@ begin
     QuickJS.Register.impl.OutputLogString := LogCallBack;
 
     _context := TJSContext.Create(TJSRuntime.Create);
-    TJSRegisterTypedObjects.Initialize;
+    TJSRegisterTypedObjects.Initialize(_context);
 
-    TJSRegisterTypedObjects.RegisterObject<IProject>(_context.ctx, 'Project', function : IProject begin Result := TProject.Create; end);
-    TJSRegisterTypedObjects.RegisterObject<ITask>(_context.ctx, 'Task', function : ITask begin Result := TTask.Create; end);
+    //TJSRegister.RegisterObject<TEnumerableObj>(_context.ctx, 'EObj', function : TEnumerableObj begin Result := TEnumerableObj.Create; end);
+    TJSRegister.RegisterObject<IProject>(_context.ctx, 'Project', function : IProject begin Result := TProject.Create; end);
+    TJSRegister.RegisterObject<ITask>(_context.ctx, 'Task', function : ITask begin Result := TTask.Create; end);
+
+//      TJSRegister.RegisterObject<IProject>(_context.ctx, 'Project', function : IProject begin Result := TProject.Create; end);
+//      TJSRegister.RegisterObject<ITask>(_context.ctx, 'Task', function : ITask begin Result := TTask.Create; end);
 
 //    TJSRegister.RegisterObject(_context.ctx, 'XMLHttpRequest', TypeInfo(IXMLHttpRequest), function : TObject begin Result := TXMLHttpRequest.Create; end);
 //    TJSRegister.RegisterObject<IResource>(_context.ctx, 'Resource', function : IResource begin Result := TResource.Create(-1, ''); end);
@@ -140,6 +160,43 @@ begin
   ExtensionManager.AddProperty(&Type.Create(TypeInfo(IProject)), prop);
 end;
 
+procedure TForm1.Button1Click(Sender: TObject);
+begin
+  var rtti := TRttiContext.Create;
+
+  var ms := rtti.GetType(TypeInfo(ITask)).GetMethods;
+
+  for var m in ms do
+    mmLog.Lines.Add(m.Name);
+
+
+//  var tp := &Type.Create(TypeInfo(ITask));
+//
+//  var p := tp.PropertyByName('Name');
+//  if p = nil then;
+
+end;
+
+procedure TForm1.Button2Click(Sender: TObject);
+begin
+//  var si := JS_NewString(_context.ctx, 'Symbol.iterator');
+//  var atom := JS_ValueToAtom(_context.ctx, si);
+
+//    var jv := JS_AtomToString(_context.ctx, i);
+//210:Symbol.iterator
+//333:iterator
+  for var i := 1 to 500 do
+  begin
+    var jv := JS_AtomToValue(_context.ctx, i);
+    if JS_IsString(jv) then
+    begin
+      var s := JS_ToCString(_context.ctx, jv);
+      if Pos('iter', s) > 0 then
+        mmLog.Lines.Add(i.ToString + ':' + s);
+    end;
+  end;
+end;
+
 procedure TForm1.LogCallBack(S: string);
 begin
   mmLog.Lines.Add(s);
@@ -155,6 +212,21 @@ end;
 function TProject.get_Name: string;
 begin
   Result := _Name;
+end;
+
+function TProject.get_Tasks: List<ITask>;
+begin
+  var l: List<ITask> := CList<ITask>.Create;
+
+  for var i := 0 to 9 do
+  begin
+    var t: ITask := TTask.Create;
+    t.ID := i;
+    t.Name := 'Task ' + i.ToString;
+    l.Add(t);
+  end;
+
+  Result := l;
 end;
 
 procedure TProject.set_ID(const Value: CObject);
@@ -187,6 +259,17 @@ end;
 procedure TTask.set_Name(const Value: string);
 begin
   _Name := Value;
+end;
+
+
+{ TEnumerableObj }
+
+constructor TEnumerableObj.Create;
+begin
+  inherited;
+
+  for var i := 0 to 9 do
+    Add(i.ToString);
 end;
 
 end.

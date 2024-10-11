@@ -25,12 +25,10 @@ object Form1: TForm1
     DataDetectorTypes = []
     Lines.Strings = (
       'p = new Project();'
-      'p.Name = '#39'Project 1'#39';'
-      'log(p.Name);'
-      ''
-      't=new Task();'
-      't.Name='#39'Task 1'#39';'
-      'log(t.Name);')
+      't=p.Tasks;'
+      'for(var x of t) {'
+      'log(x.Name);'
+      '}')
     Align = Client
     Size.Width = 640.000000000000000000
     Size.Height = 259.000000000000000000
@@ -60,6 +58,22 @@ object Form1: TForm1
       Text = 'Add property'
       TextSettings.Trimming = None
       OnClick = btnAddPropertyClick
+    end
+    object Button1: TButton
+      Position.X = 216.000000000000000000
+      Position.Y = 8.000000000000000000
+      TabOrder = 2
+      Text = 'Button1'
+      TextSettings.Trimming = None
+      OnClick = Button1Click
+    end
+    object Button2: TButton
+      Position.X = 320.000000000000000000
+      Position.Y = 8.000000000000000000
+      TabOrder = 3
+      Text = 'Button2'
+      TextSettings.Trimming = None
+      OnClick = Button2Click
     end
   end
 end
