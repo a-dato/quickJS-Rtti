@@ -13,7 +13,8 @@ uses
 type
   TJSRegisterTypedObjects = class(TJSRegister)
   protected
-    class function TypedGetMemberByName(TypeInfo: PTypeInfo; const AName: string; MemberTypes: TMemberTypes) : IRttiCachedDescriptor;
+    class function GetMemberByName(TypeInfo: PTypeInfo; const AName: string; MemberTypes: TMemberTypes) : IRttiCachedDescriptor;
+    class function GetMemberNames(TypeInfo: PTypeInfo; MemberTypes: TMemberTypes) : TArray<string>;
 
     class function GenericClassIterator(ctx : JSContext; this_val : JSValueConst;
       argc : Integer; argv : PJSValueConstArr): JSValue; cdecl; static;
@@ -59,7 +60,8 @@ begin
   GenericInterfacePropertyGetterPtr := @GenericInterfacePropertyGetter;
   GenericInterfacePropertySetterPtr := @GenericInterfacePropertySetter;
 
-  GetMemberByNameFunc := TypedGetMemberByName;
+  GetMemberByNameFunc := GetMemberByName;
+  GetMemberNamesFunc := GetMemberNames;
 
   TJSRegister.RegisterObject(Context.ctx, 'JSIEnumerableIterator', TypeInfo(TJSIEnumerableIterator));
 end;
@@ -127,6 +129,8 @@ class function TJSRegisterTypedObjects.GenericInterfacePropertyGetter(ctx : JSCo
   func_data : PJSValue ): JSValue;
 
 begin
+  Result := JS_UNDEFINED;
+
   var prtti: Int64;
   TJSRuntime.Check(JS_ToInt64(ctx, @prtti, func_data^));
   var descr: IRttiCachedDescriptor := IRttiCachedDescriptor(Pointer(prtti));
@@ -138,14 +142,29 @@ begin
     TValue.Make(@ptr, descr.TypeInfo, vt);
     var o: CObject := prop.GetValue(vt.AsInterface, []);
 
-    if o.IsString then
+    if o.IsRecord then
     begin
-      var s := AnsiString(o.ToString);
-      Result := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
+      // CString?
+      if o.IsString then
+      begin
+        var s := AnsiString(o.ToString);
+        Result := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
+      end
+//      else if o.IsDateTime then
+//      begin
+//        var s := AnsiString(o.ToString);
+//        Result := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
+//      end
+      else if o.IsCObject then
+      begin
+        var v: Variant;
+        if o.TryAsType<Variant>(v) then
+          Result := JSConverter.TValueToJSValue(ctx, TValue.FromVariant(v));
+      end;
+
     end else
       Result := JSConverter.TValueToJSValue(ctx, o.AsType<TValue>);
-  end else
-    Result := JS_UNDEFINED;
+  end;
 end;
 
 class function TJSRegisterTypedObjects.GenericInterfacePropertySetter(ctx : JSContext; this_val : JSValueConst;
@@ -176,7 +195,7 @@ end;
 
 { TRegisteredTypedObject<T> }
 
-class function TJSRegisterTypedObjects.TypedGetMemberByName(TypeInfo: PTypeInfo; const AName: string; MemberTypes: TMemberTypes): IRttiCachedDescriptor;
+class function TJSRegisterTypedObjects.GetMemberByName(TypeInfo: PTypeInfo; const AName: string; MemberTypes: TMemberTypes): IRttiCachedDescriptor;
 begin
   var tp := &Type.Create(TypeInfo);
 
@@ -224,6 +243,31 @@ begin
 
   Result := TRttiCachedDescriptor.Create(members, membertype, TypeInfo);
 end;
+
+class function TJSRegisterTypedObjects.GetMemberNames(TypeInfo: PTypeInfo; MemberTypes: TMemberTypes) : TArray<string>;
+begin
+  var tp := &Type.Create(TypeInfo);
+  var methods := tp.GetMethods;
+  var properties := tp.GetProperties;
+  var i := 0;
+
+  SetLength(Result, Length(methods) + Length(properties));
+
+  var m: TRttiMethod;
+  for m in methods do
+  begin
+    Result[i] := m.Name;
+    inc(i);
+  end;
+
+  var p: _PropertyInfo;
+  for p in properties do
+  begin
+    Result[i] := p.Name;
+    inc(i);
+  end;
+end;
+
 
 { JSIEnumerableIterator }
 

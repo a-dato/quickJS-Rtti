@@ -220,7 +220,7 @@ begin
   _ID := Int64(1);
 
   _Name := 'Project 1';
-  _Description := 'Project 1';
+  _Description := 'Project description 1';
 end;
 
 function TProject.get_Description: CString;

@@ -62,14 +62,15 @@ type
     function  CreateInstance(ctx: JSContext; argc: Integer; argv: PJSValueConstArr): Pointer;
     procedure Finalize(Ptr: Pointer);
     function  GetMemberByName(const AName: string; MemberTypes: TMemberTypes) : IRttiCachedDescriptor;
+    function  GetMemberNames(MemberTypes: TMemberTypes) : TArray<string>;
     function  GetIterator: IRttiCachedDescriptor;
     function  GetIteratorNext: IRttiCachedDescriptor;
     function  GetTypeInfo: PTypeInfo;
 
-    function  TryGetRttiDescriptor(Atom: JSAtom; out RttiMember: IRttiCachedDescriptor) : Boolean;
-    procedure AddRttiDescriptor(Atom: JSAtom; const RttiMember: IRttiCachedDescriptor);
-    function  TryGetExtensionProperty(Atom: JSAtom; out PropertyName: string) : Boolean;
-    procedure AddExtensionProperty(Atom: JSAtom; const PropertyName: string);
+    function  TryGetRttiDescriptor(const PropName: string; out RttiMember: IRttiCachedDescriptor) : Boolean;
+    procedure AddRttiDescriptor(const PropName: string; const RttiMember: IRttiCachedDescriptor);
+    function  TryGetExtensionProperty(const PropName: string; out PropertyName: string) : Boolean;
+    procedure AddExtensionProperty(const PropName: string; const PropertyName: string);
 
     property ClassID: JSClassID read get_ClassID write set_ClassID;
     property IsInterface: Boolean read get_IsInterface;
@@ -107,6 +108,7 @@ type
 
   TCheckSupportsEnumerationFunc = reference to function(TypeInfo: PTypeInfo) : Boolean;
   TGetMemberByNameFunc = reference to function(TypeInfo: PTypeInfo; const AName: string; MemberTypes: TMemberTypes) : IRttiCachedDescriptor;
+  TGetMemberNamesFunc = reference to function(TypeInfo: PTypeInfo; MemberTypes: TMemberTypes) : TArray<string>;
   TGetIteratorFunc = reference to function(TypeInfo: PTypeInfo) : IRttiCachedDescriptor;
   TGetIteratorNextFunc = reference to function(TypeInfo: PTypeInfo) : IRttiCachedDescriptor;
 

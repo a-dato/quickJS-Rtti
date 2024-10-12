@@ -77,12 +77,14 @@ type
     // Internal callbacks
     class var CheckSupportsEnumerationFunc: TCheckSupportsEnumerationFunc;
     class var GetMemberByNameFunc: TGetMemberByNameFunc;
+    class var GetMemberNamesFunc: TGetMemberNamesFunc;
     class var GetIteratorFunc: TGetIteratorFunc;
     class var GetIteratorNextFunc: TGetIteratorNextFunc;
 
     class function  GetIterator(TypeInfo: PTypeInfo) : IRttiCachedDescriptor;
     class function  GetIteratorNext(TypeInfo: PTypeInfo) : IRttiCachedDescriptor;
     class function  GetMemberByName(TypeInfo: PTypeInfo; const AName: string; MemberTypes: TMemberTypes) : IRttiCachedDescriptor;
+    class function  GetMemberNames(TypeInfo: PTypeInfo; MemberTypes: TMemberTypes) : TArray<string>;
     class procedure InternalRegisterType(const Reg: IRegisteredObject; ctx: JSContext; ClassName: string);
 
     class function CallMethod(Method: TRttiMethod; TypeInfo: PTypeInfo;
@@ -207,8 +209,8 @@ type
     FClassID: JSClassID;
     FTypeInfo: PTypeInfo;
     FConstructor: TObjectConstuctor;
-    FRttiDescriptorCache: TDictionary<JSAtom, IRttiCachedDescriptor>;
-    FExtensionProperties: TDictionary<JSAtom, string>;
+    FRttiDescriptorCache: TDictionary<string, IRttiCachedDescriptor>;
+    FExtensionProperties: TDictionary<string, string>;
     FObjectSupportsExtension: TObjectSupportsExtension;
 
   protected
@@ -226,12 +228,13 @@ type
     function  GetIterator: IRttiCachedDescriptor;
     function  GetIteratorNext: IRttiCachedDescriptor;
     function  GetMemberByName(const AName: string; MemberTypes: TMemberTypes) : IRttiCachedDescriptor;
+    function  GetMemberNames(MemberTypes: TMemberTypes) : TArray<string>;
     function  GetTypeInfo: PTypeInfo;
 
-    function  TryGetRttiDescriptor(Atom: JSAtom; out RttiMember: IRttiCachedDescriptor) : Boolean;
-    procedure AddRttiDescriptor(Atom: JSAtom; const RttiMember: IRttiCachedDescriptor);
-    function  TryGetExtensionProperty(Atom: JSAtom; out PropertyName: string) : Boolean;
-    procedure AddExtensionProperty(Atom: JSAtom; const PropertyName: string);
+    function  TryGetRttiDescriptor(const PropName: string; out RttiMember: IRttiCachedDescriptor) : Boolean;
+    procedure AddRttiDescriptor(const PropName: string; const RttiMember: IRttiCachedDescriptor);
+    function  TryGetExtensionProperty(const PropName: string; out PropertyName: string) : Boolean;
+    procedure AddExtensionProperty(const PropName: string; const PropertyName: string);
 
   public
     constructor Create(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor);
@@ -645,22 +648,22 @@ begin
   // Can't explain why it calls this method a second time (with desc = nil), for now ignore second call
   if desc = nil then Exit(1);
 
+  var ansistr := JS_AtomToCString(ctx, prop);
+  var member_name: string := ansistr;
+  JS_FreeCString(ctx, ansistr);
+
   {$IFDEF DEBUG}
-  var s := JS_AtomToCString(ctx, prop);
-  var obj_type := '';
+  var obj_type: string;
   var r: IRegisteredObject;
   if FRegisteredObjectsByClassID.TryGetValue(GetClassID(obj), r) then
     obj_type := r.GetTypeInfo.Name;
-
-  JS_FreeCString(ctx, s);
   {$ENDIF}
 
   var reg: IRegisteredObject;
-  var member_name: string;
 
   if FRegisteredObjectsByClassID.TryGetValue(GetClassID(obj), reg) then
   begin
-    if reg.TryGetRttiDescriptor(prop, rtti_descriptor) then
+    if reg.TryGetRttiDescriptor(member_name, rtti_descriptor) then
     begin
       if rtti_descriptor.IsRealProperty then
         SetRttiProperty
@@ -674,20 +677,12 @@ begin
         SetIteratorNextProperty;
 
       Exit(1);
-    end
-    else if reg.TryGetExtensionProperty(prop, {out} member_name) then
-    begin
-      SetExtendableObjectGetterSetter(member_name);
-      Exit(1);
     end;
-
-    var str := JS_AtomToCString(ctx, prop);
-    if Assigned(str) then
-    begin
-      member_name := string(str);
-      JS_FreeCString(ctx, str);
-    end else
-      Exit;
+//    else if reg.TryGetExtensionProperty(member_name, {out} member_name) then
+//    begin
+//      SetExtendableObjectGetterSetter(member_name);
+//      Exit(1);
+//    end;
 
     // 'Symbol.toPrimitive'
     if member_name = 'Symbol.iterator' then
@@ -716,15 +711,15 @@ begin
         SetRttiMethod
 
       // Cannot use regular Rtti to get property/method. Maybe object supports extension?
-      else if TestObjectSupportsExtension(reg, member_name) then
-      begin
-        reg.AddExtensionProperty(prop, member_name);
-        SetExtendableObjectGetterSetter(member_name);
-        Exit(1);
-      end;
+//      else if TestObjectSupportsExtension(reg, member_name) then
+//      begin
+//        reg.AddExtensionProperty(prop, member_name);
+//        SetExtendableObjectGetterSetter(member_name);
+//        Exit(1);
+//      end;
     end;
 
-    reg.AddRttiDescriptor(prop, rtti_descriptor);
+    reg.AddRttiDescriptor(member_name, rtti_descriptor);
     Exit(1);
   end;
 end;
@@ -737,37 +732,20 @@ begin
   var reg: IRegisteredObject;
   if FRegisteredObjectsByClassID.TryGetValue(GetClassID(obj), reg) then
   begin
-    var rttictx := TRttiContext.Create;
-    var rttiType := rttictx.GetType(reg.GetTypeInfo);
+    var names := reg.GetMemberNames([TMemberType.Methods, TMemberType.Properties]);
 
-//    var methods := rttiType.GetMethods;
-//    var properties := rttiType.GetProperties;
-//
-//    var arr: PJSPropertyEnum := js_malloc(ctx, (Length(methods) + Length(properties)) * SizeOf(JSPropertyEnum));
-//    var p := arr;
-//
-//    var m: TRttiMethod;
-//    for m in methods do
-//    begin
-//      p^.is_enumerable := False; // Not used?
-//      p^.atom := JS_NewAtom(ctx, PAnsiChar(AnsiString(m.Name)));
-//      inc(p);
-//    end;
-
-    var properties := rttiType.GetProperties;
-
-    var arr: PJSPropertyEnum := js_malloc(ctx, (Length(properties)) * SizeOf(JSPropertyEnum));
+    var arr: PJSPropertyEnum := js_malloc(ctx, Length(names) * SizeOf(JSPropertyEnum));
     var p := arr;
+    var name: string;
 
-    var prop: TRttiProperty;
-    for prop in properties do
+    for name in names do
     begin
       p^.is_enumerable := False; // Not used?
-      p^.atom := JS_NewAtom(ctx, PAnsiChar(AnsiString(prop.Name)));
+      p^.atom := JS_NewAtom(ctx, PAnsiChar(AnsiString(name)));
       inc(p);
     end;
 
-    plen^ := {Length(methods) +} Length(properties);
+    plen^ := Length(names);
     ptab^ := arr;
   end;
 end;
@@ -899,6 +877,7 @@ begin
 
   CheckSupportsEnumerationFunc := CheckSupportsEnumeration;
   GetMemberByNameFunc := GetMemberByName;
+  GetMemberNamesFunc := GetMemberNames;
   GetIteratorFunc := GetIterator;
   GetIteratorNextFunc := GetIteratorNext;
 
@@ -967,6 +946,31 @@ begin
   end;
 
   Result := TRttiCachedDescriptor.Create(members, membertype, TypeInfo);
+end;
+
+class function TJSRegister.GetMemberNames(TypeInfo: PTypeInfo; MemberTypes: TMemberTypes): TArray<string>;
+begin
+  var rttiType := _RttiContext.GetType(TypeInfo);
+
+  var methods := rttiType.GetMethods;
+  var properties := rttiType.GetProperties;
+  var i := 0;
+
+  SetLength(Result, Length(methods) + Length(properties));
+
+  var m: TRttiMethod;
+  for m in methods do
+  begin
+    Result[i] := m.Name;
+    inc(i);
+  end;
+
+  var p: TRttiProperty;
+  for p in properties do
+  begin
+    Result[i] := p.Name;
+    inc(i);
+  end;
 end;
 
 class procedure TJSRegister.InternalRegisterType(const Reg: IRegisteredObject; ctx: JSContext; ClassName: string);
@@ -1106,19 +1110,19 @@ end;
 
 { TRegisteredObject }
 
-function TRegisteredObject.TryGetExtensionProperty(Atom: JSAtom; out PropertyName: string) : Boolean;
+function TRegisteredObject.TryGetExtensionProperty(const PropName: string; out PropertyName: string) : Boolean;
 begin
-  Result := FExtensionProperties.TryGetValue(Atom, PropertyName);
+  Result := FExtensionProperties.TryGetValue(PropName, PropertyName);
 end;
 
-procedure TRegisteredObject.AddExtensionProperty(Atom: JSAtom; const PropertyName: string);
+procedure TRegisteredObject.AddExtensionProperty(const PropName: string; const PropertyName: string);
 begin
-  FExtensionProperties.Add(Atom, PropertyName);
+  FExtensionProperties.Add(PropName, PropertyName);
 end;
 
-procedure TRegisteredObject.AddRttiDescriptor(Atom: JSAtom; const RttiMember: IRttiCachedDescriptor);
+procedure TRegisteredObject.AddRttiDescriptor(const PropName: string; const RttiMember: IRttiCachedDescriptor);
 begin
-  FRttiDescriptorCache.Add(Atom, RttiMember);
+  FRttiDescriptorCache.Add(PropName, RttiMember);
 end;
 
 procedure TRegisteredObject.Finalize(Ptr: Pointer);
@@ -1143,8 +1147,8 @@ constructor TRegisteredObject.Create(ATypeInfo: PTypeInfo; AConstructor: TObject
 begin
   FTypeInfo := ATypeInfo;
   FConstructor := AConstructor;
-  FRttiDescriptorCache := TDictionary<JSAtom, IRttiCachedDescriptor>.Create;
-  FExtensionProperties := TDictionary<JSAtom, string>.Create;
+  FRttiDescriptorCache := TDictionary<string, IRttiCachedDescriptor>.Create;
+  FExtensionProperties := TDictionary<string, string>.Create;
 end;
 
 destructor TRegisteredObject.Destroy;
@@ -1234,6 +1238,11 @@ begin
   Result := TJSRegister.GetMemberByNameFunc(FTypeInfo, AName, MemberTypes);
 end;
 
+function TRegisteredObject.GetMemberNames(MemberTypes: TMemberTypes) : TArray<string>;
+begin
+  Result := TJSRegister.GetMemberNamesFunc(FTypeInfo, MemberTypes);
+end;
+
 function TRegisteredObject.GetTypeInfo: PTypeInfo;
 begin
   Result := FTypeInfo;
@@ -1264,9 +1273,9 @@ begin
   FObjectSupportsExtension := Value;
 end;
 
-function TRegisteredObject.TryGetRttiDescriptor(Atom: JSAtom; out RttiMember: IRttiCachedDescriptor): Boolean;
+function TRegisteredObject.TryGetRttiDescriptor(const PropName: string; out RttiMember: IRttiCachedDescriptor): Boolean;
 begin
-  Result := FRttiDescriptorCache.TryGetValue(Atom, RttiMember);
+  Result := FRttiDescriptorCache.TryGetValue(PropName, RttiMember);
 end;
 
 { JSConverter }
