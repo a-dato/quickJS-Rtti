@@ -134,7 +134,7 @@ begin
   end;
 
   var tp := &Type.Create(FTypeInfo);
-  if TMemberType.Properties in MemberTypes then
+  if TMemberType.Property in MemberTypes then
   begin
     var prop := tp.PropertyByName(AName);
     if prop <> nil then
@@ -196,7 +196,7 @@ end;
 
 function TTypedStandardPropertyDescriptor.get_MemberType: TMemberType;
 begin
-  Result := TMemberType.Properties;
+  Result := TMemberType.Property;
 end;
 
 procedure TTypedStandardPropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);

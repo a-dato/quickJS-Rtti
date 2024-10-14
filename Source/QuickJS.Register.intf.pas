@@ -22,7 +22,7 @@ type
     property Value: Variant read FValue;
   end;
 
-  TMemberType = (None, Methods, Properties, InterfacePropertyGetSet, Iterator, IteratorNext);
+  TMemberType = (None, Methods, &Property, Iterator, IteratorNext);
   TMemberTypes = set of TMemberType;
   TObjectSupportsExtension = (Unknown, Supported, NotSupported);
 

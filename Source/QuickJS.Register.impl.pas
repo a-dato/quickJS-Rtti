@@ -629,7 +629,7 @@ begin
   begin
     if not reg.TryGetRttiDescriptor(member_name, rtti_descriptor) then
     begin
-      rtti_descriptor := reg.GetMemberByName(member_name, [TMemberType.Methods, TMemberType.Properties]);
+      rtti_descriptor := reg.GetMemberByName(member_name, [TMemberType.Methods, TMemberType.Property]);
       if rtti_descriptor = nil then
         Exit;
       reg.AddRttiDescriptor(member_name, rtti_descriptor);
@@ -656,7 +656,7 @@ begin
   var reg: IRegisteredObject;
   if FRegisteredObjectsByClassID.TryGetValue(GetClassID(obj), reg) then
   begin
-    var names := reg.GetMemberNames([TMemberType.Methods, TMemberType.Properties]);
+    var names := reg.GetMemberNames([TMemberType.Methods, TMemberType.Property]);
 
     var arr: PJSPropertyEnum := js_malloc(ctx, Length(names) * SizeOf(JSPropertyEnum));
     var p := arr;
@@ -1099,7 +1099,7 @@ begin
     end;
   end;
 
-  if TMemberType.Properties in MemberTypes then
+  if TMemberType.Property in MemberTypes then
   begin
     if FTypeInfo.Kind = tkInterface then
     begin
@@ -1531,7 +1531,7 @@ end;
 
 function TRttiStandardPropertyDescriptor.get_MemberType: TMemberType;
 begin
-  Result := TMemberType.Properties;
+  Result := TMemberType.Property;
 end;
 
 procedure TRttiStandardPropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
@@ -1582,7 +1582,7 @@ end;
 
 function TRttiInterfacePropertyDescriptor.get_MemberType: TMemberType;
 begin
-  Result := TMemberType.InterfacePropertyGetSet;
+  Result := TMemberType.Property;
 end;
 
 procedure TRttiInterfacePropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);

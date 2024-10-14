@@ -14,7 +14,8 @@ uses
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
   FMX.Controls.Presentation, FMX.StdCtrls, QuickJS.Register.intf,
   QuickJS.Register.impl, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo, FMX.Layouts,
-  System.Collections.Generic, System.Generics.Collections;
+  System.Collections.Generic, System.Generics.Collections, System.Rtti,
+  System.TypInfo;
 
 type
   {$M+}
@@ -135,13 +136,25 @@ type
     property Name: string read get_Name write set_Name;
   end;
 
+  TCustomPropertyDescriptor = class(TPropertyDescriptor)
+  protected
+    FName: string;
+
+    function  get_MemberType: TMemberType; virtual;
+
+    function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; override;
+    procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
+  public
+    constructor Create(const AName: string);
+  end;
+
 var
   Form1: TForm1;
 
 implementation
 
 uses
-  quickjs, QuickJS.Register.dn4d.impl, System.Rtti;
+  quickjs, QuickJS.Register.dn4d.impl;
 
 {$R *.fmx}
 
@@ -175,7 +188,13 @@ end;
 function TForm1.OnGetMemberByName(const AObject: IRegisteredObject; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean) : IPropertyDescriptor;
 begin
   Result := nil;
-  Handled := False;
+
+  if (AName = 'Custom') and (AObject.GetTypeInfo = TypeInfo(IProject)) then
+  begin
+    Result := TCustomPropertyDescriptor.Create('Custom');
+    Handled := True;
+  end else
+    Handled := False;
 end;
 
 function TForm1.OnGetMemberNames(const AObject: IRegisteredObject; MemberTypes: TMemberTypes; var Handled: Boolean): TArray<string>;
@@ -344,6 +363,30 @@ begin
 
   for var i := 0 to 9 do
     Add(i.ToString);
+end;
+
+{ TCustomPropertyDescriptor }
+
+constructor TCustomPropertyDescriptor.Create(const AName: string);
+begin
+  FName := AName;
+
+end;
+
+function TCustomPropertyDescriptor.GetValue(const Ptr: Pointer; const Index: array of TValue): TValue;
+begin
+  Result := 'Value for property ' + FName;
+end;
+
+function TCustomPropertyDescriptor.get_MemberType: TMemberType;
+begin
+  Result := TMemberType.Property;
+end;
+
+procedure TCustomPropertyDescriptor.SetValue(const Ptr: Pointer;
+  const Index: array of TValue; const Value: TValue);
+begin
+
 end;
 
 end.
