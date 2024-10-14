@@ -32,13 +32,19 @@ type
   IPropertyDescriptor = interface
     function  get_MemberType: TMemberType;
     function  get_TypeInfo: PTypeInfo;
+    function  get_PropertyType: PTypeInfo;
 
-    function  CallMethod(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue;
     function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue;
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue);
 
     property MemberType: TMemberType read get_MemberType;
     property TypeInfo: PTypeInfo read get_TypeInfo;
+    property PropertyType: PTypeInfo read get_PropertyType;
+  end;
+
+  IMethodsPropertyDescriptor = interface
+    ['{3D51ABCB-4C43-482A-8AE4-0749F56CD1CA}']
+    function Methods: TArray<TRttiMethod>;
   end;
 
   IRegisteredObject = interface

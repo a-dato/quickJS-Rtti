@@ -118,8 +118,7 @@ function TRegisteredTypedObject.GetMemberByName(const AName: string; MemberTypes
 begin
   var handled := False;
   Result := DoOnGetMemberByName(AName, MemberTypes, handled);
-  if handled then
-    Exit;
+  if handled then Exit;
 
   if AName = 'Symbol.iterator' then
   begin

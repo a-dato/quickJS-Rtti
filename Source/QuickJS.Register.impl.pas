@@ -87,7 +87,7 @@ type
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
     class function GenericPropertySetter(ctx: JSContext; this_val: JSValueConst;
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
-    class function SelectMethodMatchArguments(ctx: JSContext; const Methods: TArray<PObjectMember>;
+    class function SelectMethodMatchArguments(ctx: JSContext; const Methods: TArray<TRttiMethod>;
       argc: Integer; argv: PJSValueConst): TRttiMethod; cdecl; static;
     class function ExtendablePropertyGetter(ctx: JSContext; obj: JSValueConst;
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
@@ -118,7 +118,7 @@ type
     class procedure RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor); overload;
 
     class procedure RegisterLiveObject(ctx: JSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean); overload;
-    class procedure RegisterLiveObject(ctx: JSContext; ObjectName: string; const AInterface: IInterface); overload;
+    class procedure RegisterLiveObject(ctx: JSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface); overload;
 
     class property AutoRegister: Boolean read FAutoRegister write FAutoRegister;
     class property Instance: TJSRegister read FInstance write set_Instance;
@@ -178,8 +178,8 @@ type
 
     function  get_MemberType: TMemberType; virtual;
     function  get_TypeInfo: PTypeInfo; virtual;
+    function  get_PropertyType: PTypeInfo; virtual;
 
-    function  CallMethod(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; virtual;
     function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; virtual;
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); virtual;
   public
@@ -199,14 +199,13 @@ type
     constructor Create(AInfo: PTypeInfo; const RttiProp: TRttiMember);
   end;
 
-  TRttiMethodPropertyDescriptor = class(TPropertyDescriptor)
+  TRttiMethodPropertyDescriptor = class(TPropertyDescriptor, IMethodsPropertyDescriptor)
   protected
     FIsInterface: Boolean;
     FMethods: TArray<TRttiMethod>; // Multiple methods can have the same name
 
     function  get_MemberType: TMemberType; override;
-
-    function  CallMethod(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; override;
+    function  Methods: TArray<TRttiMethod>;
 
   public
     constructor Create(AInfo: PTypeInfo; const RttiMethods: TArray<TRttiMethod>; IsInterface: Boolean);
@@ -317,7 +316,7 @@ begin
   end;
 end;
 
-class function TJSRegister.SelectMethodMatchArguments(ctx: JSContext; const Methods: TArray<PObjectMember>;
+class function TJSRegister.SelectMethodMatchArguments(ctx: JSContext; const Methods: TArray<TRttiMethod>;
   argc: Integer; argv: PJSValueConst): TRttiMethod;
 begin
   if Length(Methods) = 0 then Exit(nil);
@@ -406,15 +405,18 @@ class function TJSRegister.GenericMethodCallData(ctx : JSContext; this_val : JSV
   func_data : PJSValue ): JSValue;
 
 begin
-  {$IFDEF NOT_WORKING}
   var prtti: Int64;
   TJSRuntime.Check(JS_ToInt64(ctx, @prtti, func_data^));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
-  var method := SelectMethodMatchArguments(ctx, descr.Members, argc, argv);
-  if method <> nil then
-    Result := CallMethod(method, descr.TypeInfo, ctx, this_val, argc, argv) else
-  {$ENDIF}
-    Result := JS_UNDEFINED;
+  var m_descr: IMethodsPropertyDescriptor := nil;
+
+  if Supports(descr, IMethodsPropertyDescriptor, m_descr) then
+  begin
+    var method := SelectMethodMatchArguments(ctx, m_descr.Methods, argc, argv);
+    if method <> nil then
+      Result := CallMethod(method, descr.TypeInfo, ctx, this_val, argc, argv) else
+      Result := JS_UNDEFINED;
+  end;
 end;
 
 class function TJSRegister.GenericPropertyGetter(ctx : JSContext; this_val : JSValueConst;
@@ -435,20 +437,16 @@ class function TJSRegister.GenericPropertySetter(ctx : JSContext; this_val : JSV
   func_data : PJSValue ): JSValue;
 
 begin
-  {$IFDEF NOT_WORKING}
   var prtti: Int64;
   TJSRuntime.Check(JS_ToInt64(ctx, @prtti, func_data^));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
-  var rtti_prop := TRTTIProperty(descr.Members[0]);
-  if rtti_prop <> nil then
-  begin
-    var internal_obj := GetObjectFromJSValue(this_val, True);
-    if argc <> 1 then
-      raise Exception.Create('Invalid number of arguments');
-    var v := JSConverter.JSValueToTValue(ctx, PJSValueConstArray(argv)[0], rtti_prop.PropertyType.Handle);
-    rtti_prop.SetValue(internal_obj, v);
-  end;
-  {$ENDIF}
+  var ptr := TJSRegister.GetObjectFromJSValue(this_val, False {Ptr is an IInterface} );
+
+  if argc <> 1 then
+    raise Exception.Create('Invalid number of arguments');
+  var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArray(argv)[0], descr.TypeInfo);
+
+  descr.SetValue(ptr, [], v);
   Result := JS_UNDEFINED;
 end;
 
@@ -897,26 +895,24 @@ begin
   end;
 end;
 
-class procedure TJSRegister.RegisterLiveObject(ctx: JSContext; ObjectName: string; const AInterface: IInterface);
+class procedure TJSRegister.RegisterLiveObject(ctx: JSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface);
 begin
   TMonitor.Enter(FRegisteredObjectsByType);
   try
-    var tp := PTypeInfo(TObject(AInterface).ClassInfo);
     var reg: IRegisteredObject := nil;
 
-    if not FRegisteredObjectsByType.TryGetValue(tp, reg) then
+    if not FRegisteredObjectsByType.TryGetValue(TypeInfo, reg) then
     begin
-      TJSRegister.RegisterObject(ctx, ClassName, nil {no constructor});
-      reg := FRegisteredObjectsByType[tp];
+      TJSRegister.RegisterObject(ctx, ClassName, TypeInfo);
+      reg := FRegisteredObjectsByType[TypeInfo];
     end;
 
     var global := JS_GetGlobalObject(ctx);
     var jsval := JS_NewObjectClass(ctx, reg.ClassID);
 
-    var ptr := nil;
-    // NO need to call _AddRef, Supports will bump reference count
-    Supports(AInterface, PTypeInfo(tp)^.TypeData.Guid, ptr);
-    JS_SetOpaque(jsval, ptr);
+    // Bump ref count required
+    AInterface._AddRef;
+    JS_SetOpaque(jsval, Pointer(AInterface));
     var s: AnsiString := ObjectName;
     JS_SetPropertyStr(ctx, global, PAnsiChar(s), jsval);
     JS_FreeValue(ctx, global);
@@ -1070,8 +1066,7 @@ function TRegisteredObject.GetMemberByName(const AName: string; MemberTypes: TMe
 begin
   var handled := False;
   Result := DoOnGetMemberByName(AName, MemberTypes, handled);
-  if handled then
-    Exit;
+  if handled then Exit;
 
   if AName = 'Symbol.iterator' then
   begin
@@ -1484,11 +1479,6 @@ begin
 end;
 
 { TPropertyDescriptor }
-function TPropertyDescriptor.CallMethod(const Ptr: Pointer; const Index: array of TValue): TValue;
-begin
-  raise ENotImplemented.Create('CallMethod not implemented');
-end;
-
 constructor TPropertyDescriptor.Create(AInfo: PTypeInfo);
 begin
   FTypeInfo := AInfo;
@@ -1507,6 +1497,11 @@ end;
 function TPropertyDescriptor.get_TypeInfo: PTypeInfo;
 begin
   Result := FTypeInfo;
+end;
+
+function TPropertyDescriptor.get_PropertyType: PTypeInfo;
+begin
+
 end;
 
 procedure TPropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
@@ -1550,15 +1545,14 @@ begin
   FIsInterface := IsInterface;
 end;
 
-function TRttiMethodPropertyDescriptor.CallMethod(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue;
-begin
-  var vt := TValue.From<IInterface>(IInterface(ptr));
-  Result := FMethods[0].Invoke(vt, Index);
-end;
-
 function TRttiMethodPropertyDescriptor.get_MemberType: TMemberType;
 begin
   Result := TMemberType.Methods;
+end;
+
+function TRttiMethodPropertyDescriptor.Methods: TArray<TRttiMethod>;
+begin
+  Result := FMethods;
 end;
 
 { TRttiInterfacePropertyDescriptor }
@@ -1617,6 +1611,8 @@ end;
 
 class function TJSRuntime.Check(ctx: JSContext; Val: JSValue): Boolean;
 begin
+  Result := True;
+
   if JS_IsException(Val) then
   begin
     var exp := JS_GetException(ctx);

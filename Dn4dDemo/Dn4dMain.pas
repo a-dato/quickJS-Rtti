@@ -50,6 +50,7 @@ type
   public
     { Public declarations }
     _context: IJSContext;
+    _task: ITask;
   end;
 
   TEnumerableObj = class(TList<string>)
@@ -71,6 +72,8 @@ type
     function  get_Name: string;
     procedure set_Name(const Value: string);
     function  get_Tasks: List<ITask>;
+
+    function Calc : Int64;
 
     property Created: CDateTime read get_Created write set_Created;
     property ID: CObject read get_ID write set_ID;
@@ -98,6 +101,8 @@ type
     function  get_Name: string;
     procedure set_Name(const Value: string);
     function  get_Tasks: List<ITask>;
+
+    function Calc : Int64;
 
   public
     constructor Create;
@@ -130,6 +135,10 @@ type
 
     function  get_Name: string;
     procedure set_Name(const Value: string);
+
+  public
+    constructor Create;
+    destructor Destroy; override;
 
   published
     property ID: CObject read get_ID write set_ID;
@@ -173,6 +182,10 @@ begin
     TJSRegister.RegisterObject(_context.ctx, 'Project', TypeInfo(IProject), function : Pointer begin Result := TProject.Create; end);
     TJSRegister.RegisterObject(_context.ctx, 'Task', TypeInfo(ITask), function : Pointer begin Result := TTask.Create; end);
 
+    var t: ITask := TTask.Create;
+    t.Name := 'Live task';
+
+    TJSRegister.RegisterLiveObject(_context.ctx, 'tk', TypeInfo(ITask), t);
 //      TJSRegister.RegisterObject<IProject>(_context.ctx, 'Project', function : IProject begin Result := TProject.Create; end);
 //      TJSRegister.RegisterObject<ITask>(_context.ctx, 'Task', function : ITask begin Result := TTask.Create; end);
 
@@ -263,6 +276,11 @@ end;
 
 { TProject }
 
+function TProject.Calc: Int64;
+begin
+  Result := 310;
+end;
+
 constructor TProject.Create;
 begin
   _ID := Int64(1);
@@ -333,6 +351,17 @@ begin
 end;
 
 { TTask }
+
+constructor TTask.Create;
+begin
+  _ID := 10;
+  _Name := 'Task 10';
+end;
+
+destructor TTask.Destroy;
+begin
+  inherited;
+end;
 
 function TTask.get_ID: CObject;
 begin
