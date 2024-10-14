@@ -33,6 +33,13 @@ type
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
   private
+    function OnGetMemberByName(const AObject: IRegisteredObject;
+      const AName: string; MemberTypes: TMemberTypes;
+      var Handled: Boolean): IPropertyDescriptor;
+
+    function OnGetMemberNames(const AObject: IRegisteredObject; MemberTypes: TMemberTypes;
+      var Handled: Boolean): TArray<string>;
+
     { Private declarations }
 
   protected
@@ -52,6 +59,8 @@ type
 
   IProject = interface(IBaseInterface)
     ['{95432947-A441-4022-8BDF-7D4F484755DF}']
+    function  get_Created: CDateTime;
+    procedure set_Created(const Value: CDateTime);
     function  get_ID: CObject;
     procedure set_ID(const Value: CObject);
 
@@ -62,6 +71,7 @@ type
     procedure set_Name(const Value: string);
     function  get_Tasks: List<ITask>;
 
+    property Created: CDateTime read get_Created write set_Created;
     property ID: CObject read get_ID write set_ID;
     property Description: CString read get_Description write set_Description;
     property Name: string read get_Name write set_Name;
@@ -70,9 +80,13 @@ type
 
   TProject = class(TBaseInterfacedObject, IProject)
   protected
+    _Created: CDateTime;
     _ID: CObject;
     _Name: string;
     _Description: CString;
+
+    function  get_Created: CDateTime;
+    procedure set_Created(const Value: CDateTime);
 
     function  get_ID: CObject;
     procedure set_ID(const Value: CObject);
@@ -86,6 +100,7 @@ type
 
   public
     constructor Create;
+    destructor Destroy; override;
 
   published
     property ID: CObject read get_ID write set_ID;
@@ -137,11 +152,13 @@ begin
     QuickJS.Register.impl.OutputLogString := LogCallBack;
 
     _context := TJSContext.Create(TJSRuntime.Create);
+
     TJSRegisterTypedObjects.Initialize(_context);
+    TRegisteredTypedObject.OnGetMemberByName := OnGetMemberByName;
 
     //TJSRegister.RegisterObject<TEnumerableObj>(_context.ctx, 'EObj', function : TEnumerableObj begin Result := TEnumerableObj.Create; end);
-    TJSRegister.RegisterObject<IProject>(_context.ctx, 'Project', function : IProject begin Result := TProject.Create; end);
-    TJSRegister.RegisterObject<ITask>(_context.ctx, 'Task', function : ITask begin Result := TTask.Create; end);
+    TJSRegister.RegisterObject(_context.ctx, 'Project', TypeInfo(IProject), function : Pointer begin Result := TProject.Create; end);
+    TJSRegister.RegisterObject(_context.ctx, 'Task', TypeInfo(ITask), function : Pointer begin Result := TTask.Create; end);
 
 //      TJSRegister.RegisterObject<IProject>(_context.ctx, 'Project', function : IProject begin Result := TProject.Create; end);
 //      TJSRegister.RegisterObject<ITask>(_context.ctx, 'Task', function : ITask begin Result := TTask.Create; end);
@@ -153,6 +170,18 @@ begin
 //    var u := TUser.Create;
 //    TJSRegister.RegisterLiveObject<TUser>(_context.ctx, 'usr', u, True);
   end;
+end;
+
+function TForm1.OnGetMemberByName(const AObject: IRegisteredObject; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean) : IPropertyDescriptor;
+begin
+  Result := nil;
+  Handled := False;
+end;
+
+function TForm1.OnGetMemberNames(const AObject: IRegisteredObject; MemberTypes: TMemberTypes; var Handled: Boolean): TArray<string>;
+begin
+  Result := nil;
+  Handled := False;
 end;
 
 procedure TForm1.btnExecuteClick(Sender: TObject);
@@ -218,9 +247,20 @@ end;
 constructor TProject.Create;
 begin
   _ID := Int64(1);
+  _Created := CDateTime.Now;
 
   _Name := 'Project 1';
   _Description := 'Project description 1';
+end;
+
+destructor TProject.Destroy;
+begin
+  inherited;
+end;
+
+function TProject.get_Created: CDateTime;
+begin
+  Result := _Created;
 end;
 
 function TProject.get_Description: CString;
@@ -251,6 +291,11 @@ begin
   end;
 
   Result := l;
+end;
+
+procedure TProject.set_Created(const Value: CDateTime);
+begin
+  _Created := Value;
 end;
 
 procedure TProject.set_Description(const Value: CString);
