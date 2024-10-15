@@ -71,6 +71,8 @@ type
 
     function  get_Name: string;
     procedure set_Name(const Value: string);
+    function  get_Names: List<string>;
+
     function  get_Tasks: List<ITask>;
 
     function Calc : Int64;
@@ -100,6 +102,9 @@ type
 
     function  get_Name: string;
     procedure set_Name(const Value: string);
+
+    function  get_Names: List<string>;
+
     function  get_Tasks: List<ITask>;
 
     function Calc : Int64;
@@ -111,6 +116,7 @@ type
   published
     property ID: CObject read get_ID write set_ID;
     property Name: string read get_Name write set_Name;
+    property Names: List<string> read get_Names;
   end;
 
   ITask = interface(IBaseInterface)
@@ -313,6 +319,16 @@ end;
 function TProject.get_Name: string;
 begin
   Result := _Name;
+end;
+
+function TProject.get_Names: List<string>;
+begin
+  var l: List<string> := CList<string>.Create;
+
+  for var i := 0 to 9 do
+    l.Add('Item ' + i.ToString);
+
+  Result := l;
 end;
 
 function TProject.get_Tasks: List<ITask>;

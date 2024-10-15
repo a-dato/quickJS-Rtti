@@ -20,14 +20,18 @@ type
   end;
 
   TJSTypedConverter = class(JSConverter)
+    function JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue; override;
     function TValueToJSValue(ctx: JSContext; const Value: TValue) : JSValue; override;
   end;
 
   TRegisteredTypedObject = class(TRegisteredObject)
   protected
+    function  GetArrayIndexer: IPropertyDescriptor; override;
     function  GetIterator: IPropertyDescriptor; override;
     function  GetMemberByName(const AName: string; MemberTypes: TMemberTypes) : IPropertyDescriptor; override;
     function  GetMemberNames(MemberTypes: TMemberTypes) : TArray<string>; override;
+
+    function  get_ObjectSupportsIndexing: Boolean; override;
   end;
 
   TTypedStandardPropertyDescriptor = class(TPropertyDescriptor)
@@ -35,12 +39,27 @@ type
     FProp: _PropertyInfo;
 
     function  get_MemberType: TMemberType; override;
+    function  get_PropertyType: PTypeInfo; override;
 
     function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; override;
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
 
   public
     constructor Create(AInfo: PTypeInfo; const AProp: _PropertyInfo);
+  end;
+
+  TTypedArrayIndexerDescriptor = class(TPropertyDescriptor)
+  protected
+    _innerType: PTypeInfo;
+
+    function  get_MemberType: TMemberType; override;
+    function  get_PropertyType: PTypeInfo; override;
+
+    function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; override;
+    procedure SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue); override;
+
+  public
+    constructor Create(AInfo: PTypeInfo); override;
   end;
 
   TTypedIteratorDescriptor = class(TPropertyDescriptor)
@@ -109,6 +128,11 @@ end;
 
 { TRegisteredTypedObject }
 
+function TRegisteredTypedObject.GetArrayIndexer: IPropertyDescriptor;
+begin
+  Result := TTypedArrayIndexerDescriptor.Create(FTypeInfo);
+end;
+
 function TRegisteredTypedObject.GetIterator: IPropertyDescriptor;
 begin
   Result := TTypedIteratorDescriptor.Create(FTypeInfo);
@@ -174,6 +198,11 @@ begin
   end;
 end;
 
+function TRegisteredTypedObject.get_ObjectSupportsIndexing: Boolean;
+begin
+  Result := inherited;
+end;
+
 { TTypedStandardPropertyDescriptor }
 
 constructor TTypedStandardPropertyDescriptor.Create(AInfo: PTypeInfo; const AProp: _PropertyInfo);
@@ -198,10 +227,20 @@ begin
   Result := TMemberType.Property;
 end;
 
+function TTypedStandardPropertyDescriptor.get_PropertyType: PTypeInfo;
+begin
+  Result := FProp.PropInfo.PropType;
+end;
+
 procedure TTypedStandardPropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
 begin
-  inherited;
+  var vt: TValue;
 
+  if FTypeInfo.Kind = tkInterface then
+    vt := TValue.From<IInterface>(IInterface(Ptr)) else
+    vt := TValue.From<TObject>(TObject(Ptr));
+
+  FProp.SetValue(CObject.From<TValue>(vt), Value, []);
 end;
 
 { TTypedIteratorDescriptor }
@@ -224,6 +263,38 @@ end;
 
 { TJSTypedConverter }
 
+function TJSTypedConverter.JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
+begin
+  if (Target.Kind = tkRecord) and (Target = TypeInfo(CObject)) then
+  begin
+    if JS_IsBool(Value) then
+      Result := JS_ToBool(ctx, Value) <> 0
+
+    else if JS_IsString(Value) then
+    begin
+      var str: PAnsiChar := JS_ToCString(ctx, Value);
+      Result := string(str);
+      JS_FreeCString(ctx, str);
+    end
+
+    else if JS_IsNumber(Value) then
+    begin
+      var v: Integer;
+      JS_ToInt32(ctx, @v, Value);
+      Result := v;
+    end
+
+    else if JS_IsObject(Value) then
+    begin
+//      var cid := TJSRegister.GetClassID();
+//      var ptr := TJSRegister.GetObjectFromJSValue(Value, True {Is object type?});
+//      if ptr <> nil then
+//        TValue.Make(@ptr, Target, Result);
+    end
+  end else
+    inherited;
+end;
+
 function TJSTypedConverter.TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue;
 begin
   Result := JS_NULL;
@@ -239,12 +310,52 @@ begin
     end
     else if Value.TypeInfo = TypeInfo(CDateTime) then
     begin
-      var s := AnsiString(CString(Value.GetReferenceToRawData^).ToString);
-      Result := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
+      var dt := CDateTime(Value.GetReferenceToRawData^).ToUniversalTime;
+      var epoch := CDateTime.Create(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+      var ts := (dt - epoch).TotalMilliSeconds;
+      Result := TJSRegister.JS_NewDate(ctx, ts);
     end;
 
   end else
     Result := inherited;
+end;
+
+{ TTypedArrayIndexerDescriptor }
+
+constructor TTypedArrayIndexerDescriptor.Create(AInfo: PTypeInfo);
+begin
+  inherited;
+
+//  if AInfo.N then
+//  _RttiContext.FindType()
+end;
+
+function TTypedArrayIndexerDescriptor.GetValue(const Ptr: Pointer; const Index: array of TValue): TValue;
+begin
+  var l: IList;
+
+  if (FTypeInfo.Kind = tkInterface) and Interfaces.Supports<IList>(IInterface(Ptr), l) then
+    Result := l[Index[0].AsInteger].AsType<TValue> else
+    Result := inherited;
+end;
+
+procedure TTypedArrayIndexerDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
+begin
+  var l: IList;
+
+  if (FTypeInfo.Kind = tkInterface) and Interfaces.Supports<IList>(IInterface(Ptr), l) then
+    l[Index[0].AsInteger] := Value else
+    inherited;
+end;
+
+function TTypedArrayIndexerDescriptor.get_MemberType: TMemberType;
+begin
+  Result := TMemberType.ArrayIndexer;
+end;
+
+function TTypedArrayIndexerDescriptor.get_PropertyType: PTypeInfo;
+begin
+  Result := TypeInfo(CObject);
 end;
 
 end.

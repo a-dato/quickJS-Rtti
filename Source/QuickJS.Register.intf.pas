@@ -22,7 +22,7 @@ type
     property Value: Variant read FValue;
   end;
 
-  TMemberType = (None, Methods, &Property, Iterator, IteratorNext);
+  TMemberType = (None, Methods, &Property, Iterator, IteratorNext, ArrayIndexer);
   TMemberTypes = set of TMemberType;
   TObjectSupportsExtension = (Unknown, Supported, NotSupported);
 
@@ -56,6 +56,7 @@ type
     function  get_ObjectSupportsEnumeration: Boolean;
     function  get_ObjectSupportsExtension: TObjectSupportsExtension;
     procedure set_ObjectSupportsExtension(const Value: TObjectSupportsExtension);
+    function  get_ObjectSupportsIndexing: Boolean;
 
     function  CreateInstance(ctx: JSContext; argc: Integer; argv: PJSValueConstArr): Pointer;
     procedure Finalize(Ptr: Pointer);
@@ -75,6 +76,7 @@ type
     property IsIterator: Boolean read get_IsIterator;
     property ObjectSupportsEnumeration: Boolean read get_ObjectSupportsEnumeration;
     property ObjectSupportsExtension: TObjectSupportsExtension read get_ObjectSupportsExtension write set_ObjectSupportsExtension;
+    property ObjectSupportsIndexing: Boolean read get_ObjectSupportsIndexing;
   end;
 
   IJSRuntime = interface

@@ -65,6 +65,8 @@ type
     class var FInstance: TJSRegister;
     class procedure set_Instance(Value: TJSRegister); static;
 
+    class var JS_DATE_CONSTRUCTOR: JSValue;
+
   protected
     class var FAutoRegister: Boolean;
     class var FExotics: JSClassExoticMethods;
@@ -77,6 +79,10 @@ type
 
     class function CallMethod(Method: TRttiMethod; TypeInfo: PTypeInfo;
       ctx: JSContext; this_val: JSValueConst; argc: Integer; argv: PJSValueConst): JSValue; cdecl; static;
+    class function GenericGetItem(ctx: JSContext; this_val: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
+    class function GenericSetItem(ctx: JSContext; this_val: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
     class function GenericClassIterator(ctx: JSContext; this_val: JSValueConst;
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue): JSValue; cdecl; static;
     class function  GenericIteratorNext(ctx : JSContext; this_val : JSValueConst;
@@ -94,9 +100,6 @@ type
     class function ExtendablePropertySetter(ctx: JSContext; obj: JSValueConst;
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
 
-    class function  GetClassID(Value: JSValueConst) : JSClassID;
-    class function  GetClassName(Value: PTypeInfo) : string;
-    class function  GetObjectFromJSValue(Value: JSValueConst; PointerIsAnObject: Boolean) : Pointer;
     class function  CConstructor(ctx: JSContext; new_target: JSValueConst; argc: Integer; argv: PJSValueConstArr; magic : Integer): JSValue; cdecl; static;
     class procedure CFinalize(rt : JSRuntime; this_val : JSValue); cdecl; static;
 
@@ -114,11 +117,19 @@ type
     class function  CreateCallback_0(ctx: JSContext; JSValue: JSValueConst; TypeInfo: PTypeInfo) : TProc_0;
     class function  CreateCallback_Double(ctx: JSContext; JSValue: JSValueConst; TypeInfo: PTypeInfo) : TProc_Double;
 
+    class function  JS_NewDate(ctx: JSContext; epoch_ms: Double) : JSValue;
+
+    class function  GetClassID(Value: JSValueConst) : JSClassID;
+    class function  GetClassName(Value: PTypeInfo) : string;
+    class function  GetObjectFromJSValue(Value: JSValueConst; PointerIsAnObject: Boolean) : Pointer;
+
     class procedure RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo); overload;
     class procedure RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor); overload;
 
     class procedure RegisterLiveObject(ctx: JSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean); overload;
     class procedure RegisterLiveObject(ctx: JSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface); overload;
+    class function  TryGetRegisteredObjectFromClassID(ClassID: JSClassID; out RegisteredObject: IRegisteredObject) : Boolean;
+    class function  TryGetRegisteredObjectFromTypeInfo(TypeInfo: PTypeInfo; out RegisteredObject: IRegisteredObject) : Boolean;
 
     class property AutoRegister: Boolean read FAutoRegister write FAutoRegister;
     class property Instance: TJSRegister read FInstance write set_Instance;
@@ -183,7 +194,7 @@ type
     function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; virtual;
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); virtual;
   public
-    constructor Create(AInfo: PTypeInfo);
+    constructor Create(AInfo: PTypeInfo); virtual;
   end;
 
   TRttiStandardPropertyDescriptor = class(TPropertyDescriptor)
@@ -191,6 +202,7 @@ type
     FProp: TRttiMember;
 
     function  get_MemberType: TMemberType; override;
+    function  get_PropertyType: PTypeInfo; override;
 
     function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; override;
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
@@ -217,12 +229,25 @@ type
     FSetter: TRttiMethod;
 
     function  get_MemberType: TMemberType; override;
+    function  get_PropertyType: PTypeInfo; override;
 
     function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; override;
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
 
   public
     constructor Create(AInfo: PTypeInfo; const RttiGetter: TRttiMethod; const RttiSetter: TRttiMethod);
+  end;
+
+  TRttiArrayIndexDescriptor = class(TPropertyDescriptor)
+  protected
+    function  get_MemberType: TMemberType; override;
+    function  get_PropertyType: PTypeInfo; override;
+
+    function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; override;
+    procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
+
+  public
+    constructor Create(AInfo: PTypeInfo);
   end;
 
   TRttiIteratorDescriptor = class(TPropertyDescriptor)
@@ -254,15 +279,17 @@ type
     procedure set_ClassID(const Value: JSClassID);
     function  get_IsInterface: Boolean;
     function  get_IsIterator: Boolean;
-    function  get_ObjectSupportsEnumeration: Boolean;
-    function  get_ObjectSupportsExtension: TObjectSupportsExtension;
-    procedure set_ObjectSupportsExtension(const Value: TObjectSupportsExtension);
+    function  get_ObjectSupportsEnumeration: Boolean; virtual;
+    function  get_ObjectSupportsExtension: TObjectSupportsExtension; virtual;
+    procedure set_ObjectSupportsExtension(const Value: TObjectSupportsExtension); virtual;
+    function  get_ObjectSupportsIndexing: Boolean; virtual;
 
     procedure Finalize(Ptr: Pointer);
     function  CallConstructor : Pointer; virtual;
     function  CreateInstance(ctx: JSContext; argc: Integer; argv: PJSValueConstArr) : Pointer;
     function  DoOnGetMemberByName(const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean) : IPropertyDescriptor; virtual;
     function  DoOnGetMemberNames(MemberTypes: TMemberTypes; var Handled: Boolean) : TArray<string>; virtual;
+    function  GetArrayIndexer: IPropertyDescriptor; virtual;
     function  GetIterator: IPropertyDescriptor; virtual;
     function  GetIteratorNext: IPropertyDescriptor; virtual;
     function  GetMemberByName(const AName: string; MemberTypes: TMemberTypes) : IPropertyDescriptor; virtual;
@@ -306,13 +333,19 @@ class function TJSRegister.CreateCallback_Double(ctx: JSContext; JSValue: JSValu
 begin
   Result := procedure(D: Double) begin
     var argc := 1;
-    var argv: PJSValueConstArr := js_malloc(ctx, 1 * SizeOf(JSValue));
+    var argv: array of JSValueConst;
+    SetLength(argv, 1);
     argv[0] := JS_NewFloat64(ctx, D);
-
-    TJSRuntime.Check(ctx, JS_Call(ctx, JSValue, JS_UNDEFINED, argc, argv));
-
+    TJSRuntime.Check(ctx, JS_Call(ctx, JSValue, JS_UNDEFINED, argc, PJSValueConstArr(argv)));
     JS_FreeValue(ctx, argv[0]);
-    js_free(ctx, argv);
+
+//    var argv: PJSValueConstArr := js_malloc(ctx, 1 * SizeOf(JSValue));
+//    argv[0] := JS_NewFloat64(ctx, D);
+//
+//    TJSRuntime.Check(ctx, JS_Call(ctx, JSValue, JS_UNDEFINED, argc, argv));
+//
+//    JS_FreeValue(ctx, argv[0]);
+//    js_free(ctx, argv);
   end;
 end;
 
@@ -419,6 +452,38 @@ begin
   end;
 end;
 
+class function TJSRegister.GenericGetItem(ctx : JSContext; this_val : JSValueConst;
+  argc : Integer; argv : PJSValueConst; magic : Integer;
+  func_data : PJSValue ): JSValue;
+
+begin
+  var prtti: Int64;
+  TJSRuntime.Check(JS_ToInt64(ctx, @prtti, func_data^));
+  var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
+  var ptr := TJSRegister.GetObjectFromJSValue(this_val, False {Ptr is an IInterface} );
+  var vt := descr.GetValue(ptr, [magic]);
+  Result := JSConverter.Instance.TValueToJSValue(ctx, vt);
+end;
+
+class function TJSRegister.GenericSetItem(ctx : JSContext; this_val : JSValueConst;
+  argc : Integer; argv : PJSValueConst; magic : Integer;
+  func_data : PJSValue ): JSValue;
+
+begin
+  var prtti: Int64;
+  TJSRuntime.Check(JS_ToInt64(ctx, @prtti, func_data^));
+  var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
+  var ptr := TJSRegister.GetObjectFromJSValue(this_val, False {Ptr is an IInterface} );
+
+  if argc <> 1 then
+    raise Exception.Create('Invalid number of arguments');
+
+  var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArray(argv)[0], descr.PropertyType);
+
+  descr.SetValue(ptr, [magic], v);
+  Result := JS_UNDEFINED;
+end;
+
 class function TJSRegister.GenericPropertyGetter(ctx : JSContext; this_val : JSValueConst;
   argc : Integer; argv : PJSValueConst; magic : Integer;
   func_data : PJSValue ): JSValue;
@@ -444,7 +509,7 @@ begin
 
   if argc <> 1 then
     raise Exception.Create('Invalid number of arguments');
-  var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArray(argv)[0], descr.TypeInfo);
+  var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArray(argv)[0], descr.PropertyType);
 
   descr.SetValue(ptr, [], v);
   Result := JS_UNDEFINED;
@@ -508,6 +573,18 @@ end;
 class function TJSRegister.get_own_property(ctx: JSContext; desc: PJSPropertyDescriptor; obj: JSValueConst; prop: JSAtom) : Integer;
 var
   rtti_descriptor: IPropertyDescriptor;
+
+  procedure SetRttiArrayIndexProperty(Index: Integer);
+  begin
+    var data: JSValue := JS_NewInt64(ctx, Int64(Pointer(rtti_descriptor)));
+
+    desc^.flags := JS_PROP_GETSET or JS_PROP_HAS_GET or JS_PROP_HAS_SET or JS_PROP_ENUMERABLE;
+    desc^.value := JS_UNDEFINED;
+    desc^.getter := JS_NewCFunctionData(ctx, @GenericGetItem, 0 {length}, Index {magic=index}, 1 {data_len}, @data {PJSValueConst});
+    desc^.setter := JS_NewCFunctionData(ctx, @GenericSetItem, 0 {length}, Index {magic=index}, 1 {data_len}, @data {PJSValueConst});
+
+    JS_FreeValue(ctx, data);
+  end;
 
   procedure SetRttiPropertyDesriptorCallBack;
   begin
@@ -625,6 +702,13 @@ begin
 
   if FRegisteredObjectsByClassID.TryGetValue(GetClassID(obj), reg) then
   begin
+    var item_index: Integer;
+    if (member_name[1] in ['0'..'9']) then
+    begin
+      item_index := StrToInt(member_name);
+      member_name := 'Array.get_Item';
+    end;
+
     if not reg.TryGetRttiDescriptor(member_name, rtti_descriptor) then
     begin
       rtti_descriptor := reg.GetMemberByName(member_name, [TMemberType.Methods, TMemberType.Property]);
@@ -639,6 +723,8 @@ begin
       SetIteratorNextProperty
     else if rtti_descriptor.MemberType = TMemberType.Methods then
       SetRttiMethodCallBack
+    else if rtti_descriptor.MemberType = TMemberType.ArrayIndexer then
+      SetRttiArrayIndexProperty(item_index)
     else
       SetRttiPropertyDesriptorCallBack;
 
@@ -676,6 +762,30 @@ class function TJSRegister.delete_property(ctx: JSContext; obj:JSValueConst; pro
 begin
   Assert(False, 'Not implemented');
   Result := 0;
+end;
+
+class function TJSRegister.JS_NewDate(ctx: JSContext; epoch_ms: Double) : JSValue;
+begin
+  if JS_IsNull(JS_DATE_CONSTRUCTOR) then
+  begin
+    var global := JS_NULL;
+
+    try
+      global := JS_GetGlobalObject(ctx);
+      JS_DATE_CONSTRUCTOR := JS_GetPropertyStr(ctx, global, 'Date');
+      if not JS_IsConstructor(ctx, JS_DATE_CONSTRUCTOR) then
+        raise Exception.Create('Date constructor not found');
+    finally
+      JS_FreeValue(ctx, global);
+    end;
+  end;
+
+  var argc := 1;
+  var argv: array of JSValueConst;
+  SetLength(argv, 1);
+  argv[0] := JS_NewFloat64(ctx, epoch_ms);
+  Result := JS_CallConstructor(ctx, JS_DATE_CONSTRUCTOR, argc, PJSValueConst(argv));
+  JS_FreeValue(ctx, argv[0]);
 end;
 
 class function TJSRegister.GetClassID(Value: JSValueConst): JSClassID;
@@ -774,6 +884,8 @@ end;
 class constructor TJSRegister.Create;
 begin
   FInstance := TJSRegister.Create;
+
+  JS_DATE_CONSTRUCTOR := JS_Null;
 
   FAutoRegister := True;
 
@@ -921,6 +1033,21 @@ begin
   end;
 end;
 
+class function TJSRegister.TryGetRegisteredObjectFromClassID(ClassID: JSClassID; out RegisteredObject: IRegisteredObject) : Boolean;
+begin
+  Result := FRegisteredObjectsByClassID.TryGetValue(ClassID, RegisteredObject);
+end;
+
+class function TJSRegister.TryGetRegisteredObjectFromTypeInfo(TypeInfo: PTypeInfo; out RegisteredObject: IRegisteredObject) : Boolean;
+begin
+  TMonitor.Enter(FRegisteredObjectsByType);
+  try
+    Result := FRegisteredObjectsByType.TryGetValue(TypeInfo, RegisteredObject);
+  finally
+    TMonitor.Exit(FRegisteredObjectsByType);
+  end;
+end;
+
 { TRegisteredObject }
 
 function TRegisteredObject.TryGetExtensionProperty(const PropName: string; out PropertyName: string) : Boolean;
@@ -1036,6 +1163,11 @@ begin
   end;
 end;
 
+function TRegisteredObject.GetArrayIndexer: IPropertyDescriptor;
+begin
+  Result := TRttiArrayIndexDescriptor.Create(FTypeInfo);
+end;
+
 function TRegisteredObject.GetIterator: IPropertyDescriptor;
 begin
   Result := TRttiIteratorDescriptor.Create(FTypeInfo);
@@ -1078,6 +1210,13 @@ begin
   if (AName = 'next') and get_IsIterator then
   begin
     Result := GetIteratorNext;
+    Exit;
+  end;
+
+  if (AName = 'Array.get_Item') then
+  begin
+    if get_ObjectSupportsIndexing then
+      Result := GetArrayIndexer;
     Exit;
   end;
 
@@ -1166,6 +1305,11 @@ end;
 function TRegisteredObject.get_ObjectSupportsExtension: TObjectSupportsExtension;
 begin
   Result := FObjectSupportsExtension;
+end;
+
+function TRegisteredObject.get_ObjectSupportsIndexing: Boolean;
+begin
+  Result := Pos('List', FTypeInfo.Name) <> 0;
 end;
 
 procedure TRegisteredObject.set_ObjectSupportsExtension(const Value: TObjectSupportsExtension);
@@ -1494,14 +1638,14 @@ begin
   Result := TMemberType.None;
 end;
 
+function TPropertyDescriptor.get_PropertyType: PTypeInfo;
+begin
+  raise ENotImplemented.Create('PropertyType not implemented');
+end;
+
 function TPropertyDescriptor.get_TypeInfo: PTypeInfo;
 begin
   Result := FTypeInfo;
-end;
-
-function TPropertyDescriptor.get_PropertyType: PTypeInfo;
-begin
-
 end;
 
 procedure TPropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
@@ -1527,6 +1671,11 @@ end;
 function TRttiStandardPropertyDescriptor.get_MemberType: TMemberType;
 begin
   Result := TMemberType.Property;
+end;
+
+function TRttiStandardPropertyDescriptor.get_PropertyType: PTypeInfo;
+begin
+  Result := FProp.Handle;
 end;
 
 procedure TRttiStandardPropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
@@ -1579,12 +1728,22 @@ begin
   Result := TMemberType.Property;
 end;
 
+function TRttiInterfacePropertyDescriptor.get_PropertyType: PTypeInfo;
+begin
+  Result := FGetter.ReturnType.Handle;
+end;
+
 procedure TRttiInterfacePropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
 begin
   if FSetter <> nil then
   begin
     var vt := TValue.From<IInterface>(IInterface(ptr));
-    // FSetter.Invoke(vt, Index, Value);
+
+    var args: array of TValue;
+    SetLength(args, 1);
+    args[0] := Value;
+
+    FSetter.Invoke(vt, args);
   end else
     raise Exception.Create('Property cannot be set');
 end;
@@ -1877,6 +2036,35 @@ end;
 function TRttiIteratorNextDescriptor.get_MemberType: TMemberType;
 begin
   Result := TMemberType.IteratorNext;
+end;
+
+{ TRttiArrayIndexDescriptor }
+
+constructor TRttiArrayIndexDescriptor.Create(AInfo: PTypeInfo);
+begin
+  inherited Create(AInfo);
+end;
+
+function TRttiArrayIndexDescriptor.GetValue(const Ptr: Pointer; const Index: array of TValue): TValue;
+begin
+  Result := TValue.Empty;
+end;
+
+function TRttiArrayIndexDescriptor.get_MemberType: TMemberType;
+begin
+  Result := TMemberType.ArrayIndexer;
+end;
+
+function TRttiArrayIndexDescriptor.get_PropertyType: PTypeInfo;
+begin
+
+end;
+
+procedure TRttiArrayIndexDescriptor.SetValue(const Ptr: Pointer;
+  const Index: array of TValue; const Value: TValue);
+begin
+  inherited;
+
 end;
 
 initialization
