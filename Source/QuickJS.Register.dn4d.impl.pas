@@ -130,7 +130,9 @@ end;
 
 function TRegisteredTypedObject.GetArrayIndexer: IPropertyDescriptor;
 begin
-  Result := TTypedArrayIndexerDescriptor.Create(FTypeInfo);
+  if FTypeInfo.Kind = tkInterface then // Like IList or List
+    Result := TTypedArrayIndexerDescriptor.Create(FTypeInfo) else
+    Result := inherited;
 end;
 
 function TRegisteredTypedObject.GetIterator: IPropertyDescriptor;
@@ -286,13 +288,21 @@ begin
 
     else if JS_IsObject(Value) then
     begin
-//      var cid := TJSRegister.GetClassID();
-//      var ptr := TJSRegister.GetObjectFromJSValue(Value, True {Is object type?});
-//      if ptr <> nil then
-//        TValue.Make(@ptr, Target, Result);
+      var cid := TJSRegister.GetClassID(Value);
+      var reg: IRegisteredObject;
+      var isObjectType := True;
+      if TJSRegister.TryGetRegisteredObjectFromClassID(cid, reg) then
+        isObjectType := not reg.IsInterface;
+      var ptr := TJSRegister.GetObjectFromJSValue(Value, isObjectType);
+      if ptr <> nil then
+      begin
+        if isObjectType then
+          Result := TValue.From<TObject>(ptr) else
+          Result := TValue.From<IInterface>(IInterface(ptr));
+      end;
     end
   end else
-    inherited;
+    Result := inherited;
 end;
 
 function TJSTypedConverter.TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue;
@@ -325,9 +335,6 @@ end;
 constructor TTypedArrayIndexerDescriptor.Create(AInfo: PTypeInfo);
 begin
   inherited;
-
-//  if AInfo.N then
-//  _RttiContext.FindType()
 end;
 
 function TTypedArrayIndexerDescriptor.GetValue(const Ptr: Pointer; const Index: array of TValue): TValue;

@@ -20,6 +20,7 @@ uses
 type
   {$M+}
   ITask = interface;
+  TUser=class;
 
   TForm1 = class(TForm)
     btnExecute: TButton;
@@ -74,6 +75,7 @@ type
     function  get_Names: List<string>;
 
     function  get_Tasks: List<ITask>;
+    function  get_Users: TList<TUser>;
 
     function Calc : Int64;
 
@@ -82,6 +84,7 @@ type
     property Description: CString read get_Description write set_Description;
     property Name: string read get_Name write set_Name;
     property Tasks: List<ITask> read get_Tasks;
+    property Users: TList<TUser> read get_Users;
   end;
 
   TProject = class(TBaseInterfacedObject, IProject)
@@ -106,6 +109,7 @@ type
     function  get_Names: List<string>;
 
     function  get_Tasks: List<ITask>;
+    function  get_Users: TList<TUser>;
 
     function Calc : Int64;
 
@@ -151,6 +155,19 @@ type
     property Name: string read get_Name write set_Name;
   end;
 
+  TUser = class
+  protected
+    FID: Integer;
+    FName: string;
+
+  public
+    constructor Create;
+    destructor Destroy; override;
+
+  published
+    property ID: Integer read FID write FID;
+    property Name: string read FName write FName;
+  end;
   TCustomPropertyDescriptor = class(TPropertyDescriptor)
   protected
     FName: string;
@@ -187,6 +204,7 @@ begin
     //TJSRegister.RegisterObject<TEnumerableObj>(_context.ctx, 'EObj', function : TEnumerableObj begin Result := TEnumerableObj.Create; end);
     TJSRegister.RegisterObject(_context.ctx, 'Project', TypeInfo(IProject), function : Pointer begin Result := TProject.Create; end);
     TJSRegister.RegisterObject(_context.ctx, 'Task', TypeInfo(ITask), function : Pointer begin Result := TTask.Create; end);
+    TJSRegister.RegisterObject(_context.ctx, 'User', TypeInfo(TUser), function : Pointer begin Result := TUser.Create; end);
 
     var t: ITask := TTask.Create;
     t.Name := 'Live task';
@@ -346,6 +364,17 @@ begin
   Result := l;
 end;
 
+function TProject.get_Users: TList<TUser>;
+begin
+  Result := TList<TUser>.Create;
+  for var i := 0 to 4 do
+  begin
+    var u := TUser.Create;
+    u.Name := 'User ' + i.ToString;
+    Result.Add(u);
+  end;
+end;
+
 procedure TProject.set_Created(const Value: CDateTime);
 begin
   _Created := Value;
@@ -432,6 +461,18 @@ procedure TCustomPropertyDescriptor.SetValue(const Ptr: Pointer;
   const Index: array of TValue; const Value: TValue);
 begin
 
+end;
+
+{ TUser }
+
+constructor TUser.Create;
+begin
+;
+end;
+
+destructor TUser.Destroy;
+begin
+  inherited;
 end;
 
 end.
