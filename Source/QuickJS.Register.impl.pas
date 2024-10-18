@@ -219,6 +219,7 @@ type
 
     function  get_MemberType: TMemberType; override;
     function  Methods: TArray<TRttiMethod>;
+    function  Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue; virtual;
 
   public
     constructor Create(AInfo: PTypeInfo; const RttiMethods: TArray<TRttiMethod>; IsInterface: Boolean);
@@ -446,10 +447,8 @@ begin
 
   if Supports(descr, IMethodsPropertyDescriptor, m_descr) then
   begin
-    var method := SelectMethodMatchArguments(ctx, m_descr.Methods, argc, argv);
-    if method <> nil then
-      Result := CallMethod(method, descr.TypeInfo, ctx, this_val, argc, argv) else
-      Result := JS_UNDEFINED;
+    var ptr := TJSRegister.GetObjectFromJSValue(this_val, descr.TypeInfo.Kind <> tkInterface);
+    Result := m_descr.Call(ctx, ptr, argc, argv);
   end;
 end;
 
@@ -1692,6 +1691,14 @@ begin
 end;
 
 { TRttiMethodPropertyDescriptor }
+
+function TRttiMethodPropertyDescriptor.Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
+begin
+  var method := TJSRegister.SelectMethodMatchArguments(ctx, FMethods, argc, argv);
+//  if method <> nil then
+//    Result := TJSRegister.CallMethod(method, FTypeInfo, ctx, this_val, argc, argv) else
+    Result := JS_UNDEFINED;
+end;
 
 constructor TRttiMethodPropertyDescriptor.Create(AInfo: PTypeInfo; const RttiMethods: TArray<TRttiMethod>; IsInterface: Boolean);
 begin

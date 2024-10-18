@@ -78,6 +78,19 @@ type
     function MoveNext: Boolean; override;
     function Current: TValue; override;
   end;
+
+  TTypedForEachDescriptor = class(TPropertyDescriptor, IMethodsPropertyDescriptor)
+  protected
+    FIsInterface: Boolean;
+
+    function  get_MemberType: TMemberType; override;
+    function  Methods: TArray<TRttiMethod>;
+    function  Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
+
+  public
+    constructor Create(AInfo: PTypeInfo; IsInterface: Boolean);
+  end;
+
 implementation
 
 uses
@@ -130,7 +143,9 @@ end;
 
 function TRegisteredTypedObject.GetArrayIndexer: IPropertyDescriptor;
 begin
-  Result := TTypedArrayIndexerDescriptor.Create(FTypeInfo);
+  if FTypeInfo.Kind = tkInterface then // Like IList or List
+    Result := TTypedArrayIndexerDescriptor.Create(FTypeInfo) else
+    Result := inherited;
 end;
 
 function TRegisteredTypedObject.GetIterator: IPropertyDescriptor;
@@ -154,6 +169,15 @@ begin
   begin
     Result := inherited;
     Exit;
+  end;
+
+  if AName = 'forEach' then
+  begin
+    if get_ObjectSupportsEnumeration then
+    begin
+      Result := TTypedForEachDescriptor.Create(FTypeInfo, True);
+      Exit;
+    end;
   end;
 
   var tp := &Type.Create(FTypeInfo);
@@ -251,7 +275,7 @@ begin
   begin
     var e: IEnumerable;
     if Interfaces.Supports<IEnumerable>(IInterface(ptr), e) then
-    Result := TJSIEnumerableIterator.CreateIterator(e);
+      Result := TJSIEnumerableIterator.CreateIterator(e);
   end else
     Result := inherited;
 end;
@@ -286,13 +310,21 @@ begin
 
     else if JS_IsObject(Value) then
     begin
-//      var cid := TJSRegister.GetClassID();
-//      var ptr := TJSRegister.GetObjectFromJSValue(Value, True {Is object type?});
-//      if ptr <> nil then
-//        TValue.Make(@ptr, Target, Result);
+      var cid := TJSRegister.GetClassID(Value);
+      var reg: IRegisteredObject;
+      var isObjectType := True;
+      if TJSRegister.TryGetRegisteredObjectFromClassID(cid, reg) then
+        isObjectType := not reg.IsInterface;
+      var ptr := TJSRegister.GetObjectFromJSValue(Value, isObjectType);
+      if ptr <> nil then
+      begin
+        if isObjectType then
+          Result := TValue.From<TObject>(ptr) else
+          Result := TValue.From<IInterface>(IInterface(ptr));
+      end;
     end
   end else
-    inherited;
+    Result := inherited;
 end;
 
 function TJSTypedConverter.TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue;
@@ -325,9 +357,6 @@ end;
 constructor TTypedArrayIndexerDescriptor.Create(AInfo: PTypeInfo);
 begin
   inherited;
-
-//  if AInfo.N then
-//  _RttiContext.FindType()
 end;
 
 function TTypedArrayIndexerDescriptor.GetValue(const Ptr: Pointer; const Index: array of TValue): TValue;
@@ -356,6 +385,46 @@ end;
 function TTypedArrayIndexerDescriptor.get_PropertyType: PTypeInfo;
 begin
   Result := TypeInfo(CObject);
+end;
+
+{ TTypedForEachDescriptor }
+
+function TTypedForEachDescriptor.Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
+begin
+  if argc <> 1 then
+    raise Exception.Create('Invalid number of arguments');
+
+  var e: IEnumerable;
+  if Interfaces.Supports<IEnumerable>(IInterface(Ptr), e) and JS_IsFunction(ctx, PJSValueConstArray(argv)[0]) then
+  begin
+    var func := PJSValueConstArray(argv)[0];
+    var enum := e.GetEnumerator;
+    while enum.MoveNext do
+    begin
+      var target: JSValue := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
+      var call_argv: array of JSValueConst;
+      SetLength(call_argv, 1);
+      call_argv[0] := target;
+      Result := JS_Call(ctx, func, JS_Null, argc, PJSValueConstArr(call_argv));
+      JS_FreeValue(ctx, call_argv[0]);
+    end;
+  end;
+end;
+
+constructor TTypedForEachDescriptor.Create(AInfo: PTypeInfo; IsInterface: Boolean);
+begin
+  FTypeInfo := AInfo;
+  FIsInterface := IsInterface;
+end;
+
+function TTypedForEachDescriptor.get_MemberType: TMemberType;
+begin
+  Result := TMemberType.Methods;
+end;
+
+function TTypedForEachDescriptor.Methods: TArray<TRttiMethod>;
+begin
+  Result := nil;
 end;
 
 end.
