@@ -77,8 +77,6 @@ type
 
     class procedure InternalRegisterType(const Reg: IRegisteredObject; ctx: JSContext; ClassName: string);
 
-    class function CallMethod(Method: TRttiMethod; TypeInfo: PTypeInfo;
-      ctx: JSContext; this_val: JSValueConst; argc: Integer; argv: PJSValueConst): JSValue; cdecl; static;
     class function GenericGetItem(ctx: JSContext; this_val: JSValueConst;
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
     class function GenericSetItem(ctx: JSContext; this_val: JSValueConst;
@@ -93,8 +91,6 @@ type
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
     class function GenericPropertySetter(ctx: JSContext; this_val: JSValueConst;
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
-    class function SelectMethodMatchArguments(ctx: JSContext; const Methods: TArray<TRttiMethod>;
-      argc: Integer; argv: PJSValueConst): TRttiMethod; cdecl; static;
     class function ExtendablePropertyGetter(ctx: JSContext; obj: JSValueConst;
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
     class function ExtendablePropertySetter(ctx: JSContext; obj: JSValueConst;
@@ -220,6 +216,7 @@ type
     function  Methods: TArray<TRttiMethod>;
     function  Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue; virtual;
 
+    function  SelectMethodMatchArguments(ctx: JSContext; argc: Integer; argv: PJSValueConst): TRttiMethod;
   public
     constructor Create(AInfo: PTypeInfo; const RttiMethods: TArray<TRttiMethod>; IsInterface: Boolean);
   end;
@@ -350,88 +347,10 @@ begin
   end;
 end;
 
-class function TJSRegister.SelectMethodMatchArguments(ctx: JSContext; const Methods: TArray<TRttiMethod>;
-  argc: Integer; argv: PJSValueConst): TRttiMethod;
-begin
-  if Length(Methods) = 0 then Exit(nil);
-  if Length(Methods) = 1 then Exit(TRttiMethod(Methods[0]));
-
-  var firstmatch: TRttiMethod := nil;
-
-  for var m in Methods do
-  begin
-    if TRttiMember(m) is TRttiMethod then
-    begin
-      var mt := TRttiMember(m) as TRttiMethod;
-      var params := mt.GetParameters;
-      var match := True;
-      for var i := 0 to argc - 1 do
-      begin
-        // Skip method when there are more arguments passed from JS than method accepts
-        if (i = Length(params)) or not JSConverter.TestParamsAreCompatible(ctx, params[i], PJSValueConstArray(argv)[i]) then
-        begin
-          match := False;
-          break;
-        end;
-      end;
-
-      // Excact match?
-      if match and (Length(params) = argc) then
-        Exit(mt);
-
-      if firstmatch = nil then
-        firstmatch := mt;
-    end;
-  end;
-
-  Exit(firstmatch);
-end;
-
 class procedure TJSRegister.set_Instance(Value: TJSRegister);
 begin
   FreeAndNil(FInstance);
   FInstance := Value;
-end;
-
-class function TJSRegister.CallMethod(
-  Method: TRttiMethod; TypeInfo: PTypeInfo;
-  ctx: JSContext; this_val: JSValueConst;
-  argc: Integer; argv: PJSValueConst): JSValue;
-var
-  arr: array of TValue;
-
-begin
-  {$IFDEF DEBUG}
-  var s := Method.Name;
-  {$ENDIF}
-  try
-    var params := Method.GetParameters;
-
-    if Length(params) > 0 then
-    begin
-      SetLength(arr, Length(params));
-      for var i := 0 to High(params) do
-      begin
-        if i < argc then
-          arr[i] := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArray(argv)[i], params[i].ParamType.Handle) else
-          arr[i] := JSConverter.GetDefaultValue(params[i]);
-      end;
-    end;
-
-    var v: TValue;
-    var ptr := GetObjectFromJSValue(this_val, TypeInfo.Kind = tkClass {Is object type?});
-    var vt: TValue;
-    TValue.Make(@ptr, TypeInfo, vt);
-    v := Method.Invoke(vt, arr);
-    Result := JSConverter.Instance.TValueToJSValue(ctx, v);
-  except
-    on E: Exception do
-    begin
-      Result := JS_EXCEPTION;
-      IJSContext(TJSRuntime._ActiveContexts[ctx]).Runtime.OutputLog(
-        string.Format('Calling ''%s'' on type ''%s'' raised exception: %s', [Method.name, TypeInfo.Name, E.Message]));
-    end;
-  end;
 end;
 
 class function TJSRegister.GenericMethodCallData(ctx : JSContext; this_val : JSValueConst;
@@ -1688,10 +1607,72 @@ end;
 
 function TRttiMethodPropertyDescriptor.Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
 begin
-  var method := TJSRegister.SelectMethodMatchArguments(ctx, FMethods, argc, argv);
-//  if method <> nil then
-//    Result := TJSRegister.CallMethod(method, FTypeInfo, ctx, this_val, argc, argv) else
-    Result := JS_UNDEFINED;
+  var method := SelectMethodMatchArguments(ctx, argc, argv);
+
+  {$IFDEF DEBUG}
+  var s := Method.Name;
+  {$ENDIF}
+
+  try
+    var params := Method.GetParameters;
+    var arr: array of TValue;
+
+    if Length(params) > 0 then
+    begin
+      SetLength(arr, Length(params));
+      for var i := 0 to High(params) do
+      begin
+        if i < argc then
+          arr[i] := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArray(argv)[i], params[i].ParamType.Handle) else
+          arr[i] := JSConverter.GetDefaultValue(params[i]);
+      end;
+    end;
+
+    var v: TValue;
+    var vt: TValue;
+    TValue.Make(@ptr, FTypeInfo, vt);
+    v := Method.Invoke(vt, arr);
+    Result := JSConverter.Instance.TValueToJSValue(ctx, v);
+  except
+    on E: Exception do
+    begin
+      Result := JS_EXCEPTION;
+      IJSContext(TJSRuntime._ActiveContexts[ctx]).Runtime.OutputLog(
+        string.Format('Calling ''%s'' on type ''%s'' raised exception: %s', [Method.name, FTypeInfo.Name, E.Message]));
+    end;
+  end;
+end;
+
+function TRttiMethodPropertyDescriptor.SelectMethodMatchArguments(ctx: JSContext; argc: Integer; argv: PJSValueConst): TRttiMethod;
+begin
+  if Length(Methods) = 0 then Exit(nil);
+  if Length(Methods) = 1 then Exit(FMethods[0]);
+
+  var firstmatch: TRttiMethod := nil;
+
+  for var m in FMethods do
+  begin
+    var params := m.GetParameters;
+    var match := True;
+    for var i := 0 to argc - 1 do
+    begin
+      // Skip method when there are more arguments passed from JS than method accepts
+      if (i = Length(params)) or not JSConverter.TestParamsAreCompatible(ctx, params[i], PJSValueConstArray(argv)[i]) then
+      begin
+        match := False;
+        break;
+      end;
+    end;
+
+    // Excact match?
+    if match and (Length(params) = argc) then
+      Exit(m);
+
+    if firstmatch = nil then
+      firstmatch := m;
+  end;
+
+  Exit(firstmatch);
 end;
 
 constructor TRttiMethodPropertyDescriptor.Create(AInfo: PTypeInfo; const RttiMethods: TArray<TRttiMethod>; IsInterface: Boolean);
