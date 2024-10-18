@@ -186,6 +186,7 @@ type
     function  get_MemberType: TMemberType; virtual;
     function  get_TypeInfo: PTypeInfo; virtual;
     function  get_PropertyType: PTypeInfo; virtual;
+    function IsInterface: Boolean; virtual;
 
     function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; virtual;
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); virtual;
@@ -410,7 +411,7 @@ begin
   var prtti: Int64;
   TJSRuntime.Check(JS_ToInt64(ctx, @prtti, func_data^));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
-  var ptr := TJSRegister.GetObjectFromJSValue(this_val, False {Ptr is an IInterface} );
+  var ptr := TJSRegister.GetObjectFromJSValue(this_val, not descr.IsInterface {Ptr is an IInterface} );
   var vt := descr.GetValue(ptr, []);
   Result := JSConverter.Instance.TValueToJSValue(ctx, vt);
 end;
@@ -423,7 +424,7 @@ begin
   var prtti: Int64;
   TJSRuntime.Check(JS_ToInt64(ctx, @prtti, func_data^));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
-  var ptr := TJSRegister.GetObjectFromJSValue(this_val, False {Ptr is an IInterface} );
+  var ptr := TJSRegister.GetObjectFromJSValue(this_val, not descr.IsInterface {Ptr is an IInterface} );
 
   if argc <> 1 then
     raise Exception.Create('Invalid number of arguments');
@@ -1564,6 +1565,11 @@ end;
 function TPropertyDescriptor.get_TypeInfo: PTypeInfo;
 begin
   Result := FTypeInfo;
+end;
+
+function TPropertyDescriptor.IsInterface: Boolean;
+begin
+  Result := (FTypeInfo <> nil) and (FTypeInfo.Kind = tkInterface);
 end;
 
 procedure TPropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
