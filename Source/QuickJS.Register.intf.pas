@@ -34,6 +34,8 @@ type
     function  get_TypeInfo: PTypeInfo;
     function  get_PropertyType: PTypeInfo;
 
+    function IsInterface: Boolean;
+
     function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue;
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue);
 
