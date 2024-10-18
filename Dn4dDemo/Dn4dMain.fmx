@@ -26,9 +26,9 @@ object Form1: TForm1
     Lines.Strings = (
       'p = new Project();'
       't=p.Tasks;'
-      'for(var x of t) {'
-      'log(x.Name);'
-      '}')
+      't.forEach(task => {'
+      '  log('#39'Hello'#39')'
+      '});')
     Align = Client
     Size.Width = 640.000000000000000000
     Size.Height = 259.000000000000000000

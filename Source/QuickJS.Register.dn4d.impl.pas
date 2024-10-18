@@ -78,6 +78,19 @@ type
     function MoveNext: Boolean; override;
     function Current: TValue; override;
   end;
+
+  TTypedForEachDescriptor = class(TPropertyDescriptor, IMethodsPropertyDescriptor)
+  protected
+    FIsInterface: Boolean;
+
+    function  get_MemberType: TMemberType; override;
+    function  Methods: TArray<TRttiMethod>;
+    function  Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
+
+  public
+    constructor Create(AInfo: PTypeInfo; IsInterface: Boolean);
+  end;
+
 implementation
 
 uses
@@ -156,6 +169,15 @@ begin
   begin
     Result := inherited;
     Exit;
+  end;
+
+  if AName = 'forEach' then
+  begin
+    if get_ObjectSupportsEnumeration then
+    begin
+      Result := TTypedForEachDescriptor.Create(FTypeInfo, True);
+      Exit;
+    end;
   end;
 
   var tp := &Type.Create(FTypeInfo);
@@ -253,7 +275,7 @@ begin
   begin
     var e: IEnumerable;
     if Interfaces.Supports<IEnumerable>(IInterface(ptr), e) then
-    Result := TJSIEnumerableIterator.CreateIterator(e);
+      Result := TJSIEnumerableIterator.CreateIterator(e);
   end else
     Result := inherited;
 end;
@@ -363,6 +385,46 @@ end;
 function TTypedArrayIndexerDescriptor.get_PropertyType: PTypeInfo;
 begin
   Result := TypeInfo(CObject);
+end;
+
+{ TTypedForEachDescriptor }
+
+function TTypedForEachDescriptor.Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
+begin
+  if argc <> 1 then
+    raise Exception.Create('Invalid number of arguments');
+
+  var e: IEnumerable;
+  if Interfaces.Supports<IEnumerable>(IInterface(Ptr), e) and JS_IsFunction(ctx, PJSValueConstArray(argv)[0]) then
+  begin
+    var func := PJSValueConstArray(argv)[0];
+    var enum := e.GetEnumerator;
+    while enum.MoveNext do
+    begin
+      var target: JSValue := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
+      var call_argv: array of JSValueConst;
+      SetLength(call_argv, 1);
+      call_argv[0] := target;
+      Result := JS_Call(ctx, func, JS_Null, argc, PJSValueConstArr(call_argv));
+      JS_FreeValue(ctx, call_argv[0]);
+    end;
+  end;
+end;
+
+constructor TTypedForEachDescriptor.Create(AInfo: PTypeInfo; IsInterface: Boolean);
+begin
+  FTypeInfo := AInfo;
+  FIsInterface := IsInterface;
+end;
+
+function TTypedForEachDescriptor.get_MemberType: TMemberType;
+begin
+  Result := TMemberType.Methods;
+end;
+
+function TTypedForEachDescriptor.Methods: TArray<TRttiMethod>;
+begin
+  Result := nil;
 end;
 
 end.

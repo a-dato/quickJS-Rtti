@@ -45,6 +45,7 @@ type
   IMethodsPropertyDescriptor = interface
     ['{3D51ABCB-4C43-482A-8AE4-0749F56CD1CA}']
     function Methods: TArray<TRttiMethod>;
+    function Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
   end;
 
   IRegisteredObject = interface
