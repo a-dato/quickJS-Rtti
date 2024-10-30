@@ -15,7 +15,9 @@ type
   TProc_1 = TProc<Pointer>;
   TProc_Double = TProc<Double>;
 
-  JSValueConstArray = array[0..0] of JSValueConst;
+  // Used to pass function parameters.
+  // We can pass a maximum of 20 parameters to a function.
+  JSValueConstArray = array[0..19] of JSValueConst;
   PJSValueConstArray = ^JSValueConstArray;
 
   TJSRuntime = class(TInterfacedObject, IJSRuntime)

@@ -78,6 +78,7 @@ type
     function  get_Users: TList<TUser>;
 
     function Calc : Int64;
+    function Concat(str1, str2: string) : string;
 
     property Created: CDateTime read get_Created write set_Created;
     property ID: CObject read get_ID write set_ID;
@@ -112,6 +113,7 @@ type
     function  get_Users: TList<TUser>;
 
     function Calc : Int64;
+    function Concat(str1, str2: string) : string;
 
   public
     constructor Create;
@@ -303,6 +305,11 @@ end;
 function TProject.Calc: Int64;
 begin
   Result := 310;
+end;
+
+function TProject.Concat(str1, str2: string): string;
+begin
+  Result := str1 + str2;
 end;
 
 constructor TProject.Create;
