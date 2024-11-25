@@ -52,6 +52,8 @@ type
     { Public declarations }
     _context: IJSContext;
     _task: ITask;
+
+    function Sum(X, Y: Integer) : Integer;
   end;
 
   TEnumerableObj = class(TList<string>)
@@ -170,6 +172,7 @@ type
     property ID: Integer read FID write FID;
     property Name: string read FName write FName;
   end;
+
   TCustomPropertyDescriptor = class(TPropertyDescriptor)
   protected
     FName: string;
@@ -212,8 +215,10 @@ begin
     t.Name := 'Live task';
 
     TJSRegister.RegisterLiveObject(_context.ctx, 'tk', TypeInfo(ITask), t);
-//      TJSRegister.RegisterObject<IProject>(_context.ctx, 'Project', function : IProject begin Result := TProject.Create; end);
-//      TJSRegister.RegisterObject<ITask>(_context.ctx, 'Task', function : ITask begin Result := TTask.Create; end);
+    TJSRegister.RegisterLiveObject(_context.ctx, 'form', Self, False);
+
+
+
 
 //    TJSRegister.RegisterObject(_context.ctx, 'XMLHttpRequest', TypeInfo(IXMLHttpRequest), function : TObject begin Result := TXMLHttpRequest.Create; end);
 //    TJSRegister.RegisterObject<IResource>(_context.ctx, 'Resource', function : IResource begin Result := TResource.Create(-1, ''); end);
@@ -240,6 +245,11 @@ function TForm1.OnGetMemberNames(const AObject: IRegisteredObject; MemberTypes: 
 begin
   Result := nil;
   Handled := False;
+end;
+
+function TForm1.Sum(X, Y: Integer): Integer;
+begin
+  Result := X+Y;
 end;
 
 procedure TForm1.btnExecuteClick(Sender: TObject);

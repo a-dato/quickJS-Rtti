@@ -907,7 +907,7 @@ begin
 
     if not FRegisteredObjectsByType.TryGetValue(tp, reg) then
     begin
-      TJSRegister.RegisterObject(ctx, ClassName, nil {no constructor});
+      TJSRegister.RegisterObject(ctx, ClassName, tp);
       reg := FRegisteredObjectsByType[tp];
     end;
 
