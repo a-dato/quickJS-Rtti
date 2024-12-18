@@ -62,6 +62,8 @@ type
 
   end;
 
+  TEventMethod = reference to procedure(Name: string);
+
   IProject = interface(IBaseInterface)
     ['{95432947-A441-4022-8BDF-7D4F484755DF}']
     function  get_Created: CDateTime;
@@ -82,12 +84,20 @@ type
     function Calc : Int64;
     function Concat(str1, str2: string) : string;
 
+    function  get_EventMethod: TProc;
+    procedure set_EventMethod(const Value: TProc);
+    function  get_OnNotify: TNotifyEvent;
+    procedure set_OnNotify(const Value: TNotifyEvent);
+
     property Created: CDateTime read get_Created write set_Created;
     property ID: CObject read get_ID write set_ID;
     property Description: CString read get_Description write set_Description;
     property Name: string read get_Name write set_Name;
     property Tasks: List<ITask> read get_Tasks;
     property Users: TList<TUser> read get_Users;
+
+    property OnNotify: TNotifyEvent read get_OnNotify write set_OnNotify;
+    property EventMethod: TProc read get_EventMethod write set_EventMethod;
   end;
 
   TProject = class(TBaseInterfacedObject, IProject)
@@ -96,6 +106,8 @@ type
     _ID: CObject;
     _Name: string;
     _Description: CString;
+    _EventMethod: TProc;
+    _OnNotify: TNotifyEvent;
 
     function  get_Created: CDateTime;
     procedure set_Created(const Value: CDateTime);
@@ -113,6 +125,11 @@ type
 
     function  get_Tasks: List<ITask>;
     function  get_Users: TList<TUser>;
+
+    function  get_EventMethod: TProc;
+    procedure set_EventMethod(const Value: TProc);
+    function  get_OnNotify: TNotifyEvent;
+    procedure set_OnNotify(const Value: TNotifyEvent);
 
     function Calc : Int64;
     function Concat(str1, str2: string) : string;
@@ -346,6 +363,11 @@ begin
   Result := _Description;
 end;
 
+function TProject.get_EventMethod: TProc;
+begin
+  Result := _EventMethod;
+end;
+
 function TProject.get_ID: CObject;
 begin
   Result := _ID;
@@ -364,6 +386,11 @@ begin
     l.Add('Item ' + i.ToString);
 
   Result := l;
+end;
+
+function TProject.get_OnNotify: TNotifyEvent;
+begin
+  Result := _OnNotify;
 end;
 
 function TProject.get_Tasks: List<ITask>;
@@ -402,6 +429,11 @@ begin
   _Description := Value;
 end;
 
+procedure TProject.set_EventMethod(const Value: TProc);
+begin
+  _EventMethod := Value;
+end;
+
 procedure TProject.set_ID(const Value: CObject);
 begin
   _ID := Value;
@@ -410,6 +442,11 @@ end;
 procedure TProject.set_Name(const Value: string);
 begin
   _Name := Value;
+end;
+
+procedure TProject.set_OnNotify(const Value: TNotifyEvent);
+begin
+  _OnNotify := Value;
 end;
 
 { TTask }

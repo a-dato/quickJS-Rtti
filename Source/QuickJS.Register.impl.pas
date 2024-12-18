@@ -15,10 +15,10 @@ type
   TProc_1 = TProc<Pointer>;
   TProc_Double = TProc<Double>;
 
-  // Used to pass function parameters.
-  // We can pass a maximum of 20 parameters to a function.
-  JSValueConstArray = array[0..19] of JSValueConst;
-  PJSValueConstArray = ^JSValueConstArray;
+//  // Used to pass function parameters.
+//  // We can pass a maximum of 20 parameters to a function.
+//  JSValueConstArray = array[0..19] of JSValueConst;
+//  PJSValueConstArray = ^JSValueConstArray;
 
   TJSRuntime = class(TInterfacedObject, IJSRuntime)
   protected
@@ -79,6 +79,8 @@ type
 
     class procedure InternalRegisterType(const Reg: IRegisteredObject; ctx: JSContext; ClassName: string);
 
+    class function GenericInvokeCallBack(ctx: JSContext; this_val: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
     class function GenericGetItem(ctx: JSContext; this_val: JSValueConst;
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
     class function GenericSetItem(ctx: JSContext; this_val: JSValueConst;
@@ -356,19 +358,30 @@ begin
   FInstance := Value;
 end;
 
+class function TJSRegister.GenericInvokeCallBack(ctx: JSContext; this_val: JSValueConst;
+  argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue;
+begin
+  Result := JS_NewInt64(ctx, 500);
+end;
+
 class function TJSRegister.GenericMethodCallData(ctx : JSContext; this_val : JSValueConst;
   argc : Integer; argv : PJSValueConst; magic : Integer;
   func_data : PJSValue ): JSValue;
 
 begin
   var prtti: Int64;
-  TJSRuntime.Check(JS_ToInt64(ctx, @prtti, func_data^));
+  TJSRuntime.Check(JS_ToInt64(ctx, @prtti, PJSValueConstArr(func_data)[1]));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
   var m_descr: IMethodsPropertyDescriptor := nil;
 
   if Supports(descr, IMethodsPropertyDescriptor, m_descr) then
   begin
-    var ptr := TJSRegister.GetObjectFromJSValue(this_val, descr.TypeInfo.Kind <> tkInterface);
+    var ptr: Pointer;
+    if not JS_IsUndefined(this_val) then
+      ptr := TJSRegister.GetObjectFromJSValue(this_val, descr.TypeInfo.Kind <> tkInterface) else
+      // Get self
+      ptr := TJSRegister.GetObjectFromJSValue(PJSValueConstArr(func_data)[0], descr.TypeInfo.Kind <> tkInterface);
+
     Result := m_descr.Call(ctx, ptr, argc, argv);
   end;
 end;
@@ -399,7 +412,7 @@ begin
   if argc <> 1 then
     raise Exception.Create('Invalid number of arguments');
 
-  var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArray(argv)[0], descr.PropertyType);
+  var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[0], descr.PropertyType);
 
   descr.SetValue(ptr, [magic], v);
   Result := JS_UNDEFINED;
@@ -430,7 +443,7 @@ begin
 
   if argc <> 1 then
     raise Exception.Create('Invalid number of arguments');
-  var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArray(argv)[0], descr.PropertyType);
+  var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[0], descr.PropertyType);
 
   descr.SetValue(ptr, [], v);
   Result := JS_UNDEFINED;
@@ -484,7 +497,7 @@ begin
       var prop_name := JS_ToCString(ctx, func_data^);
       if Assigned(prop_name) then
       begin
-        ext.SetValue(string(prop_name), JS_DupValue(ctx, PJSValueConstArray(argv)[0]));
+        ext.SetValue(string(prop_name), JS_DupValue(ctx, PJSValueConstArr(argv)[0]));
         JS_FreeCString(ctx, prop_name);
       end;
     end;
@@ -521,14 +534,17 @@ var
 
   procedure SetRttiMethodCallBack;
   begin
-    var data: JSValue := JS_NewInt64(ctx, Int64(Pointer(rtti_descriptor)));
+    var data: array of JSValueConst;
+    SetLength(data, 2);
+    data[0] := JS_DupValue(ctx, obj); // Add Self pointer
+    data[1] := JS_NewInt64(ctx, Int64(Pointer(rtti_descriptor))); // Method to call
 
     desc^.flags := JS_PROP_HAS_VALUE or JS_PROP_ENUMERABLE;
-    desc^.value := JS_NewCFunctionData(ctx, @GenericMethodCallData, 0 {length}, 999 {magic}, 1 {data_len}, @data {PJSValueConst});
+    desc^.value := JS_NewCFunctionData(ctx, @GenericMethodCallData, 0 {length}, 999 {magic}, 2, PJSValueConst(data) {PJSValueConst});
     desc^.getter := JS_UNDEFINED;
     desc^.setter := JS_UNDEFINED;
 
-    JS_FreeValue(ctx, data);
+    JS_FreeValue(ctx, data[1]);
   end;
 
   procedure SetIteratorProperty;
@@ -617,6 +633,7 @@ begin
   var r: IRegisteredObject;
   if FRegisteredObjectsByClassID.TryGetValue(GetClassID(obj), r) then
     obj_type := r.GetTypeInfo.Name;
+  var ptr := TJSRegister.GetObjectFromJSValue(obj, r.GetTypeInfo.Kind <> tkInterface);
   {$ENDIF}
 
   var reg: IRegisteredObject;
@@ -1072,7 +1089,7 @@ begin
         if High(params) < i then
           raise Exception.Create('Too many parameters in call to constructor');
 
-        arr[i] := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArray(argv)[i], params[i].ParamType.Handle);
+        arr[i] := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[i], params[i].ParamType.Handle);
       end;
     end;
 
@@ -1457,12 +1474,20 @@ begin
     end;
     tkInterface:
     begin
-      var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
-      Result := JS_NewObjectClass(ctx, reg.ClassID);
-      var ptr: Pointer;
-      // No need to call _AddRef, Supports will bump reference count
-      Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
-      JS_SetOpaque(Result, ptr);
+      // Property holds a reference to callback procedure
+      if string(Value.TypeInfo.Name).StartsWith('TProc') then
+      begin
+        Result := JS_NewCFunctionData(ctx, @TJSRegister.GenericInvokeCallBack, 0, 999, 0, nil);
+      end
+      else
+      begin
+        var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
+        Result := JS_NewObjectClass(ctx, reg.ClassID);
+        var ptr: Pointer;
+        // No need to call _AddRef, Supports will bump reference count
+        Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
+        JS_SetOpaque(Result, ptr);
+      end;
     end;
 
     tkInt64:
@@ -1631,7 +1656,7 @@ begin
       for var i := 0 to High(params) do
       begin
         if i < argc then
-          arr[i] := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArray(argv)[i], params[i].ParamType.Handle) else
+          arr[i] := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[i], params[i].ParamType.Handle) else
           arr[i] := JSConverter.GetDefaultValue(params[i]);
       end;
     end;
@@ -1665,7 +1690,7 @@ begin
     for var i := 0 to argc - 1 do
     begin
       // Skip method when there are more arguments passed from JS than method accepts
-      if (i = Length(params)) or not JSConverter.TestParamsAreCompatible(ctx, params[i], PJSValueConstArray(argv)[i]) then
+      if (i = Length(params)) or not JSConverter.TestParamsAreCompatible(ctx, params[i], PJSValueConstArr(argv)[i]) then
       begin
         match := False;
         break;

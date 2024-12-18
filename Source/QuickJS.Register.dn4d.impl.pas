@@ -395,9 +395,9 @@ begin
     raise Exception.Create('Invalid number of arguments');
 
   var e: IEnumerable;
-  if Interfaces.Supports<IEnumerable>(IInterface(Ptr), e) and JS_IsFunction(ctx, PJSValueConstArray(argv)[0]) then
+  if Interfaces.Supports<IEnumerable>(IInterface(Ptr), e) and JS_IsFunction(ctx, PJSValueConstArr(argv)[0]) then
   begin
-    var func := PJSValueConstArray(argv)[0];
+    var func := PJSValueConstArr(argv)[0];
     var enum := e.GetEnumerator;
     while enum.MoveNext do
     begin
