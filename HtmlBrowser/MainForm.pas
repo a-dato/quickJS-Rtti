@@ -68,7 +68,7 @@ begin
   var canvas := HtPanel.Document.GetElementbyId('myChart');
   var elem: IHtmlCanvasElement := THtmlCanvasElement.Create(canvas, Image1);
 
-  TJSRegister.RegisterLiveObject<IHtmlCanvasElement>(_context.ctx, 'canvasElement', elem);
+  TJSRegister.RegisterLiveObject(_context.ctx, 'canvasElement', TypeInfo(IHtmlCanvasElement), elem);
 
   var s := AnsiString(Memo2.Lines.Text);
   _Context.eval_buf(PAnsiChar(s), length(s), '', JS_EVAL_TYPE_MODULE);
@@ -100,11 +100,11 @@ begin
     _Context := TJSContext.Create(rt);
 
     var wnd: IWindow := THtmlWindow.Create;
-    TJSRegister.RegisterLiveObject<IWindow>(_context.ctx, 'window', wnd);
-    TJSRegister.RegisterLiveObject<IWindow>(_context.ctx, 'self', wnd);
+    TJSRegister.RegisterLiveObject(_context.ctx, 'window', TypeInfo(IWindow), wnd);
+    TJSRegister.RegisterLiveObject(_context.ctx, 'self', TypeInfo(IWindow), wnd);
 
     var doc: IHtmlDocument := THtmlDocument.Create(wnd, HtPanel.Document);
-    TJSRegister.RegisterLiveObject<IHtmlDocument>(_context.ctx, 'document', doc);
+    TJSRegister.RegisterLiveObject(_context.ctx, 'document', TypeInfo(IHtmlDocument), doc);
   end;
 end;
 
