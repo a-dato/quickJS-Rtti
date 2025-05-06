@@ -170,8 +170,8 @@ procedure TForm2.Button1Click(Sender: TObject);
 begin
   Initialize;
   var b: AnsiString := AnsiString(Memo1.Lines.Text);
-  // _context.eval_buf(PAnsiChar(b), Length(b), 'application', JS_EVAL_TYPE_MODULE);
-  _context.eval_buf(PAnsiChar(b), Length(b), 'application', JS_EVAL_TYPE_GLOBAL);
+  _context.eval_buf(PAnsiChar(b), Length(b), 'application', JS_EVAL_TYPE_MODULE);
+  //_context.eval_buf(PAnsiChar(b), Length(b), 'application', JS_EVAL_TYPE_GLOBAL);
 end;
 
 procedure TForm2.Button2Click(Sender: TObject);
