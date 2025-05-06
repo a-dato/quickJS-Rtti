@@ -157,12 +157,12 @@ begin
 
     _context := TJSContext.Create(TJSRuntime.Create);
 
-    TJSRegister.RegisterObject(_context.ctx, 'XMLHttpRequest', TypeInfo(IXMLHttpRequest), function : TObject begin Result := TXMLHttpRequest.Create; end);
-    TJSRegister.RegisterObject<IResource>(_context.ctx, 'Resource', function : IResource begin Result := TResource.Create(-1, ''); end);
+    TJSRegister.RegisterObject(_context.ctx, 'XMLHttpRequest', TypeInfo(IXMLHttpRequest), function : Pointer begin Result := TXMLHttpRequest.Create; end);
+    TJSRegister.RegisterObject(_context.ctx, 'Resource', TypeInfo(IResource), function : Pointer begin Result := TResource.Create(-1, ''); end);
     TJSRegister.RegisterObject(_context.ctx, 'User', TypeInfo(TUser));
 
     var u := TUser.Create;
-    TJSRegister.RegisterLiveObject<TUser>(_context.ctx, 'usr', u, True);
+    TJSRegister.RegisterLiveObject(_context.ctx, 'usr', u, True);
   end;
 end;
 
@@ -220,22 +220,22 @@ begin
     var st := TStopWatch.Create;
     st.Start;
 
-    TParallel.&For(0, 100, procedure(I: Integer) begin
-      argv[0] := JSConverter.TValueToJSValue(_context.ctx, o.AsType<TValue>);
-      var res := JS_Call(_context.ctx, func, JS_UNDEFINED, 1 {argc}, PJSValueConstArr(argv));
-
-//      if JS_IsNumber(res) then
-//      begin
-//        var i64: Int64;
-//        JS_ToInt64(ctx, @i64, res);
-//        if i64 <> 499500 then
-//          raise Exception.Create('Invalid value');
-//      end else
-//        raise Exception.Create('Invalid value');
-
-      JS_FreeValue(_context.ctx, argv[0]);
-      JS_FreeValue(_context.ctx, res);
-    end);
+//    TParallel.&For(0, 100, procedure(I: Integer) begin
+//      argv[0] := JSConverter.TValueToJSValue(_context.ctx, o.AsType<TValue>);
+//      var res := JS_Call(_context.ctx, func, JS_UNDEFINED, 1 {argc}, PJSValueConstArr(argv));
+//
+////      if JS_IsNumber(res) then
+////      begin
+////        var i64: Int64;
+////        JS_ToInt64(ctx, @i64, res);
+////        if i64 <> 499500 then
+////          raise Exception.Create('Invalid value');
+////      end else
+////        raise Exception.Create('Invalid value');
+//
+//      JS_FreeValue(_context.ctx, argv[0]);
+//      JS_FreeValue(_context.ctx, res);
+//    end);
 
     st.Stop;
 

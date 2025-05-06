@@ -6,7 +6,7 @@
         <MainSource>QuickJSFMX.dpr</MainSource>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
-        <Platform Condition="'$(Platform)'==''">Win32</Platform>
+        <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <TargetedPlatforms>693267</TargetedPlatforms>
         <AppType>Application</AppType>
         <ProjectName Condition="'$(ProjectName)'==''">QuickJSFMX</ProjectName>
@@ -302,11 +302,8 @@
             <Form>Form2</Form>
             <FormType>fmx</FormType>
         </DCCReference>
-        <DCCReference Include="..\FMXShared\QuickJS.Register.impl.pas"/>
-        <DCCReference Include="..\FMXShared\XMLHttpRequest.impl.pas"/>
-        <DCCReference Include="..\FMXShared\XMLHttpRequest.intf.pas">
-            <Form>$R *.res</Form>
-        </DCCReference>
+        <DCCReference Include="..\Source\XMLHttpRequest.impl.pas"/>
+        <DCCReference Include="..\Source\XMLHttpRequest.intf.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -345,6 +342,24 @@
                     </Platform>
                 </DeployFile>
                 <DeployFile LocalName="Win32\Debug\QuickJSFMX.exe" Configuration="Debug" Class="ProjectOutput"/>
+                <DeployFile LocalName="Win32\Debug\QuickJSFMX.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win32">
+                        <RemoteName>QuickJSFMX.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Win64\Debug\QuickJSFMX.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win64">
+                        <RemoteName>QuickJSFMX.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
+                <DeployFile LocalName="Win64\Debug\QuickJSFMX.rsm" Configuration="Debug" Class="DebugSymbols">
+                    <Platform Name="Win64">
+                        <RemoteName>QuickJSFMX.rsm</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">
                         <Operation>1</Operation>
