@@ -152,6 +152,18 @@ type
     class property Instance: JSConverter read FInstance write set_Instance;
   end;
 
+  TJSObjectReference = class(TInterfacedObject, IJSObjectReference)
+  protected
+    _ctx: JSContext;
+    _object: JSValueConst;
+
+    procedure Invoke(const FuncName: string);
+
+  public
+    constructor Create(ctx: JSContext; Value: JSValueConst);
+    destructor Destroy; override;
+  end;
+
   TJSIterator = class abstract
   public
     function MoveNext: Boolean; virtual; abstract;
@@ -1289,13 +1301,6 @@ end;
 
 function JSConverter.JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
 begin
-  {$IFDEF DEBUG}
-  if JS_IsSymbol(Value) then
-    Result := 'Symbol'
-  else if JS_IsConstructor(ctx, Value) then
-    Result := 'Constructor';
-  {$ENDIF}
-
   case Target.Kind of
     // tkUnknown:
     tkInteger:
@@ -1390,7 +1395,13 @@ begin
       begin
         var ptr := TJSRegister.GetObjectFromJSValue(Value, False {Is NOT object type?});
         if ptr <> nil then
-          TValue.Make(@ptr, Target, Result);
+          TValue.Make(@ptr, Target, Result)
+
+        else
+        begin
+          var obj_ref: IJSObjectReference := TJSObjectReference.Create(ctx, Value);
+          Result := TValue.From<IJSObjectReference>(obj_ref);
+        end;
       end;
     end;
 
@@ -2093,6 +2104,29 @@ procedure TRttiArrayIndexDescriptor.SetValue(const Ptr: Pointer;
 begin
   inherited;
 
+end;
+
+{ TJSObjectReference }
+
+constructor TJSObjectReference.Create(ctx: JSContext; Value: JSValueConst);
+begin
+  _ctx := ctx;
+  _object := JS_DupValue(ctx, Value);
+end;
+
+destructor TJSObjectReference.Destroy;
+begin
+  JS_FreeValue(_ctx, _object);
+  inherited;
+end;
+
+procedure TJSObjectReference.Invoke(const FuncName: string);
+begin
+  var atom := JS_NewAtom(_ctx, PAnsiChar(FuncName));
+  var func := JS_GetProperty(_ctx, _object, atom);
+  if JS_IsFunction(_ctx, func) then
+    JS_Call(_ctx, func, _object, 0 {argc}, nil {PJSValueConstArr(argv)});
+  JS_FreeAtom(_ctx, atom);
 end;
 
 initialization

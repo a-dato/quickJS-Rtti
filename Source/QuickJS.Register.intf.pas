@@ -109,6 +109,10 @@ type
     procedure SetValue(const Name: string; Value: JSValue);
   end;
 
+  IJSObjectReference = interface
+    procedure Invoke(const FuncName: string);
+  end;
+
   TOnGetMemberByName = function(const AObject: IRegisteredObject; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean) : IPropertyDescriptor of Object;
   TOnGetMemberNames = function(const AObject: IRegisteredObject; MemberTypes: TMemberTypes; var Handled: Boolean) : TArray<string> of Object;
 
