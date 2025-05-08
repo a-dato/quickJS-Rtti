@@ -1289,6 +1289,13 @@ end;
 
 function JSConverter.JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
 begin
+  {$IFDEF DEBUG}
+  if JS_IsSymbol(Value) then
+    Result := 'Symbol'
+  else if JS_IsConstructor(ctx, Value) then
+    Result := 'Constructor';
+  {$ENDIF}
+
   case Target.Kind of
     // tkUnknown:
     tkInteger:
