@@ -75,9 +75,10 @@ type
     class var FRegisteredObjectsByClassID: TDictionary<JSClassID, IRegisteredObject>;
     class var FRegisteredObjectsByType: TDictionary<PTypeInfo, IRegisteredObject>;
 
-    function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; virtual;
+    class procedure AddRegisteredObjectWithClassID(const RegisteredObject: IRegisteredObject);
+    class procedure InternalRegisterType(const Reg: IRegisteredObject; ctx: JSContext; ClassName: string); virtual;
 
-    class procedure InternalRegisterType(const Reg: IRegisteredObject; ctx: JSContext; ClassName: string);
+    function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; virtual;
 
     class function GenericInvokeCallBack(ctx: JSContext; this_val: JSValueConst;
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
@@ -123,8 +124,8 @@ type
     class function  GetClassName(Value: PTypeInfo) : string;
     class function  GetObjectFromJSValue(Value: JSValueConst; PointerIsAnObject: Boolean) : Pointer;
 
-    class procedure RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo); overload;
-    class procedure RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor); overload;
+    class function  RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject; overload;
+    class function  RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; overload;
 
     class procedure RegisterLiveObject(ctx: JSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean); overload;
     class procedure RegisterLiveObject(ctx: JSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface); overload;
@@ -150,18 +151,6 @@ type
     class function TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue) : Boolean;
 
     class property Instance: JSConverter read FInstance write set_Instance;
-  end;
-
-  TJSObjectReference = class(TInterfacedObject, IJSObjectReference)
-  protected
-    _ctx: JSContext;
-    _object: JSValueConst;
-
-    procedure Invoke(const FuncName: string);
-
-  public
-    constructor Create(ctx: JSContext; Value: JSValueConst);
-    destructor Destroy; override;
   end;
 
   TJSIterator = class abstract
@@ -895,7 +884,6 @@ begin
   JS_FreeValue(ctx,global);
 
   Reg.ClassID := classID;
-  FRegisteredObjectsByClassID.Add(classID, Reg);
 end;
 
 function TJSRegister.CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject;
@@ -903,25 +891,33 @@ begin
   Result := TRegisteredObject.Create(ATypeInfo, AConstructor);
 end;
 
-class procedure TJSRegister.RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo);
+class procedure TJSRegister.AddRegisteredObjectWithClassID(const RegisteredObject: IRegisteredObject);
 begin
-  var reg: IRegisteredObject := TJSRegister.Instance.CreateRegisteredObject(TypeInfo, nil);
-  InternalRegisterType(reg, ctx, ClassName);
+  FRegisteredObjectsByClassID.Add(RegisteredObject.ClassID, RegisteredObject);
+end;
+
+class function TJSRegister.RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject;
+begin
+  Result := TJSRegister.Instance.CreateRegisteredObject(TypeInfo, nil);
+  InternalRegisterType(Result, ctx, ClassName);
+  AddRegisteredObjectWithClassID(Result);
+
   TMonitor.Enter(FRegisteredObjectsByType);
   try
-    FRegisteredObjectsByType.Add(TypeInfo, Reg);
+    FRegisteredObjectsByType.Add(TypeInfo, Result);
   finally
     TMonitor.Exit(FRegisteredObjectsByType);
   end;
 end;
 
-class procedure TJSRegister.RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor);
+class function TJSRegister.RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject;
 begin
-  var reg: IRegisteredObject := TJSRegister.Instance.CreateRegisteredObject(TypeInfo, AConstructor);
-  InternalRegisterType(reg, ctx, ClassName);
+  Result := TJSRegister.Instance.CreateRegisteredObject(TypeInfo, AConstructor);
+  InternalRegisterType(Result, ctx, ClassName);
+  AddRegisteredObjectWithClassID(Result);
   TMonitor.Enter(FRegisteredObjectsByType);
   try
-    FRegisteredObjectsByType.Add(TypeInfo, Reg);
+    FRegisteredObjectsByType.Add(TypeInfo, Result);
   finally
     TMonitor.Exit(FRegisteredObjectsByType);
   end;
@@ -1053,9 +1049,18 @@ begin
   if Assigned(FConstructor) then
   begin
     Result := FConstructor;
+
+    if Result = nil then
+      raise Exception.Create('Constructor returned nil');
+
     if IsInterface then
+    try
       // NO need to call _AddRef, Supports will bump reference count
       Supports(TObject(Result), FTypeInfo^.TypeData.Guid, Result)
+    except
+      on E: Exception do
+        raise Exception.Create(string.Format('Query interface failed for interface %s', [FTypeInfo.Name]));
+    end;
   end else
     Result := nil;
 end;
@@ -1395,13 +1400,7 @@ begin
       begin
         var ptr := TJSRegister.GetObjectFromJSValue(Value, False {Is NOT object type?});
         if ptr <> nil then
-          TValue.Make(@ptr, Target, Result)
-
-        else
-        begin
-          var obj_ref: IJSObjectReference := TJSObjectReference.Create(ctx, Value);
-          Result := TValue.From<IJSObjectReference>(obj_ref);
-        end;
+          TValue.Make(@ptr, Target, Result);
       end;
     end;
 
@@ -1844,6 +1843,8 @@ begin
     end;
 
     JS_FreeValue(ctx, exp);
+
+    Result := False;
   end;
 end;
 
@@ -2104,29 +2105,6 @@ procedure TRttiArrayIndexDescriptor.SetValue(const Ptr: Pointer;
 begin
   inherited;
 
-end;
-
-{ TJSObjectReference }
-
-constructor TJSObjectReference.Create(ctx: JSContext; Value: JSValueConst);
-begin
-  _ctx := ctx;
-  _object := JS_DupValue(ctx, Value);
-end;
-
-destructor TJSObjectReference.Destroy;
-begin
-  JS_FreeValue(_ctx, _object);
-  inherited;
-end;
-
-procedure TJSObjectReference.Invoke(const FuncName: string);
-begin
-  var atom := JS_NewAtom(_ctx, PAnsiChar(FuncName));
-  var func := JS_GetProperty(_ctx, _object, atom);
-  if JS_IsFunction(_ctx, func) then
-    JS_Call(_ctx, func, _object, 0 {argc}, nil {PJSValueConstArr(argv)});
-  JS_FreeAtom(_ctx, atom);
 end;
 
 initialization
