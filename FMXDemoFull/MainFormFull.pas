@@ -8,7 +8,7 @@ uses
   FMX.Controls.Presentation, FMX.ScrollBox, FMX.Memo, FMX.Layouts,
   quickjs, System.Collections.Generic, System.Net.URLClient,
   System.Net.HttpClient, System.Net.HttpClientComponent, QuickJS.Register.intf,
-  FMX.Memo.Types;
+  FMX.Memo.Types, System.Actions, FMX.ActnList;
 
 type
   {$M+}
@@ -26,11 +26,18 @@ type
     NetHTTPRequest1: TNetHTTPRequest;
     NetHTTPClient1: TNetHTTPClient;
     Button5: TButton;
-    procedure Button1Click(Sender: TObject);
+    ActionList1: TActionList;
+    acExecute: TAction;
+    Button6: TButton;
+    Button7: TButton;
+    procedure FormCreate(Sender: TObject);
+    procedure acExecuteExecute(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
+    procedure Button6Click(Sender: TObject);
+    procedure Button7Click(Sender: TObject);
     procedure NetHTTPRequest1RequestCompleted(const Sender: TObject; const
         AResponse: IHTTPResponse);
   private
@@ -145,9 +152,22 @@ implementation
 uses
   QuickJS.Register.impl, System.Rtti, System_, ADato.Parser.intf,
   ADato.Parser.impl, System.Diagnostics, System.Threading, XMLHttpRequest.impl,
-  System.TypInfo, XMLHttpRequest.intf;
+  System.TypInfo, XMLHttpRequest.intf, Winapi.Windows, System.Math;
 
 {$R *.fmx}
+
+procedure TForm2.FormCreate(Sender: TObject);
+begin
+  Initialize;
+end;
+
+procedure TForm2.acExecuteExecute(Sender: TObject);
+begin
+  var b: AnsiString := AnsiString(Memo1.Lines.Text);
+  // _context.eval_buf(PAnsiChar(b), Length(b), 'lyx', JS_EVAL_TYPE_GLOBAL);
+  _context.eval_buf(PAnsiChar(b), Length(b), 'lynx', JS_EVAL_TYPE_GLOBAL or JS_EVAL_TYPE_MODULE);
+  //_context.eval_buf(PAnsiChar(b), Length(b), 'application', JS_EVAL_TYPE_GLOBAL);
+end;
 
 procedure TForm2.Initialize;
 begin
@@ -164,14 +184,6 @@ begin
     var u := TUser.Create;
     TJSRegister.RegisterLiveObject(_context.ctx, 'usr', u, True);
   end;
-end;
-
-procedure TForm2.Button1Click(Sender: TObject);
-begin
-  Initialize;
-  var b: AnsiString := AnsiString(Memo1.Lines.Text);
-  _context.eval_buf(PAnsiChar(b), Length(b), 'application', JS_EVAL_TYPE_MODULE);
-  //_context.eval_buf(PAnsiChar(b), Length(b), 'application', JS_EVAL_TYPE_GLOBAL);
 end;
 
 procedure TForm2.Button2Click(Sender: TObject);
@@ -304,6 +316,59 @@ begin
   end;
 
   JS_FreeValue(_context.ctx, exp);
+end;
+
+procedure TForm2.Button6Click(Sender: TObject);
+var
+  Security : TSecurityAttributes;
+  outputPipeRead, outputPipeWrite: THandle;
+
+begin
+  Security.nlength := SizeOf(TSecurityAttributes) ;
+  Security.binherithandle := true;
+  Security.lpsecuritydescriptor := nil;
+  if CreatePipe(outputPipeRead, outputPipeWrite, @Security, 0) then
+    SetStdHandle(STD_OUTPUT_HANDLE, outputPipeWrite) else
+    ShowMessage ('Error in creating pipe');
+
+  TThread.CreateAnonymousThread(procedure begin
+    while True do
+    try
+      Sleep(100);
+
+      Flush(output);
+
+      var bytesavail: Cardinal;
+
+      PeekNamedPipe(outputPipeRead, nil, 0, nil, @bytesavail, nil);
+      while bytesavail > 0 do
+      begin
+        var buffer: array[0..500] of AnsiChar;
+        var size := Min(500 - 1, bytesavail);
+        var bytesread: Cardinal;
+        if ReadFile(outputPipeRead, buffer, size, bytesread, nil) then
+        begin
+          bytesavail := bytesavail - bytesread;
+
+          buffer[bytesread] := #0;
+          var s := AnsiString(buffer);
+          TThread.Queue(nil, procedure begin
+            Memo2.Lines.Add(s);
+          end);
+        end;
+      end
+    except
+      on E: Exception do
+        TThread.Queue(nil, procedure begin
+          Memo2.Lines.Add(E.Message);
+        end);
+    end;
+  end).Start;
+end;
+
+procedure TForm2.Button7Click(Sender: TObject);
+begin
+  WriteLn('Hello from here');
 end;
 
 procedure TForm2.LogCallBack(S: string);

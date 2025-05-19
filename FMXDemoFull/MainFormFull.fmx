@@ -2,25 +2,26 @@ object Form2: TForm2
   Left = 0
   Top = 0
   Caption = 'Form2'
-  ClientHeight = 480
-  ClientWidth = 805
+  ClientHeight = 543
+  ClientWidth = 1003
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
   DesignerMasterStyle = 0
   object Layout1: TLayout
     Align = Top
-    Size.Width = 805.000000000000000000
+    Size.Width = 1003.000000000000000000
     Size.Height = 41.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
     object Button1: TButton
+      Action = acExecute
+      ImageIndex = -1
       Position.X = 8.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 0
-      Text = 'Button1'
       TextSettings.Trimming = None
-      OnClick = Button1Click
     end
     object Button2: TButton
       Position.X = 504.000000000000000000
@@ -57,38 +58,65 @@ object Form2: TForm2
       TextSettings.Trimming = None
       OnClick = Button5Click
     end
+    object Button6: TButton
+      Position.X = 209.000000000000000000
+      Position.Y = 11.000000000000000000
+      TabOrder = 5
+      Text = 'Button6'
+      TextSettings.Trimming = None
+      OnClick = Button6Click
+    end
+    object Button7: TButton
+      Position.X = 297.000000000000000000
+      Position.Y = 11.000000000000000000
+      TabOrder = 6
+      Text = 'Button7'
+      TextSettings.Trimming = None
+      OnClick = Button7Click
+    end
   end
   object Memo1: TMemo
     Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
     DataDetectorTypes = []
     Lines.Strings = (
-      'var x = new XMLHttpRequest();'
+      'import RemObjects from '#39'RemObjectsSDK.js'#39';'
+      
+        'import {__namespace as services} from '#39'ADatoServiceLibrary_intf.' +
+        'js'#39';'
       ''
-      'x.onreadystatechange = function () {'
-      '  if(x.readyState == 4)'
-      '     log(x.responseText);    '
-      '}'
+      
+        'var channel = new RemObjects.SDK.HTTPClientChannel('#39'https://lynx' +
+        '.a-dato.com/bin'#39');'
+      'var message = new RemObjects.SDK.BinMessage();'
+      'var service = new services.LoginService(channel, message);'
       ''
-      'x.open('#39'GET'#39', '#39'https://google.com'#39', true);'
-      'x.send();')
+      
+        'service.Hello(function (msg) {log(msg);}, RemObjects.UTIL.showEr' +
+        'ror);'
+      ''
+      
+        'service.Login('#39'info@a-dato.net'#39', '#39'60D1C18CF486B00ADD269A34A5D683' +
+        'B1'#39', false, 1200, 1, function (msg) {log(msg);}, RemObjects.UTIL' +
+        '.showError);'
+      '')
     Align = Client
-    Size.Width = 501.000000000000000000
-    Size.Height = 303.000000000000000000
+    Size.Width = 520.000000000000000000
+    Size.Height = 366.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
-    Viewport.Width = 497.000000000000000000
-    Viewport.Height = 299.000000000000000000
+    Viewport.Width = 516.000000000000000000
+    Viewport.Height = 346.000000000000000000
   end
   object Memo2: TMemo
     Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
     DataDetectorTypes = []
     Align = Bottom
-    Position.Y = 344.000000000000000000
-    Size.Width = 805.000000000000000000
+    Position.Y = 407.000000000000000000
+    Size.Width = 1003.000000000000000000
     Size.Height = 136.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
-    Viewport.Width = 801.000000000000000000
+    Viewport.Width = 999.000000000000000000
     Viewport.Height = 132.000000000000000000
   end
   object Memo3: TMemo
@@ -107,14 +135,22 @@ object Form2: TForm2
       ''
       '//////////'
       ''
-      'import {RemObjects} from '#39'RemObjectsSDK.js'#39';'
+      '/*'
+      '  Add '#39'export default RemObjects;'#39' to RemObjectsSDK.js'
+      
+        '  Update '#39'import {RemObjects} from '#39'RemObjectsSDK.js'#39';'#39' to '#39'impo' +
+        'rt RemObjects from '#39'RemObjectsSDK.js'#39';'#39' in ADatoServiceLibrary_i' +
+        'ntf.js'
+      '*/'
+      ''
+      'import RemObjects from '#39'RemObjectsSDK.js'#39';'
       
         'import {__namespace as services} from '#39'ADatoServiceLibrary_intf.' +
         'js'#39';'
       ''
       
-        'var channel = new RemObjects.SDK.HTTPClientChannel('#39'https://serv' +
-        'ice.a-dato.net/handler.ashx/binmessage'#39');'
+        'var channel = new RemObjects.SDK.HTTPClientChannel('#39'https://lynx' +
+        '.a-dato.com/bin'#39');'
       'var message = new RemObjects.SDK.BinMessage();'
       'var service = new services.LoginService(channel, message);'
       ''
@@ -160,14 +196,14 @@ object Form2: TForm2
       '//log(u.name);'
       '')
     Align = Right
-    Position.X = 501.000000000000000000
+    Position.X = 520.000000000000000000
     Position.Y = 41.000000000000000000
-    Size.Width = 304.000000000000000000
-    Size.Height = 303.000000000000000000
+    Size.Width = 483.000000000000000000
+    Size.Height = 366.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 3
-    Viewport.Width = 284.000000000000000000
-    Viewport.Height = 283.000000000000000000
+    Viewport.Width = 463.000000000000000000
+    Viewport.Height = 346.000000000000000000
   end
   object NetHTTPRequest1: TNetHTTPRequest
     Client = NetHTTPClient1
@@ -178,5 +214,14 @@ object Form2: TForm2
     UserAgent = 'Embarcadero URI Client/1.0'
     Left = 152
     Top = 216
+  end
+  object ActionList1: TActionList
+    Left = 368
+    Top = 65
+    object acExecute: TAction
+      Text = 'Execute'
+      ShortCut = 120
+      OnExecute = acExecuteExecute
+    end
   end
 end

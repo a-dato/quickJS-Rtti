@@ -97,7 +97,8 @@ type
     function get_ctx: JSContext;
     function get_Runtime: IJSRuntime;
 
-    function eval_buf(Buf: PAnsiChar; buf_len: Integer; filename: PAnsiChar; eval_flags: Integer): Integer;
+    function eval_buf(Buf: PAnsiChar; buf_len: Integer; Filename: PAnsiChar; eval_flags: Integer): Integer;
+
     property ctx: JSContext read get_ctx;
     property runtime: IJSRuntime read get_Runtime;
   end;

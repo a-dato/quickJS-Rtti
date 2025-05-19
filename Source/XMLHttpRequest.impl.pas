@@ -106,7 +106,9 @@ begin
 //  FreeAndNil(_sendContent);
   InternalSetReadyState(READYSTATE_DONE);
 
+  {$IFDEF DEBUG}
   var s := get_responseText;
+  {$ENDIF}
 end;
 
 procedure TXMLHttpRequest.open(Method, Url: string; Async: Boolean);
