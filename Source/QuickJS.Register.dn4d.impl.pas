@@ -18,7 +18,7 @@ type
     tkJSType = TTypeKind(Ord(tkMRecord) + 1);
 
   protected
-    function CreateRegisteredJSObject(ctx: JSContext; Proto: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; override;
+    function CreateRegisteredJSObject(ctx: JSContext; Value: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; override;
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject; override;
 
   public
@@ -92,7 +92,6 @@ type
     constructor Create(Ctx: JSContext; Proto: JSValueConst; ATypeInfo: PTypeInfo);
     destructor Destroy; override;
 
-    // class function GetPropertiesFromJSProto(CapturedJSObject: IJSCapturedObject; const OwnerType: &Type) : PropertyInfoArray;
     function GetType : &Type;
   end;
 
@@ -259,9 +258,9 @@ begin
   Result := TRegisteredTypedObject.Create(ATypeInfo, AConstructor);
 end;
 
-function TJSRegisterTypedObjects.CreateRegisteredJSObject(ctx: JSContext; Proto: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject;
+function TJSRegisterTypedObjects.CreateRegisteredJSObject(ctx: JSContext; Value: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject;
 begin
-  Result := TRegisteredJSObject.Create(ctx, Proto, ATypeInfo);
+  Result := TRegisteredJSObject.Create(ctx, Value, ATypeInfo);
 end;
 
 { JSIEnumerableIterator }
@@ -440,6 +439,7 @@ begin
   var proto := JS_GetProtoType(ctx, Value);
   var reg: IRegisteredObject;
 
+  // Try to find registration under the prototype.
   if not TJSRegister.TryGetRegisteredJSObject(proto, reg) then
   begin
     var c := JS_GetPropertyStr(ctx, proto, 'constructor');
@@ -726,6 +726,10 @@ type
   PJSPropertyEnumArr = ^JSPropertyEnumArr;
 
 begin
+  {$IFDEF DEBUG}
+  var s := TJSRegister.Describe(_ctx, _proto);
+  {$ENDIF}
+
   var p_enum: PJSPropertyEnum := nil;
   var p_len: UInt32;
   JS_GetOwnPropertyNames(_ctx, @p_enum, @p_len, _proto, JS_PROP_C_W_E);

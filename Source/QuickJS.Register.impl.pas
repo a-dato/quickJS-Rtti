@@ -83,7 +83,7 @@ type
     class procedure InternalRegisterType(const Reg: IRegisteredObject; ctx: JSContext; ClassName: string); virtual;
 
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; virtual;
-    function CreateRegisteredJSObject(ctx: JSContext; Proto: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; virtual;
+    function CreateRegisteredJSObject(ctx: JSContext; Value: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; virtual;
 
     class function GenericInvokeCallBack(ctx: JSContext; this_val: JSValueConst;
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
@@ -123,6 +123,7 @@ type
     class procedure Clear(ClearAll: Boolean);
     class function  CreateCallback_0(ctx: JSContext; JSValue: JSValueConst; TypeInfo: PTypeInfo) : TProc_0;
     class function  CreateCallback_Double(ctx: JSContext; JSValue: JSValueConst; TypeInfo: PTypeInfo) : TProc_Double;
+    class function  Describe(ctx: JSContext; Value: JSValue): string;
 
     class function  JS_NewDate(ctx: JSContext; epoch_ms: Double) : JSValue;
 
@@ -865,6 +866,36 @@ begin
   FExotics.set_property := nil; // set_property;
 end;
 
+class function TJSRegister.Describe(ctx: JSContext; Value: JSValue): string;
+type
+  JSPropertyEnumArr  = array[0..(MaxInt div SizeOf(JSPropertyEnum))-1] of JSPropertyEnum;
+  PJSPropertyEnumArr = ^JSPropertyEnumArr;
+
+begin
+  if not JS_IsObject(Value) then
+    Exit;
+
+  var p_enum: PJSPropertyEnum := nil;
+  var p_len: UInt32;
+  JS_GetOwnPropertyNames(ctx, @p_enum, @p_len, Value, JS_PROP_C_W_E);
+
+  if p_len > 0 then
+  begin
+    for var i := 0 to p_len -1 do
+    begin
+      var atom := PJSPropertyEnumArr(p_enum)[i].atom;
+      var name := JS_AtomToCString(ctx, atom);
+      if Result = '' then
+        Result := name else
+        Result := Result + ', ' + name;
+      JS_FreeCString(ctx, name);
+      JS_FreeAtom(ctx, atom);
+    end;
+  end;
+
+  js_free(ctx, p_enum);
+end;
+
 class destructor TJSRegister.Destroy;
 begin
   FreeAndNil(FInstance);
@@ -920,7 +951,7 @@ begin
   Result := TRegisteredObject.Create(ATypeInfo, AConstructor);
 end;
 
-function TJSRegister.CreateRegisteredJSObject(ctx: JSContext; Proto: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject;
+function TJSRegister.CreateRegisteredJSObject(ctx: JSContext; Value: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject;
 begin
   raise ENotSupportedException.Create('Wrapping of JS objects requires dn4d extensions');
 end;
@@ -970,6 +1001,7 @@ begin
 
   TMonitor.Enter(FRegisteredJSObjects);
   try
+    // Object is registered under proto
     FRegisteredJSObjects.Add(Proto, Result);
   finally
     TMonitor.Exit(FRegisteredJSObjects);
@@ -1876,24 +1908,37 @@ begin
 
   if JS_IsError(ctx, Value) then
   begin
-    var err := JS_GetPropertyStr(ctx, Value, 'name');
-    if not JS_IsUndefined(err) then
+    var err: string;
+
+    // var s := Describe(ctx, Value);
+    var name := JS_GetPropertyStr(ctx, Value, 'name');
+    if not JS_IsUndefined(name) then
     begin
-      var str: PAnsiChar := JS_ToCString(ctx, err);
-      IJSContext(_ActiveContexts[ctx]).Runtime.OutputLog(string(str));
+      var str: PAnsiChar := JS_ToCString(ctx, name);
+      err := string(str);
       JS_FreeCString(ctx, str);
-      JS_FreeValue(ctx, err);
+      JS_FreeValue(ctx, name);
+    end;
+
+    var msg := JS_GetPropertyStr(ctx, Value, 'message');
+    if not JS_IsUndefined(msg) then
+    begin
+      var str: PAnsiChar := JS_ToCString(ctx, msg);
+      err := err + ': ' + string(str);
+      JS_FreeCString(ctx, str);
+      JS_FreeValue(ctx, msg);
     end;
 
     var stack := JS_GetPropertyStr(ctx, Value, 'stack');
     if not JS_IsUndefined(stack) then
     begin
-      str := JS_ToCString(ctx, stack);
-      IJSContext(_ActiveContexts[ctx]).Runtime.OutputLog(string(str));
+      var str: PAnsiChar := JS_ToCString(ctx, stack);
+      err := err + #13#10 + string(str);
       JS_FreeCString(ctx, str);
+      JS_FreeValue(ctx, stack);
     end;
-    JS_FreeValue(ctx, stack);
 
+    IJSContext(_ActiveContexts[ctx]).Runtime.OutputLog(err);
     Result := False;
   end;
 end;
@@ -2017,7 +2062,8 @@ begin
   end;
 
   JS_FreeValue(_ctx, eval_result);
-  TJSRegister.Clear(False);
+
+  // TJSRegister.Clear(False);
 end;
 
 class function TJSContext.logme(ctx : JSContext; {%H-}this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue;
@@ -2080,9 +2126,7 @@ begin
   js_std_init_handlers(_runtime.rt);
   js_std_add_helpers(_ctx, 0, nil);
 
-  var std_module := js_init_module_std(_ctx, 'std');
-  // JS_SetModuleExport(_ctx, std_module, 'err', js_new_std_file(ctx, stderr, FALSE, FALSE));
-
+  js_init_module_std(_ctx, 'std');
   js_init_module_os(_ctx, 'os');
 
   eval_buf(std_helper, Length(std_helper), 'initialize', JS_EVAL_TYPE_MODULE);
