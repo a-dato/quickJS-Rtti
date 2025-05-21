@@ -53,6 +53,7 @@ type
 
   TJSPropertyInfo = class(TBaseInterfacedObject, _PropertyInfo)
   protected
+    _ctx: JSContext;
     _ownerType: &Type;
     _name: AnsiString;
 
@@ -67,7 +68,7 @@ type
     function  GetValue(const obj: CObject; const index: array of CObject): CObject;
     procedure SetValue(const obj: CObject; const value: CObject; const index: array of CObject; ExecuteTriggers: Boolean = false);
   public
-    constructor Create(const AOwnerType: &Type; Name: AnsiString);
+    constructor Create(Ctx: JSContext; const AOwnerType: &Type; Name: AnsiString);
   end;
 
   TRegisteredTypedObject = class(TRegisteredObject)
@@ -612,7 +613,11 @@ begin
 
     if Value.TypeInfo = TypeInfo(CString) then
     begin
-      var s := AnsiString(CString(Value.GetReferenceToRawData^).ToString);
+      var cs := CString(Value.GetReferenceToRawData^);
+      if CString.IsNullOrEmpty(cs) then
+        Exit(JS_NULL);
+
+      var s := AnsiString(cs.ToString);
       Exit(JS_NewStringLen(ctx, PAnsiChar(s), Length(s)));
     end;
 
@@ -743,7 +748,7 @@ begin
       var atom := PJSPropertyEnumArr(p_enum)[i].atom;
       var name := JS_AtomToCString(_ctx, atom);
 
-      Result[i] := TJSPropertyInfo.Create(ownerType, name);
+      Result[i] := TJSPropertyInfo.Create(_ctx, ownerType, name);
 
       JS_FreeCString(_ctx, name);
       JS_FreeAtom(_ctx, atom);
@@ -761,8 +766,9 @@ end;
 
 { TJSPropertyInfo }
 
-constructor TJSPropertyInfo.Create(const AOwnerType: &Type; Name: AnsiString);
+constructor TJSPropertyInfo.Create(Ctx: JSContext; const AOwnerType: &Type; Name: AnsiString);
 begin
+  _ctx := Ctx;
   _ownerType := AOwnerType;
   _name := Name;
 end;
@@ -781,7 +787,11 @@ function TJSPropertyInfo.GetValue(const obj: CObject; const index: array of CObj
 begin
   var js_obj: IJSObjectReference;
   if obj.TryAsType<IJSObjectReference>(js_obj) then
-    Result := js_obj.Invoke(_name, nil);
+  begin
+    var val := JS_GetPropertyStr(_ctx, js_obj.Reference, PAnsiChar(_name));
+    if not TJSRuntime.Check(_ctx) then Exit;
+    Result := JSConverter.Instance.JSValueToTValue(_ctx, val, nil);
+  end;
 end;
 
 function TJSPropertyInfo.get_CanRead: Boolean;
@@ -811,7 +821,12 @@ end;
 
 procedure TJSPropertyInfo.SetValue(const obj, value: CObject; const index: array of CObject; ExecuteTriggers: Boolean);
 begin
-
+  var js_obj: IJSObjectReference;
+  if obj.TryAsType<IJSObjectReference>(js_obj) then
+  begin
+    JS_SetPropertyStr(_ctx, js_obj.Reference, PAnsiChar(_name), JSConverter.Instance.TValueToJSValue(_ctx, value.AsType<TValue>));
+    TJSRuntime.Check(_ctx);
+  end;
 end;
 
 { TCaptureJSObject }
