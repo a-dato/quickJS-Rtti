@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+<script type="text/javascript">
+	function Click() {
+		// Start local Node.js service from:
+		//		 D:\adato_quickjs\AppPlatform\js\SalesforceNodeJSServer.mjs
+		fetch("http://localhost:3000/api/auth", {
+		  method: "POST",
+		  headers: {
+		    "Content-Type": "application/x-www-form-urlencoded"
+		  }
+		})
+		  .then((res) => res.json())
+		  .then((data) => {
+		    console.log("Access Token:", data.access_token);
+		    // getAccounts(data.access_token, data.instance_url);
+		  })
+		  .catch(console.error);
+}
+  
+  	
+</script>
+</head>
+<body>
+	<button onClick="Click();">Click me</button>
+</body>

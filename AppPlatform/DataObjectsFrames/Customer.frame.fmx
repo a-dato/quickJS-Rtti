@@ -1,0 +1,156 @@
+object CustomerFrame: TCustomerFrame
+  Size.Width = 689.000000000000000000
+  Size.Height = 474.000000000000000000
+  Size.PlatformDefault = False
+  object ICustomer_Model: TDataControl
+    Align = Left
+    HitTest = True
+    Position.Y = 50.000000000000000000
+    Size.Width = 201.000000000000000000
+    Size.Height = 382.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid]
+    RowHeightDefault = 30.000000000000000000
+    HeaderHeight = 24.000000000000000000
+    AutoExtraColumnSizeMax = -1.000000000000000000
+  end
+  object Layout1: TLayout
+    Align = Top
+    Size.Width = 689.000000000000000000
+    Size.Height = 50.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    object Label1: TLabel
+      Position.X = 24.000000000000000000
+      Position.Y = 8.000000000000000000
+      Size.Width = 65.000000000000000000
+      Size.Height = 17.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Customer:'
+      TabOrder = 0
+    end
+    object ICustomer_Name_1: TLabel
+      Position.X = 86.000000000000000000
+      Position.Y = 8.000000000000000000
+      Text = 'ICustomer_Name_1'
+      TabOrder = 1
+    end
+  end
+  object Splitter1: TSplitter
+    Align = Left
+    Cursor = crHSplit
+    MinSize = 20.000000000000000000
+    Position.X = 201.000000000000000000
+    Position.Y = 50.000000000000000000
+    Size.Width = 5.000000000000000000
+    Size.Height = 382.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object TabPages: TTabControl
+    Align = Client
+    Size.Width = 483.000000000000000000
+    Size.Height = 382.000000000000000000
+    Size.PlatformDefault = False
+    TabIndex = 0
+    TabOrder = 2
+    TabPosition = PlatformDefault
+    Sizes = (
+      483s
+      356s
+      483s
+      356s)
+    object tbGeneral: TTabItem
+      CustomIcon = <
+        item
+        end>
+      TextSettings.Trimming = None
+      IsSelected = True
+      Size.Width = 61.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'General'
+      ExplicitSize.cx = 61.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object Label2: TLabel
+        Position.X = 24.000000000000000000
+        Position.Y = 30.000000000000000000
+        Size.Width = 120.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.HorzAlign = Trailing
+        Text = 'Description'
+        TabOrder = 2
+      end
+      object ICustomer_Name_2: TEdit
+        Touch.InteractiveGestures = [LongTap, DoubleTap]
+        TabOrder = 3
+        Position.X = 160.000000000000000000
+        Position.Y = 30.000000000000000000
+        Size.Width = 193.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+      end
+      object Label3: TLabel
+        Position.X = 24.000000000000000000
+        Position.Y = 60.000000000000000000
+        Size.Width = 120.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.HorzAlign = Trailing
+        Text = 'Age'
+        TabOrder = 0
+      end
+      object ICustomer_Age_1: TEdit
+        Touch.InteractiveGestures = [LongTap, DoubleTap]
+        TabOrder = 1
+        Position.X = 160.000000000000000000
+        Position.Y = 60.000000000000000000
+        Size.Width = 193.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+      end
+    end
+    object tbCustomfields: TTabItem
+      CustomIcon = <
+        item
+        end>
+      TextSettings.Trimming = None
+      IsSelected = False
+      Size.Width = 93.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'Custom fields'
+      ExplicitSize.cx = 93.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+    end
+  end
+  object Layout2: TLayout
+    Align = Bottom
+    Position.Y = 432.000000000000000000
+    Size.Width = 689.000000000000000000
+    Size.Height = 42.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 4
+    object Button1: TButton
+      Action = acOk
+      ImageIndex = -1
+      Position.X = 592.000000000000000000
+      Position.Y = 12.000000000000000000
+      TabOrder = 0
+      TextSettings.Trimming = None
+    end
+  end
+  object ActionList1: TActionList
+    Left = 262
+    Top = 178
+    object acOk: TAction
+      Text = 'Ok'
+      OnExecute = acOkExecute
+    end
+  end
+end

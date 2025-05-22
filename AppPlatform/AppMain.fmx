@@ -1,0 +1,182 @@
+object Form1: TForm1
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 630
+  ClientWidth = 946
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  DesignerMasterStyle = 0
+  object Layout1: TLayout
+    Align = Top
+    Size.Width = 946.000000000000000000
+    Size.Height = 49.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    object Button1: TButton
+      Action = acExecute
+      ImageIndex = -1
+      Position.X = 16.000000000000000000
+      Position.Y = 16.000000000000000000
+      TabOrder = 0
+      TextSettings.Trimming = None
+    end
+    object btnCustomer: TButton
+      Position.X = 112.000000000000000000
+      Position.Y = 16.000000000000000000
+      Size.Width = 113.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 1
+      Text = 'Customer view'
+      TextSettings.Trimming = None
+      OnClick = btnCustomerClick
+    end
+    object Button2: TButton
+      Position.X = 352.000000000000000000
+      Position.Y = 16.000000000000000000
+      TabOrder = 2
+      Text = 'Button2'
+      TextSettings.Trimming = None
+      OnClick = Button2Click
+    end
+    object Button3: TButton
+      Position.X = 232.000000000000000000
+      Position.Y = 16.000000000000000000
+      Size.Width = 112.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 3
+      Text = 'JSCustomer view'
+      TextSettings.Trimming = None
+      OnClick = Button3Click
+    end
+  end
+  object mmCode: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Lines.Strings = (
+      'class ICustomer {'
+      '  constructor(n) {'
+      '    this._Name = n;'
+      '    this._Age = 10;'
+      '  }'
+      ''
+      '  get Name() {'
+      '   return this._Name;'
+      '  }'
+      ''
+      '  set Name(name) {'
+      '   this._Name = name;'
+      '  }'
+      ''
+      '  get Age() {'
+      '  return this._Age;'
+      '  }'
+      ''
+      '  set Age(age) {'
+      '  this._Age = age;'
+      '  }'
+      ''
+      '}'
+      ''
+      'class CustomerProvider {'
+      'get Data() {'
+      #9'var l = new List();'
+      #9'l.Add(new ICustomer('#39'Customer 1'#39'));'
+      #9'  l.Add(new ICustomer('#39'Customer 2'#39'));'
+      #9'  return l;'
+      #9'}'
+      '}'
+      ''
+      'class CustomerType {'
+      '  constructor() {'
+      '    this.Binder = new JSBinder();'
+      '    this.Builder = new JSFrameBuilder();'
+      '    this.Provider = new CustomerProvider();'
+      '  }'
+      ''
+      '  GetType() {'
+      '     return new ICustomer();'
+      '  }'
+      '}'
+      ''
+      'var ct = new CustomerType();'
+      'app.Config.RegisterJSType(ct);'
+      ''
+      'var w = app.Windows.CreateWindow(null, ct);'
+      'w.Build();'
+      'var data = ct.Provider.Data;'
+      'w.Bind(data);'
+      'w.Show();')
+    StyledSettings = [Size, Style, FontColor]
+    TextSettings.Font.Family = 'Fira Code'
+    Align = Client
+    Size.Width = 946.000000000000000000
+    Size.Height = 404.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 3
+    Viewport.Width = 926.000000000000000000
+    Viewport.Height = 400.000000000000000000
+  end
+  object mmLog: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Align = Bottom
+    Position.Y = 463.000000000000000000
+    Size.Width = 946.000000000000000000
+    Size.Height = 145.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    Viewport.Width = 942.000000000000000000
+    Viewport.Height = 141.000000000000000000
+  end
+  object Splitter1: TSplitter
+    Align = Bottom
+    Cursor = crVSplit
+    MinSize = 20.000000000000000000
+    Position.Y = 453.000000000000000000
+    Size.Width = 946.000000000000000000
+    Size.Height = 10.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object StatusBar1: TStatusBar
+    Align = MostBottom
+    Position.Y = 608.000000000000000000
+    ShowSizeGrip = True
+    Size.Width = 946.000000000000000000
+    Size.Height = 22.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 7
+    object lblPosition: TLabel
+      Align = Left
+      Size.Width = 120.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Position: '
+      TabOrder = 0
+    end
+  end
+  object Timer1: TTimer
+    Interval = 100
+    OnTimer = Timer1Timer
+    Left = 536
+    Top = 113
+  end
+  object ActionList1: TActionList
+    Left = 328
+    Top = 97
+    object acExecute: TAction
+      Text = 'Execute'
+      ShortCut = 120
+      OnExecute = acExecuteExecute
+    end
+  end
+  object NetHTTPClient1: TNetHTTPClient
+    UserAgent = 'Embarcadero URI Client/1.0'
+    Left = 440
+    Top = 113
+  end
+end

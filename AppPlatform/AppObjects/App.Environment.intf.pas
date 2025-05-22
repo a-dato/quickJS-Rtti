@@ -1,0 +1,23 @@
+unit App.Environment.intf;
+
+interface
+
+uses
+  System_,
+  App.Objects.intf,
+  App.Windows.intf;
+
+type
+  {$M+}
+  IEnvironment = interface(IBaseInterface)
+
+    function get_TickCount: Integer;
+
+    function CreateWindowFrame(const AOwner: CObject; const ObjectType: IObjectType) : IWindowFrame;
+
+    property TickCount: Integer read get_TickCount;
+  end;
+
+implementation
+
+end.

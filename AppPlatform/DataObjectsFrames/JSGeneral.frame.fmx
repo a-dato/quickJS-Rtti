@@ -1,0 +1,5 @@
+object JSGeneralFrame: TJSGeneralFrame
+  Size.Width = 757.000000000000000000
+  Size.Height = 533.000000000000000000
+  Size.PlatformDefault = False
+end
