@@ -49,12 +49,17 @@ uses
 
 constructor TAppConfig.Create;
 begin
-  _Types := CDictionary<&Type, IObjectType>.Create;
+  _Types := CDictionary<&Type, IObjectType>.Create(10, TypeEqualityComparer.Create);
 end;
 
 function TAppConfig.get_ObjectType(const AType: &Type): IObjectType;
 begin
+  {$IFDEF DEBUG}
+  if not _Types.TryGetValue(AType, Result) then
+    _Types.TryGetValue(AType, Result);
+  {$ELSE}
   _Types.TryGetValue(AType, Result);
+  {$ENDIF}
 end;
 
 function TAppConfig.get_Types: List<&Type>;

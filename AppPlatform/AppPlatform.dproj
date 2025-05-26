@@ -1,13 +1,13 @@
 ﻿<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
     <PropertyGroup>
         <ProjectGuid>{6E1D7CF0-EAF3-415D-970D-F35A0F7BF173}</ProjectGuid>
-        <ProjectVersion>20.1</ProjectVersion>
+        <ProjectVersion>20.3</ProjectVersion>
         <FrameworkType>FMX</FrameworkType>
         <Base>True</Base>
         <Config Condition="'$(Config)'==''">Debug</Config>
         <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <ProjectName Condition="'$(ProjectName)'==''">AppPlatform</ProjectName>
-        <TargetedPlatforms>693395</TargetedPlatforms>
+        <TargetedPlatforms>693267</TargetedPlatforms>
         <AppType>Application</AppType>
         <MainSource>AppPlatform.dpr</MainSource>
     </PropertyGroup>
@@ -31,11 +31,6 @@
     </PropertyGroup>
     <PropertyGroup Condition="('$(Platform)'=='iOSSimARM64' and '$(Base)'=='true') or '$(Base_iOSSimARM64)'!=''">
         <Base_iOSSimARM64>true</Base_iOSSimARM64>
-        <CfgParent>Base</CfgParent>
-        <Base>true</Base>
-    </PropertyGroup>
-    <PropertyGroup Condition="('$(Platform)'=='Linux64' and '$(Base)'=='true') or '$(Base_Linux64)'!=''">
-        <Base_Linux64>true</Base_Linux64>
         <CfgParent>Base</CfgParent>
         <Base>true</Base>
     </PropertyGroup>
@@ -117,7 +112,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Android)'!=''">
         <DCC_UsePackage>fmx;DbxCommonDriver;bindengine;IndyIPCommon;emsclient;IndyProtocols;RemObjects_Server_Indy_D29;dbxcds;FmxTeeUI;FireDACSqliteDriver;DbxClientDriver;soapmidas;dbexpress;Python;inet;FireDACDBXDriver;CustomIPTransport;IndySystem;FireDACCommon;bindcompdbx;rtl;DBXSqliteDriver;DataSnapFireDAC;FireDAC;RemObjects_Indy_D29;xmlrtl;dsnap;DataSnapNativeClient;RemObjects_WebBroker_D29;sgcWebSocketsD12;FireDACCommonDriver;IndyIPClient;bindcompfmx;fmxFireDAC;DataSnapCommon;fmxase;dbrtl;DBXInterBaseDriver;bindcomp;IndyCore;RESTBackendComponents;RESTComponents;IndyIPServer;dsnapxml;DataSnapClient;DataSnapProviderClient;emsclientfiredac;FireDACDSDriver;tethering;CloudService;FMXTee;PythonFmx;soaprtl;soapserver;FireDACIBDriver;$(DCC_UsePackage)</DCC_UsePackage>
-        <VerInfo_Keys>package=com.embarcadero.$(MSBuildProjectName);label=$(MSBuildProjectName);versionCode=1;versionName=1.0.0;persistent=False;restoreAnyVersion=False;installLocation=auto;largeHeap=False;theme=TitleBar;hardwareAccelerated=true;apiKey=</VerInfo_Keys>
+        <VerInfo_Keys>package=com.embarcadero.$(MSBuildProjectName);label=$(MSBuildProjectName);versionCode=1;versionName=1.0.0;persistent=False;restoreAnyVersion=False;installLocation=auto;largeHeap=False;theme=TitleBar;hardwareAccelerated=true;apiKey=;minSdkVersion=23;targetSdkVersion=35</VerInfo_Keys>
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <Android_LauncherIcon36>$(BDS)\bin\Artwork\Android\FM_LauncherIcon_36x36.png</Android_LauncherIcon36>
@@ -151,7 +146,7 @@
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_Android64)'!=''">
         <DCC_UsePackage>fmx;DbxCommonDriver;bindengine;IndyIPCommon;emsclient;IndyProtocols;RemObjects_Server_Indy_D29;dbxcds;FmxTeeUI;FireDACSqliteDriver;DbxClientDriver;soapmidas;dbexpress;Python;inet;FireDACDBXDriver;CustomIPTransport;IndySystem;FireDACCommon;bindcompdbx;rtl;DBXSqliteDriver;DataSnapFireDAC;FireDAC;RemObjects_Indy_D29;xmlrtl;dsnap;DataSnapNativeClient;RemObjects_WebBroker_D29;sgcWebSocketsD12;FireDACCommonDriver;IndyIPClient;bindcompfmx;fmxFireDAC;DataSnapCommon;dbrtl;DBXInterBaseDriver;bindcomp;IndyCore;RESTBackendComponents;sgcIDE;RESTComponents;IndyIPServer;dsnapxml;DataSnapClient;DataSnapProviderClient;emsclientfiredac;FireDACDSDriver;tethering;CloudService;FMXTee;PythonFmx;soaprtl;soapserver;FireDACIBDriver;$(DCC_UsePackage)</DCC_UsePackage>
-        <VerInfo_Keys>package=com.embarcadero.$(MSBuildProjectName);label=$(MSBuildProjectName);versionCode=1;versionName=1.0.0;persistent=False;restoreAnyVersion=False;installLocation=auto;largeHeap=False;theme=TitleBar;hardwareAccelerated=true;apiKey=</VerInfo_Keys>
+        <VerInfo_Keys>package=com.embarcadero.$(MSBuildProjectName);label=$(MSBuildProjectName);versionCode=1;versionName=1.0.0;persistent=False;restoreAnyVersion=False;installLocation=auto;largeHeap=False;theme=TitleBar;hardwareAccelerated=true;apiKey=;minSdkVersion=23;targetSdkVersion=35</VerInfo_Keys>
         <BT_BuildType>Debug</BT_BuildType>
         <VerInfo_IncludeVerInfo>true</VerInfo_IncludeVerInfo>
         <Android_LauncherIcon36>$(BDS)\bin\Artwork\Android\FM_LauncherIcon_36x36.png</Android_LauncherIcon36>
@@ -236,9 +231,6 @@
         <iPad_SpotLight80>$(BDS)\bin\Artwork\iOS\iPad\FM_SpotlightSearchIcon_80x80.png</iPad_SpotLight80>
         <iPad_Setting58>$(BDS)\bin\Artwork\iOS\iPad\FM_SettingIcon_58x58.png</iPad_Setting58>
         <iPad_Notification40>$(BDS)\bin\Artwork\iOS\iPad\FM_NotificationIcon_40x40.png</iPad_Notification40>
-    </PropertyGroup>
-    <PropertyGroup Condition="'$(Base_Linux64)'!=''">
-        <DCC_UsePackage>DataSnapServer;fmx;DbxCommonDriver;bindengine;FireDACCommonODBC;emsclient;IndyProtocols;RemObjects_Server_Indy_D29;dbxcds;htmlcomp_xe12;FireDACSqliteDriver;DbxClientDriver;soapmidas;dbexpress;Python;inet;CustomIPTransport;FireDACMSSQLDriver;IndySystem;htmleditfm_xe12;FireDACCommon;DataSnapServerMidas;FireDACODBCDriver;emsserverresource;rtl;FireDACMySQLDriver;ADato.DN4D;DataSnapFireDAC;FireDAC;RemObjects_Indy_D29;xmlrtl;dsnap;FireDACDb2Driver;DataSnapNativeClient;htmledit_xe12;hclcore_xe12;DatasnapConnectorsFreePascal;RemObjects_WebBroker_D29;emshosting;FireDACCommonDriver;emsedge;inetdb;FireDACASADriver;htmlcompfm_xe12;FireDACInfxDriver;DataSnapCommon;dbrtl;FireDACOracleDriver;DataSnapIndy10ServerTransport;DataSnapConnectors;FireDACMongoDBDriver;htmlreports_xe12;FireDACTDataDriver;bindcomp;IndyCore;RESTBackendComponents;FireDACADSDriver;RESTComponents;dsnapxml;DataSnapClient;htmleditcore_xe12;emsclientfiredac;FireDACPgDriver;CloudService;soaprtl;soapserver;FireDACIBDriver;$(DCC_UsePackage)</DCC_UsePackage>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Base_OSX64)'!=''">
         <DCC_UsePackage>DataSnapServer;fmx;DbxCommonDriver;bindengine;IndyIPCommon;FireDACCommonODBC;emsclient;IndyProtocols;RemObjects_Server_Indy_D29;dbxcds;FmxTeeUI;DBXFirebirdDriver;FireDACSqliteDriver;DbxClientDriver;soapmidas;dbexpress;Python;inet;FireDACDBXDriver;fmxdae;CustomIPTransport;FireDACMSSQLDriver;IndySystem;FireDACCommon;DataSnapServerMidas;FireDACODBCDriver;bindcompdbx;rtl;FireDACMySQLDriver;DBXSqliteDriver;DataSnapFireDAC;inetdbxpress;FireDAC;RemObjects_Indy_D29;xmlrtl;dsnap;DBXOracleDriver;DBXInformixDriver;fmxobj;DataSnapNativeClient;RemObjects_WebBroker_D29;sgcWebSocketsD12;FireDACCommonDriver;IndyIPClient;bindcompfmx;inetdb;FireDACASADriver;fmxFireDAC;DBXMySQLDriver;DataSnapCommon;fmxase;dbrtl;FireDACOracleDriver;DataSnapIndy10ServerTransport;DBXInterBaseDriver;FireDACMongoDBDriver;FireDACTDataDriver;bindcomp;IndyCore;RESTBackendComponents;sgcIDE;RESTComponents;IndyIPServer;dsnapxml;DataSnapClient;DataSnapProviderClient;emsclientfiredac;FireDACPgDriver;FireDACDSDriver;tethering;CloudService;DBXSybaseASADriver;FMXTee;PythonFmx;soaprtl;soapserver;FireDACIBDriver;$(DCC_UsePackage)</DCC_UsePackage>
@@ -369,7 +361,7 @@
                     <Excluded_Packages Name="C:\Users\Public\Documents\Embarcadero\Studio\23.0\Bpl\htmlreportsfm_XE12.bpl">HTML Reports Library - FMX package</Excluded_Packages>
                 </Excluded_Packages>
             </Delphi.Personality>
-            <Deployment Version="4">
+            <Deployment Version="5">
                 <DeployFile LocalName="$(BDS)\Redist\iossimulator\libcgunwind.1.0.dylib" Class="DependencyModule">
                     <Platform Name="iOSSimulator">
                         <Overwrite>true</Overwrite>
@@ -385,24 +377,9 @@
                         <Overwrite>true</Overwrite>
                     </Platform>
                 </DeployFile>
-                <DeployFile LocalName="Win32\Debug\AppPlatform.exe" Configuration="Debug" Class="ProjectOutput">
-                    <Platform Name="Win32">
-                        <RemoteName>AppPlatform.exe</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="Win64\Debug\AppPlatform.exe" Configuration="Debug" Class="ProjectOutput">
-                    <Platform Name="Win64">
-                        <RemoteName>AppPlatform.exe</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
-                <DeployFile LocalName="Win64\Debug\AppPlatform.rsm" Configuration="Debug" Class="DebugSymbols">
-                    <Platform Name="Win64">
-                        <RemoteName>AppPlatform.rsm</RemoteName>
-                        <Overwrite>true</Overwrite>
-                    </Platform>
-                </DeployFile>
+                <DeployFile LocalName="Win32\Debug\AppPlatform.exe" Configuration="Debug" Class="ProjectOutput"/>
+                <DeployFile LocalName="Win64\Debug\AppPlatform.exe" Configuration="Debug" Class="ProjectOutput"/>
+                <DeployFile LocalName="Win64\Debug\AppPlatform.rsm" Configuration="Debug" Class="DebugSymbols"/>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">
                         <Operation>1</Operation>
@@ -413,16 +390,6 @@
                     </Platform>
                     <Platform Name="Win32">
                         <Operation>0</Operation>
-                    </Platform>
-                </DeployClass>
-                <DeployClass Name="AndroidClasses">
-                    <Platform Name="Android">
-                        <RemoteDir>classes</RemoteDir>
-                        <Operation>64</Operation>
-                    </Platform>
-                    <Platform Name="Android64">
-                        <RemoteDir>classes</RemoteDir>
-                        <Operation>64</Operation>
                     </Platform>
                 </DeployClass>
                 <DeployClass Name="AndroidFileProvider">
@@ -524,6 +491,16 @@
                     </Platform>
                     <Platform Name="Android64">
                         <RemoteDir>res\values-v31</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                </DeployClass>
+                <DeployClass Name="AndroidSplashStylesV35">
+                    <Platform Name="Android">
+                        <RemoteDir>res\values-v35</RemoteDir>
+                        <Operation>1</Operation>
+                    </Platform>
+                    <Platform Name="Android64">
+                        <RemoteDir>res\values-v35</RemoteDir>
                         <Operation>1</Operation>
                     </Platform>
                 </DeployClass>
@@ -1359,7 +1336,6 @@
                 <Platform value="Android64">True</Platform>
                 <Platform value="iOSDevice64">True</Platform>
                 <Platform value="iOSSimARM64">True</Platform>
-                <Platform value="Linux64">True</Platform>
                 <Platform value="OSX64">True</Platform>
                 <Platform value="OSXARM64">True</Platform>
                 <Platform value="Win32">True</Platform>
