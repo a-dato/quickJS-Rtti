@@ -28,13 +28,23 @@ type
     procedure Register(const Value: IJSObjectReference);
     procedure RegisterType(const AType: &Type);
     procedure Show(const Value: IObjectListModel);
+    function  GetData: IDataObject;
 
   public
     constructor Create(const Environment: IEnvironment);
   end;
 
-var
-  DataList: IList;
+  TDataObject = class(TBaseINterfacedObject, IDataObject)
+  protected
+    _Name: string;
+
+    function  get_Name: string;
+    procedure set_Name(const Value: string);
+
+  public
+    constructor Create;
+    destructor Destroy; override;
+  end;
 
 implementation
 
@@ -51,6 +61,12 @@ begin
   _Config := TAppConfig.Create;
   _Models := AppModels.Create(Self);
   _Windows := Windows.Create(Self);
+end;
+
+function TAppObject.GetData: IDataObject;
+begin
+  Result := TDataObject.Create;
+  Result.Name := CDateTime.Now.ToString;
 end;
 
 function TAppObject.get_AppModels: IAppModels;
@@ -98,8 +114,30 @@ begin
   var l: IList;
   if Data.TryAsType<IList>(l) then
   begin
-    DataList := l;
+    // DataList := l;
   end;
+end;
+
+{ TDataObject }
+
+constructor TDataObject.Create;
+begin
+
+end;
+
+destructor TDataObject.Destroy;
+begin
+  inherited;
+end;
+
+function TDataObject.get_Name: string;
+begin
+  Result := _Name;
+end;
+
+procedure TDataObject.set_Name(const Value: string);
+begin
+  _Name := Value;
 end;
 
 end.

@@ -14,12 +14,22 @@ uses
 
 type
   {$M+}
+  IDataObject = interface(IBaseInterface)
+    ['{E17A1549-79AC-4861-AB2F-C446986DEAE6}']
+    function  get_Name: string;
+    procedure set_Name(const Value: string);
+
+    property Name: string read get_Name write set_Name;
+  end;
+
+  {$M+}
   IAppObject = interface(IBaseInterface)
     ['{0519E4B9-3CD3-4B42-A776-7E62173F5967}']
     function  Test(const Data: CObject; const Index: Integer) : CObject;
     procedure Register(const Value: IJSObjectReference);
     procedure RegisterType(const AType: &Type);
     procedure Show(const Value: IObjectListModel);
+    function  GetData: IDataObject;
 
     function get_AppModels: IAppModels;
     function get_Config: IAppConfig;
