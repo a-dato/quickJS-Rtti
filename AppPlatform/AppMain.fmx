@@ -94,7 +94,7 @@ object Form1: TForm1
       'class CustomerProvider {'
       #9'get Data() {'
       #9#9'var l = new List();'
-      #9#9'for(int i=0; i<10000;i++) {'
+      #9#9'for(let i=0; i<10000;i++) {'
       #9#9#9'var c = new ICustomer('#39'Customer '#39' + i);'
       #9#9#9'c.Address = '#39'Zuideindseweg '#39' + i;'
       #9#9#9'c.Age = i;'

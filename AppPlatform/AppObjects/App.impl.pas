@@ -46,6 +46,9 @@ type
     destructor Destroy; override;
   end;
 
+var
+  DataList: IList;
+
 implementation
 
 uses
