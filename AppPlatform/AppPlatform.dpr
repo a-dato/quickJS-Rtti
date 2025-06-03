@@ -1,5 +1,7 @@
 program AppPlatform;
 
+
+
 uses
   System.StartUpCopy,
   FMX.Forms,
@@ -10,8 +12,6 @@ uses
   App.impl in 'AppObjects\App.impl.pas',
   App.Environment.intf in 'AppObjects\App.Environment.intf.pas',
   App.Config.impl in 'AppObjects\App.Config.impl.pas',
-  Customer.impl in 'DataObjects\Customer.impl.pas',
-  Customer.intf in 'DataObjects\Customer.intf.pas',
   App.Objects.intf in 'AppObjects\App.Objects.intf.pas',
   App.Objects.impl in 'AppObjects\App.Objects.impl.pas',
   App.Windows.impl in 'AppObjects\App.Windows.impl.pas',
@@ -25,13 +25,16 @@ uses
   App.Models.impl in 'AppObjects\App.Models.impl.pas',
   JSGeneral.frame in 'DataObjectsFrames\JSGeneral.frame.pas' {JSGeneralFrame: TFrame},
   QuickJS.Fetch.impl in '..\Source\QuickJS.Fetch.impl.pas',
-  App.Content.impl in 'AppObjects\App.Content.impl.pas';
+  App.Content.impl in 'AppObjects\App.Content.impl.pas',
+  ObjectDesigner in 'AppDialogs\ObjectDesigner.pas' {ObjectDesignerForm},
+  Project.impl in 'DataObjects\Project.impl.pas',
+  Project.intf in 'DataObjects\Project.intf.pas',
+  Project.frame in 'DataObjectsFrames\Project.frame.pas';
 
 {$R *.res}
 
 begin
   Application.Initialize;
   Application.CreateForm(TForm1, Form1);
-  Application.CreateForm(TfrmObjectWindow, frmObjectWindow);
   Application.Run;
 end.

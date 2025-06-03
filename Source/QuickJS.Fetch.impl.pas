@@ -113,6 +113,7 @@ begin
       url := JS_ToCString(ctx, PJSValueConstArr(argv)[3]) else
       Exit(JS_EXCEPTION);
 
+    // Read options?
     if (argc >= 5) then
     begin
       var arg := PJSValueConstArr(argv)[4];

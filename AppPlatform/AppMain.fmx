@@ -12,39 +12,39 @@ object Form1: TForm1
   object Layout1: TLayout
     Align = Top
     Size.Width = 946.000000000000000000
-    Size.Height = 49.000000000000000000
+    Size.Height = 38.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
     object Button1: TButton
       Action = acExecute
       ImageIndex = -1
-      Position.X = 16.000000000000000000
-      Position.Y = 16.000000000000000000
+      Position.X = 273.000000000000000000
+      Position.Y = 8.000000000000000000
       TabOrder = 0
       TextSettings.Trimming = None
     end
     object btnCustomer: TButton
-      Position.X = 112.000000000000000000
-      Position.Y = 16.000000000000000000
+      Position.X = 369.000000000000000000
+      Position.Y = 8.000000000000000000
       Size.Width = 113.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
-      Text = 'Customer view'
+      Text = 'Projects view'
       TextSettings.Trimming = None
       OnClick = btnCustomerClick
     end
     object Button2: TButton
-      Position.X = 352.000000000000000000
-      Position.Y = 16.000000000000000000
+      Position.X = 849.000000000000000000
+      Position.Y = 8.000000000000000000
       TabOrder = 2
       Text = 'Button2'
       TextSettings.Trimming = None
       OnClick = Button2Click
     end
     object Button3: TButton
-      Position.X = 232.000000000000000000
-      Position.Y = 16.000000000000000000
+      Position.X = 489.000000000000000000
+      Position.Y = 8.000000000000000000
       Size.Width = 112.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
@@ -53,74 +53,21 @@ object Form1: TForm1
       TextSettings.Trimming = None
       OnClick = Button3Click
     end
+    object Button4: TButton
+      Position.X = 609.000000000000000000
+      Position.Y = 8.000000000000000000
+      TabOrder = 4
+      Text = 'Designer'
+      TextSettings.Trimming = None
+      OnClick = Button4Click
+    end
   end
   object mmCode: TMemo
     Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
     DataDetectorTypes = []
     Lines.Strings = (
-      'class ICustomer {'
-      '  constructor(n) {'
-      '    this._Name = n;'
-      #9'this._Address = "";'
-      '    this._Age = 0;'
-      '  }'
-      ''
-      '  get Name() {'
-      '   return this._Name;'
-      '  }'
-      ''
-      '  set Name(name) {'
-      '   this._Name = name;'
-      '  }'
-      ''
-      '  get Address() {'
-      '   return this._Address;'
-      '  }'
-      ''
-      '  set Address(address) {'
-      '   this._Address = address;'
-      '  }'
-      ''
-      '  get Age() {'
-      '  return this._Age;'
-      '  }'
-      ''
-      '  set Age(age) {'
-      '  this._Age = age;'
-      '  }'
-      '  '
-      '}'
-      ''
-      'class CustomerProvider {'
-      #9'get Data() {'
-      #9#9'var l = new List();'
-      #9#9'for(let i=0; i<10000;i++) {'
-      #9#9#9'var c = new ICustomer('#39'Customer '#39' + i);'
-      #9#9#9'c.Address = '#39'Zuideindseweg '#39' + i;'
-      #9#9#9'c.Age = i;'
-      #9#9#9'l.Add(c);'
-      #9#9'}'
-      ''
-      #9#9'return l;'
-      #9'}'
-      '}'
-      ''
-      'class CustomerType {'
-      '  constructor() {'
-      '    this.Binder = new JSBinder();'
-      '    this.Builder = new JSFrameBuilder();'
-      '    this.Provider = new CustomerProvider();'
-      '  }'
-      ''
-      '  GetType() {'
-      '     return new ICustomer();'
-      '  }'
-      '}'
-      ''
-      'var ct = new CustomerType();'
-      'app.Config.RegisterJSType(ct);'
-      ''
-      'var w = app.Windows.CreateWindow(null, ct);'
+      'const ct = new CustomerType();'
+      'const w = app.Windows.CreateWindow(null, ct);'
       'w.Build();'
       'var data = ct.Provider.Data;'
       'w.Bind(data);'
@@ -128,12 +75,12 @@ object Form1: TForm1
     StyledSettings = [Size, Style, FontColor]
     TextSettings.Font.Family = 'Fira Code'
     Align = Client
-    Size.Width = 946.000000000000000000
-    Size.Height = 404.000000000000000000
+    Size.Width = 673.000000000000000000
+    Size.Height = 415.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 3
-    Viewport.Width = 926.000000000000000000
-    Viewport.Height = 400.000000000000000000
+    Viewport.Width = 673.000000000000000000
+    Viewport.Height = 415.000000000000000000
   end
   object mmLog: TMemo
     Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
@@ -144,8 +91,8 @@ object Form1: TForm1
     Size.Height = 145.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
-    Viewport.Width = 942.000000000000000000
-    Viewport.Height = 141.000000000000000000
+    Viewport.Width = 946.000000000000000000
+    Viewport.Height = 145.000000000000000000
   end
   object Splitter1: TSplitter
     Align = Bottom
@@ -178,6 +125,21 @@ object Form1: TForm1
     OnTimer = Timer1Timer
     Left = 536
     Top = 113
+  end
+  object mmInitialize: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Lines.Strings = (
+      'import {Customer, CustomerType} from '#39'../../js/Customer.js'#39';'
+      'CustomerType.register();')
+    Align = Left
+    Position.Y = 38.000000000000000000
+    Size.Width = 273.000000000000000000
+    Size.Height = 415.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 11
+    Viewport.Width = 273.000000000000000000
+    Viewport.Height = 415.000000000000000000
   end
   object ActionList1: TActionList
     Left = 328

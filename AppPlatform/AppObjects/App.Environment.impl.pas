@@ -124,6 +124,11 @@ begin
       if (c is TDataControl) and (names[1] = 'Model') then
         (c as TDataControl).Model := AModel
 
+//      if c is TAdatoEditorPanel then
+//      begin
+//        (c as TAdatoEditorPanel)
+//      end
+
       else
       begin
         var prop := AType.PropertyByName(names[1]);

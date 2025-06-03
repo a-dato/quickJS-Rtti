@@ -26,10 +26,13 @@ type
     StatusBar1: TStatusBar;
     lblPosition: TLabel;
     Timer1: TTimer;
+    Button4: TButton;
+    mmInitialize: TMemo;
     procedure acExecuteExecute(Sender: TObject);
     procedure btnCustomerClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
@@ -56,12 +59,18 @@ uses
   App.impl,
   App.Environment.impl,
   System_,
-  Customer.intf,
-  Customer.impl, ObjectWindow, Customer.frame, QuickJS.Register.dn4d.intf,
+  Project.intf,
+  Project.impl,
+  ObjectWindow,
+  Customer.frame,
+  QuickJS.Register.dn4d.intf,
   System.Collections.Generic, ADato.ObjectModel.List.Tracking.intf,
   ADato.ObjectModel.List.Tracking.impl,
   App.Content.intf,
-  JSGeneral.frame, Winapi.Windows, App.Content.impl, System.Diagnostics;
+  JSGeneral.frame, Winapi.Windows, App.Content.impl, System.Diagnostics,
+  XMLHttpRequest.impl, XMLHttpRequest.intf,
+  ADato.Extensions.intf,
+  ADato.Extensions.impl, ObjectDesigner, Project.frame;
 
 {$R *.fmx}
 
@@ -71,17 +80,16 @@ begin
   var st := TStopWatch.StartNew;
 
   var b: AnsiString := AnsiString(mmCode.Lines.Text);
-  // _context.eval_buf(PAnsiChar(b), Length(b), 'lynx', JS_EVAL_TYPE_GLOBAL); // JS_EVAL_TYPE_MODULE);
-  _context.eval_buf(PAnsiChar(b), Length(b), 'lynx', JS_EVAL_TYPE_MODULE);
+  _context.eval_buf(PAnsiChar(b), Length(b), '<eval>', JS_EVAL_TYPE_MODULE);
 
   mmLog.Lines.Add('done: ' + st.ElapsedMilliseconds.ToString + 'ms');
 end;
 
 procedure TForm1.btnCustomerClick(Sender: TObject);
 begin
-  _app.Windows.CreateWindow(Self, TCustomer.CustomerType.GetType).
+  _app.Windows.CreateWindow(Self, TProject.Type).
     Build.
-      Bind(TCustomer.CustomerType.Provider.Data).
+      Bind(TProject.ObjectType.Provider.Data).
         Show;
 end;
 
@@ -117,17 +125,24 @@ begin
 //        Show;
 end;
 
+procedure TForm1.Button4Click(Sender: TObject);
+begin
+  var frm := TObjectDesignerForm.Create(Self);
+  frm.Load(_app);
+  frm.Show;
+end;
+
 procedure TForm1.InitializeAppEnvironment;
 begin
   App.Environment.impl.Environment.FormClass := TfrmObjectWindow;
 
   _app := TAppObject.Create(App.Environment.impl.Environment.Create);
 
-  TCustomer.CustomerType.Builder := TFrameBuilder.Create(TCustomerFrame);
-  TCustomer.CustomerType.Binder := TFrameBinder.Create();
-  TCustomer.CustomerType.Provider := TCustomerProvider.Create;
+  TProject.ObjectType.Builder := TFrameBuilder.Create(TProjectFrame);
+  TProject.ObjectType.Binder := TFrameBinder.Create();
+  TProject.ObjectType.Provider := ProjectProvider.Create;
 
-  _app.Config.RegisterType(TCustomer.CustomerType.GetType, TCustomer.CustomerType);
+  _app.Config.RegisterType(TProject.Type, TProject.ObjectType);
 end;
 
 procedure TForm1.Initialize;
@@ -166,7 +181,16 @@ begin
         Result := TFrameBuilder.Create(TCustomerFrame);
       end);
 
+    TJSRegister.RegisterObject(_context.ctx, 'XMLHttpRequest', TypeInfo(IXMLHttpRequest),
+      function : Pointer begin
+        Result := TXMLHttpRequest.Create;
+      end);
+
     TJSRegister.RegisterLiveObject(_context.ctx, 'app', TypeInfo(IAppObject), _app);
+
+    // Run initialization code from mmInitialize
+    var b: AnsiString := AnsiString(mmInitialize.Lines.Text);
+    _context.eval_buf(PAnsiChar(b), Length(b), '<initialize>', JS_EVAL_TYPE_MODULE);
   end;
 end;
 

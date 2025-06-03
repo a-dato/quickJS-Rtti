@@ -309,8 +309,6 @@
         <DCCReference Include="AppObjects\App.impl.pas"/>
         <DCCReference Include="AppObjects\App.Environment.intf.pas"/>
         <DCCReference Include="AppObjects\App.Config.impl.pas"/>
-        <DCCReference Include="DataObjects\Customer.impl.pas"/>
-        <DCCReference Include="DataObjects\Customer.intf.pas"/>
         <DCCReference Include="AppObjects\App.Objects.intf.pas"/>
         <DCCReference Include="AppObjects\App.Objects.impl.pas"/>
         <DCCReference Include="AppObjects\App.Windows.impl.pas"/>
@@ -334,6 +332,13 @@
         </DCCReference>
         <DCCReference Include="..\Source\QuickJS.Fetch.impl.pas"/>
         <DCCReference Include="AppObjects\App.Content.impl.pas"/>
+        <DCCReference Include="AppDialogs\ObjectDesigner.pas">
+            <Form>ObjectDesignerForm</Form>
+            <FormType>fmx</FormType>
+        </DCCReference>
+        <DCCReference Include="DataObjects\Project.impl.pas"/>
+        <DCCReference Include="DataObjects\Project.intf.pas"/>
+        <DCCReference Include="DataObjectsFrames\Project.frame.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>
@@ -379,7 +384,19 @@
                 </DeployFile>
                 <DeployFile LocalName="Win32\Debug\AppPlatform.exe" Configuration="Debug" Class="ProjectOutput"/>
                 <DeployFile LocalName="Win64\Debug\AppPlatform.exe" Configuration="Debug" Class="ProjectOutput"/>
+                <DeployFile LocalName="Win64\Debug\AppPlatform.exe" Configuration="Debug" Class="ProjectOutput">
+                    <Platform Name="Win64">
+                        <RemoteName>AppPlatform.exe</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployFile LocalName="Win64\Debug\AppPlatform.rsm" Configuration="Debug" Class="DebugSymbols"/>
+                <DeployFile LocalName="Win64\Debug\AppPlatform.rsm" Configuration="Debug" Class="DebugSymbols">
+                    <Platform Name="Win64">
+                        <RemoteName>AppPlatform.rsm</RemoteName>
+                        <Overwrite>true</Overwrite>
+                    </Platform>
+                </DeployFile>
                 <DeployClass Name="AdditionalDebugSymbols">
                     <Platform Name="iOSSimulator">
                         <Operation>1</Operation>

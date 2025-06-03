@@ -2,8 +2,8 @@ object Form2: TForm2
   Left = 0
   Top = 0
   Caption = 'Form2'
-  ClientHeight = 543
-  ClientWidth = 1003
+  ClientHeight = 700
+  ClientWidth = 1214
   FormFactor.Width = 320
   FormFactor.Height = 480
   FormFactor.Devices = [Desktop]
@@ -11,7 +11,7 @@ object Form2: TForm2
   DesignerMasterStyle = 0
   object Layout1: TLayout
     Align = Top
-    Size.Width = 1003.000000000000000000
+    Size.Width = 1214.000000000000000000
     Size.Height = 41.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
@@ -79,44 +79,33 @@ object Form2: TForm2
     Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
     DataDetectorTypes = []
     Lines.Strings = (
-      'import RemObjects from '#39'RemObjectsSDK.js'#39';'
-      
-        'import {__namespace as services} from '#39'ADatoServiceLibrary_intf.' +
-        'js'#39';'
+      'var x = new XMLHttpRequest();'
       ''
-      
-        'var channel = new RemObjects.SDK.HTTPClientChannel('#39'https://lynx' +
-        '.a-dato.com/bin'#39');'
-      'var message = new RemObjects.SDK.BinMessage();'
-      'var service = new services.LoginService(channel, message);'
+      'x.onreadystatechange = function () {'
+      '  if(x.readyState == 4)'
+      '     log(x.responseText);    '
+      '}'
       ''
-      
-        'service.Hello(function (msg) {log(msg);}, RemObjects.UTIL.showEr' +
-        'ror);'
-      ''
-      
-        'service.Login('#39'info@a-dato.net'#39', '#39'60D1C18CF486B00ADD269A34A5D683' +
-        'B1'#39', false, 1200, 1, function (msg) {log(msg);}, RemObjects.UTIL' +
-        '.showError);'
-      '')
+      'x.open('#39'GET'#39', '#39'https://google.com'#39', true);'
+      'x.send();')
     Align = Client
-    Size.Width = 520.000000000000000000
-    Size.Height = 366.000000000000000000
+    Size.Width = 624.000000000000000000
+    Size.Height = 523.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
-    Viewport.Width = 516.000000000000000000
-    Viewport.Height = 346.000000000000000000
+    Viewport.Width = 620.000000000000000000
+    Viewport.Height = 519.000000000000000000
   end
   object Memo2: TMemo
     Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
     DataDetectorTypes = []
     Align = Bottom
-    Position.Y = 407.000000000000000000
-    Size.Width = 1003.000000000000000000
+    Position.Y = 564.000000000000000000
+    Size.Width = 1214.000000000000000000
     Size.Height = 136.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
-    Viewport.Width = 999.000000000000000000
+    Viewport.Width = 1210.000000000000000000
     Viewport.Height = 132.000000000000000000
   end
   object Memo3: TMemo
@@ -196,14 +185,14 @@ object Form2: TForm2
       '//log(u.name);'
       '')
     Align = Right
-    Position.X = 520.000000000000000000
+    Position.X = 624.000000000000000000
     Position.Y = 41.000000000000000000
-    Size.Width = 483.000000000000000000
-    Size.Height = 366.000000000000000000
+    Size.Width = 590.000000000000000000
+    Size.Height = 523.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 3
-    Viewport.Width = 463.000000000000000000
-    Viewport.Height = 346.000000000000000000
+    Viewport.Width = 570.000000000000000000
+    Viewport.Height = 503.000000000000000000
   end
   object NetHTTPRequest1: TNetHTTPRequest
     Client = NetHTTPClient1

@@ -2,7 +2,7 @@ object CustomerFrame: TCustomerFrame
   Size.Width = 689.000000000000000000
   Size.Height = 474.000000000000000000
   Size.PlatformDefault = False
-  object ICustomer_Model: TDataControl
+  object Customer_Model: TDataControl
     Align = Left
     HitTest = True
     Position.Y = 50.000000000000000000
@@ -30,10 +30,10 @@ object CustomerFrame: TCustomerFrame
       Text = 'Customer:'
       TabOrder = 0
     end
-    object ICustomer_Name_1: TLabel
+    object Customer_Name_1: TLabel
       Position.X = 86.000000000000000000
       Position.Y = 8.000000000000000000
-      Text = 'ICustomer_Name_1'
+      Text = 'Customer_Name_1'
       TabOrder = 1
     end
   end
@@ -84,7 +84,7 @@ object CustomerFrame: TCustomerFrame
         Text = 'Description'
         TabOrder = 2
       end
-      object ICustomer_Name_2: TEdit
+      object Customer_Name_2: TEdit
         Touch.InteractiveGestures = [LongTap, DoubleTap]
         TabOrder = 3
         Position.X = 160.000000000000000000
@@ -103,7 +103,7 @@ object CustomerFrame: TCustomerFrame
         Text = 'Age'
         TabOrder = 0
       end
-      object ICustomer_Age_1: TEdit
+      object Customer_Age_1: TEdit
         Touch.InteractiveGestures = [LongTap, DoubleTap]
         TabOrder = 1
         Position.X = 160.000000000000000000

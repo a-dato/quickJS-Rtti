@@ -69,6 +69,8 @@ type
     procedure SetValue(const obj: CObject; const value: CObject; const index: array of CObject; ExecuteTriggers: Boolean = false);
   public
     constructor Create(Ctx: JSContext; const AOwnerType: &Type; Name: AnsiString);
+
+    function ToString: CString; override;
   end;
 
   TRegisteredTypedObject = class(TRegisteredObject)
@@ -529,6 +531,9 @@ begin
     if JS_IsNull(Value) then
       Exit(TValue.From<IJSObjectReference>(nil));
 
+    if JS_IsFunction(ctx, Value) then
+      Exit(inherited);
+
     if JS_IsObject(Value) then
     begin
       var ptr := TJSRegister.GetObjectFromJSValue(Value, False {Is NOT object type?});
@@ -827,6 +832,11 @@ begin
     JS_SetPropertyStr(_ctx, js_obj.Reference, PAnsiChar(_name), JSConverter.Instance.TValueToJSValue(_ctx, value.AsType<TValue>));
     TJSRuntime.Check(_ctx);
   end;
+end;
+
+function TJSPropertyInfo.ToString: CString;
+begin
+  Result := _name;
 end;
 
 { TCaptureJSObject }

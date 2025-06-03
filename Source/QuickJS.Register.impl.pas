@@ -2117,6 +2117,11 @@ const
 
   console_log : PAnsiChar = 'console.log=log;'#10;
 
+  add_fetch: PAnsiChar =
+    'import fetch from ''./fetch.js'';'#10+
+    'globalThis.fetch = fetch;'#10;
+
+
 begin
   _ctx := JS_NewContext(_runtime.rt);
 
@@ -2136,10 +2141,10 @@ begin
   // Define a function in the global context.
   JS_SetPropertyStr(_ctx, global, 'log', JS_NewCFunction(_ctx, @logme, 'log', 1));
   JS_SetPropertyStr(_ctx, global, 'alert', JS_NewCFunction(_ctx, @logme, 'alert', 1));
-  JS_SetPropertyStr(_ctx, global, 'fetch', JS_NewCFunction(_ctx, @fetch, 'fetch', 1));
 
-  // if redirect log
+
   eval_buf(console_log, Length(console_log), 'initialize', JS_EVAL_TYPE_MODULE);
+  eval_buf(add_fetch, Length(add_fetch), 'initialize', JS_EVAL_TYPE_MODULE);
 
   TJSRegister.RegisterObject(_ctx, 'JSIterator', TypeInfo(TJSIterator));
 

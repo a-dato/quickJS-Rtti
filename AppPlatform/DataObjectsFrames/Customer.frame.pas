@@ -12,22 +12,22 @@ uses
 
 type
   TCustomerFrame = class(TFrame)
-    ICustomer_Model: TDataControl;
+    Customer_Model: TDataControl;
     Layout1: TLayout;
     Label1: TLabel;
-    ICustomer_Name_1: TLabel;
+    Customer_Name_1: TLabel;
     Splitter1: TSplitter;
     TabPages: TTabControl;
     tbCustomfields: TTabItem;
     tbGeneral: TTabItem;
     Label2: TLabel;
-    ICustomer_Name_2: TEdit;
+    Customer_Name_2: TEdit;
     Layout2: TLayout;
     Button1: TButton;
     ActionList1: TActionList;
     acOk: TAction;
     Label3: TLabel;
-    ICustomer_Age_1: TEdit;
+    Customer_Age_1: TEdit;
     procedure acOkExecute(Sender: TObject);
   private
     { Private declarations }

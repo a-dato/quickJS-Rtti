@@ -1,14 +1,13 @@
-unit Customer.intf;
+unit Project.intf;
 
 interface
 
 uses
-  System_,
-  App.Windows.intf, App.Objects.intf;
+  System_;
 
 type
   {$M+}
-  ICustomer = interface(IBaseInterface)
+  IProject = interface(IBaseInterface)
     ['{42B8B40D-2951-402E-A28C-73B0DD8B04D5}']
     function  get_ID: CObject;
     procedure set_ID(const Value: CObject);

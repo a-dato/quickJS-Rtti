@@ -20,7 +20,7 @@ type
 
     procedure RegisterJSType(const JSObjectType: IJSObjectReference);
     procedure RegisterType(const AType: &Type; const ObjectType: IObjectType);
-    function  TypeByName(const Name: string) : IObjectType;
+    function  TypeByName(const Name: string) : &Type;
 
   public
     constructor Create;
@@ -78,11 +78,11 @@ begin
   _Types[AType] := ObjectType {can be nil};
 end;
 
-function TAppConfig.TypeByName(const Name: string): IObjectType;
+function TAppConfig.TypeByName(const Name: string): &Type;
 begin
   for var entry in _Types do
     if CString.Equals(entry.Key.Name, Name) then
-      Exit(entry.Value);
+      Exit(entry.Key);
 end;
 
 { TJSObjectType }
