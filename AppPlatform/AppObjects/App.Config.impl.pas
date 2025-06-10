@@ -18,7 +18,8 @@ type
     function get_ObjectType(const AType: &Type): IObjectType;
     function get_Types: List<&Type>;
 
-    procedure RegisterJSType(const JSObjectType: IJSObjectReference);
+    procedure AddProperty(const AType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const ADescriptor: IPropertyDescriptor);
+    procedure RegisterJSType(const JSObjectType: JSObjectReference);
     procedure RegisterType(const AType: &Type; const ObjectType: IObjectType);
     function  TypeByName(const Name: string) : &Type;
 
@@ -28,14 +29,15 @@ type
 
   TJSObjectType = class(ObjectType)
   protected
-    _JSProto: IJSObjectReference;
+    _JSProto: JSObjectReference;
 
     function  get_Binder: IContentBinder; override;
     function  get_Builder: IContentBuilder; override;
     function  get_Provider: IContentProvider; override;
+    function  get_PropertyDescriptor: IPropertyDescriptors; override;
 
   public
-    constructor Create(const JSProto: IJSObjectReference);
+    constructor Create(const JSProto: JSObjectReference);
 
     function  GetType: &Type; override;
   end;
@@ -43,7 +45,7 @@ type
 implementation
 
 uses
-  App.Windows.impl, System.ClassHelpers;
+  App.Windows.impl, System.ClassHelpers, System.Rtti, ADato.Extensions.intf;
 
 { TAppConfig }
 
@@ -67,7 +69,23 @@ begin
   Result := CList<&Type>.Create(_Types.Keys);
 end;
 
-procedure TAppConfig.RegisterJSType(const JSObjectType: IJSObjectReference);
+procedure TAppConfig.AddProperty(const AType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const ADescriptor: IPropertyDescriptor);
+begin
+  if ExtensionManager <> nil then
+  begin
+    var objectType := get_ObjectType(AType);
+    var ownerType := objectType.GetType;
+
+    var prop: _PropertyInfo := CustomProperty.Create(ownerType, Name, ALabel, AType);
+    ExtensionManager.AddProperty(ownerType, prop);
+
+    if (objectType.PropertyDescriptor <> nil) and (ADescriptor <> nil) then
+      objectType.PropertyDescriptor.AddPropertyDescriptor(Name, ADescriptor);
+  end;
+end;
+
+
+procedure TAppConfig.RegisterJSType(const JSObjectType: JSObjectReference);
 begin
   var tp := JSObjectType.GetType;
   RegisterType(tp, TJSObjectType.Create(JSObjectType));
@@ -87,37 +105,34 @@ end;
 
 { TJSObjectType }
 
-constructor TJSObjectType.Create(const JSProto: IJSObjectReference);
+constructor TJSObjectType.Create(const JSProto: JSObjectReference);
 begin
   _JSProto := JSProto;
 end;
 
 function TJSObjectType.GetType: &Type;
 begin
-  var o := _JSProto.Invoke('GetType', TypeInfo(&Type));
-  if o <> nil then
-    o.TryAsType<&Type>(Result);
+ Result := _JSProto.Invoke<&Type>('GetType');
 end;
 
 function TJSObjectType.get_Binder: IContentBinder;
 begin
-  var o := _JSProto.Invoke('Binder', TypeInfo(IJSObjectReference));
-  if o <> nil then
-    o.TryAsType<IContentBinder>(Result);
+  Result := _JSProto.Invoke<IContentBinder>('Binder');
 end;
 
 function TJSObjectType.get_Builder: IContentBuilder;
 begin
-  var o := _JSProto.Invoke('Builder', TypeInfo(IJSObjectReference));
-  if o <> nil then
-    o.TryAsType<IContentBuilder>(Result);
+  Result := _JSProto.Invoke<IContentBuilder>('Builder');
+end;
+
+function TJSObjectType.get_PropertyDescriptor: IPropertyDescriptors;
+begin
+  Result := _JSProto.Invoke<IPropertyDescriptors>('PropertyDescriptor');
 end;
 
 function TJSObjectType.get_Provider: IContentProvider;
 begin
-  var o := _JSProto.Invoke('Provider', TypeInfo(IJSObjectReference));
-  if o <> nil then
-    o.TryAsType<IContentProvider>(Result);
+  Result := _JSProto.Invoke<IContentProvider>('Provider');
 end;
 
 end.

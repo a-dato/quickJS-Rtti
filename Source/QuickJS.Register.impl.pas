@@ -402,7 +402,7 @@ begin
     Result := m_descr.Call(ctx, ptr, argc, argv);
   end;
 
-  JS_FreeValue(ctx, this_val);
+  // JS_FreeValue(ctx, this_val);
 end;
 
 class function TJSRegister.GenericGetItem(ctx : JSContext; this_val : JSValueConst;
@@ -555,7 +555,9 @@ var
   begin
     var data: array of JSValueConst;
     SetLength(data, 2);
-    data[0] := JS_DupValue(ctx, obj); // Add Self pointer
+    data[0] := obj; // Add Self pointer
+    // 7/6/2025 Do not increase ref count --> dubugging shows that this creates a dangling object
+    // data[0] := JS_DupValue(ctx, obj); // Add Self pointer
     data[1] := JS_NewInt64(ctx, Int64(Pointer(rtti_descriptor))); // Method to call
 
     desc^.flags := JS_PROP_HAS_VALUE or JS_PROP_ENUMERABLE;
@@ -823,7 +825,7 @@ begin
     // Finalize will free instance when no longer in use
     JS_SetOpaque(Result, iter.AsObject);
   end;
-  JS_FreeValue(ctx, this_val);
+  // JS_FreeValue(ctx, this_val);
 end;
 
 class function TJSRegister.GenericIteratorNext(ctx : JSContext; this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue; cdecl;
@@ -840,7 +842,7 @@ begin
   end else
     JS_SetPropertyStr(ctx, Result, 'done', JS_TRUE);
 
-  JS_FreeValue(ctx, this_val);
+  // JS_FreeValue(ctx, this_val);
 end;
 
 { TJSRegister }
@@ -1410,9 +1412,15 @@ begin
     end;
 
 //    tkChar:
-    tkEnumeration:
-      if Target = System.TypeInfo(Boolean) then
-        Result := TValue.From<Boolean>(JS_ToBool(ctx, Value) <> 0);
+    tkEnumeration, tkSet:
+    begin
+      if JS_IsNumber(Value) then
+      begin
+        var v: Integer;
+        TJSRuntime.Check(JS_ToInt32(ctx, @v, Value));
+        TValue.Make(v, Target, Result);
+      end;
+    end;
 
     tkFloat:
     begin
@@ -1587,19 +1595,22 @@ begin
     end;
     tkInterface:
     begin
-      // Property holds a reference to callback procedure
-      if string(Value.TypeInfo.Name).StartsWith('TProc') then
+      if not Value.IsEmpty then
       begin
-        Result := JS_NewCFunctionData(ctx, @TJSRegister.GenericInvokeCallBack, 0, 999, 0, nil);
-      end
-      else
-      begin
-        var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
-        Result := JS_NewObjectClass(ctx, reg.ClassID);
-        var ptr: Pointer;
-        // No need to call _AddRef, Supports will bump reference count
-        Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
-        JS_SetOpaque(Result, ptr);
+        // Property holds a reference to callback procedure
+        if string(Value.TypeInfo.Name).StartsWith('TProc') then
+        begin
+          Result := JS_NewCFunctionData(ctx, @TJSRegister.GenericInvokeCallBack, 0, 999, 0, nil);
+        end
+        else
+        begin
+          var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
+          Result := JS_NewObjectClass(ctx, reg.ClassID);
+          var ptr: Pointer;
+          // No need to call _AddRef, Supports will bump reference count
+          Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
+          JS_SetOpaque(Result, ptr);
+        end;
       end;
     end;
 

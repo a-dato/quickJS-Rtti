@@ -14,7 +14,7 @@ type
   protected
     [weak] _app: IAppObject;
     _Frame: IWindowFrame;
-    _ObjectType: IObjectType;
+    _Type: &Type;
 
     function get_Frame: IWindowFrame;
     function get_Name: CString;
@@ -24,7 +24,7 @@ type
     function  Show : IWindow;
 
   public
-    constructor Create(const App: IAppObject; const Frame: IWindowFrame; const ObjectType: IObjectType);
+    constructor Create(const App: IAppObject; const Frame: IWindowFrame; const AType: &Type);
   end;
 
   Windows = class(CList<IWindow>, IWindows)
@@ -50,8 +50,8 @@ begin
   if ot = nil then
     raise CException.Create('Unknown type');
 
-  var frame := _app.Environment.CreateWindowFrame(AOwner, ot);
-  Result := Window.Create(_app, frame, ot);
+  var frame := _app.Environment.CreateWindowFrame(AOwner, AType);
+  Result := Window.Create(_app, frame, AType);
 end;
 
 { Window }
@@ -59,21 +59,21 @@ end;
 function Window.Bind(const Data: CObject): IWindow;
 begin
   var c := _frame.Content;
-  _ObjectType.Binder.Bind(c, _ObjectType.GetType, Data);
+  _app.Config.ObjectType[_Type].Binder.Bind(c, _Type, Data);
   Result := Self;
 end;
 
 function Window.Build: IWindow;
 begin
-  _frame.Content := _ObjectType.Builder.Build(_frame.Owner);
+  _frame.Content := _app.Config.ObjectType[_Type].Builder.Build(_frame.Owner);
   Result := Self;
 end;
 
-constructor Window.Create(const App: IAppObject; const Frame: IWindowFrame; const ObjectType: IObjectType);
+constructor Window.Create(const App: IAppObject; const Frame: IWindowFrame; const AType: &Type);
 begin
   _app := App;
   _frame := Frame;
-  _ObjectType := ObjectType;
+  _Type := AType;
 end;
 
 function Window.get_Frame: IWindowFrame;

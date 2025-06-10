@@ -42,7 +42,6 @@ type
     { Private declarations }
 
   public
-    _app: IAppObject;
     _context: IJSContext;
     { Public declarations }
   end;
@@ -70,7 +69,8 @@ uses
   JSGeneral.frame, Winapi.Windows, App.Content.impl, System.Diagnostics,
   XMLHttpRequest.impl, XMLHttpRequest.intf,
   ADato.Extensions.intf,
-  ADato.Extensions.impl, ObjectDesigner, Project.frame;
+  ADato.Extensions.impl, ObjectDesigner, Project.frame, App.Objects.intf,
+  System.Collections, System.Rtti;
 
 {$R *.fmx}
 
@@ -89,28 +89,26 @@ procedure TForm1.btnCustomerClick(Sender: TObject);
 begin
   _app.Windows.CreateWindow(Self, TProject.Type).
     Build.
-      Bind(TProject.ObjectType.Provider.Data).
+      Bind(TProject.ObjectType.Provider.Data(nil)).
         Show;
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
-  if DataList <> nil then
+  var tp := _app.Config.TypeByName('CustomerType');
+  var descr := _app.Config.ObjectType[tp].PropertyDescriptor['Customer'];
+  var pl: IPicklist := descr.Picklist;
+
+  var o := pl.Items(nil);
+
+  var l: IList;
+  if o.TryGetValue<IList>(l) then
   begin
-    var o := DataList[0];
-    var tp: &Type;
-
-    var ref: IJSObjectReference;
-    if o.TryAsType<IJSObjectReference>(ref) then
-      tp := ref.GetType else
-      tp := o.GetType;
-
-    var prop := tp.PropertyByName('Name');
-    var s: CObject;
-
-    if prop <> nil then
-      s := prop.GetValue(o, []) else
-      s := o;
+    for var item in l do
+    begin
+      var s := pl.Format(item);
+      if s = '' then;
+    end;
   end;
 end;
 
@@ -155,9 +153,9 @@ begin
 
     TJSRegisterTypedObjects.Initialize(_context);
 
-    TJSRegister.RegisterObject(_context.ctx, 'ObjectList', TypeInfo(List<IJSObjectReference>),
+    TJSRegister.RegisterObject(_context.ctx, 'ObjectList', TypeInfo(List<JSObjectReference>),
       function : Pointer begin
-        Result := CList<IJSObjectReference>.Create;
+        Result := CList<JSObjectReference>.Create;
       end);
 
     TJSRegister.RegisterObject(_context.ctx, 'List', TypeInfo(List<CObject>),
@@ -167,7 +165,7 @@ begin
 
     TJSRegister.RegisterObject(_context.ctx, 'ObjectModel', TypeInfo(IObjectListModelChangeTracking),
       function : Pointer begin
-        Result := TObjectListModelWithChangeTracking<IJSObjectReference>.Create(nil);
+        Result := TObjectListModelWithChangeTracking<JSObjectReference>.Create(nil);
       end);
 
     TJSRegister.RegisterObject(_context.ctx, 'JSBinder', TypeInfo(IContentBinder),

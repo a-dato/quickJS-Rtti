@@ -18,9 +18,7 @@ type
 
   {$M+}
   IContentProvider = interface(IBaseInterface)
-    function get_Data: CObject;
-
-    property Data: CObject read get_Data;
+    function Data(const Filter: CObject): CObject;
   end;
 
 implementation

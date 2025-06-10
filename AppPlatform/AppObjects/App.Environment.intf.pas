@@ -13,7 +13,7 @@ type
 
     function get_TickCount: Integer;
 
-    function CreateWindowFrame(const AOwner: CObject; const ObjectType: IObjectType) : IWindowFrame;
+    function CreateWindowFrame(const AOwner: CObject; const AType: &Type) : IWindowFrame;
 
     property TickCount: Integer read get_TickCount;
   end;

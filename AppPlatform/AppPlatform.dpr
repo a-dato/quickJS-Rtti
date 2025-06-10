@@ -29,7 +29,13 @@ uses
   ObjectDesigner in 'AppDialogs\ObjectDesigner.pas' {ObjectDesignerForm},
   Project.impl in 'DataObjects\Project.impl.pas',
   Project.intf in 'DataObjects\Project.intf.pas',
-  Project.frame in 'DataObjectsFrames\Project.frame.pas';
+  Project.frame in 'DataObjectsFrames\Project.frame.pas',
+  App.EditorPanel.intf in 'AppUI\App.EditorPanel.intf.pas',
+  App.EditorManager.intf in 'AppUI\App.EditorManager.intf.pas',
+  App.EditorManager.impl in 'AppUI\App.EditorManager.impl.pas',
+  App.KeyNavigator.intf in 'AppUI\App.KeyNavigator.intf.pas',
+  App.UIStateDelegate in 'AppUI\App.UIStateDelegate.pas',
+  App.KeyNavigator.impl in 'AppUI\App.KeyNavigator.impl.pas';
 
 {$R *.res}
 

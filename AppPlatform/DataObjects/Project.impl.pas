@@ -8,10 +8,10 @@ uses
   App.Objects.intf,
   App.Objects.impl,
   App.Content.intf,
-  ADato.ObjectModel.List.intf;
+  ADato.ObjectModel.List.intf, System.Collections.Generic;
 
 type
-  TProject = class(TBaseInterfacedObject, IProject)
+  TProject = class(TBaseInterfacedObject, IProject, IExtendableObject)
   protected
     class var _objectType: IObjectType;
     class function get_Type: &Type; static;
@@ -21,12 +21,20 @@ type
     _ID: CObject;
     _Name: string;
 
+    _PropertyValue: Dictionary<_PropertyInfo, CObject>;
+
     function  get_ID: CObject;
     procedure set_ID(const Value: CObject);
     function  get_Name: string;
     procedure set_Name(const Value: string);
 
+    // IExtendableObject
+    function  get_PropertyValue(const AProperty: _PropertyInfo): CObject;
+    procedure set_PropertyValue(const AProperty: _PropertyInfo; const Value: CObject);
+
   public
+    constructor Create;
+
     class property &Type: &Type read get_Type;
     class property ObjectType: IObjectType read get_ObjectType;
   end;
@@ -38,13 +46,13 @@ type
 
   ProjectProvider = class(TBaseInterfacedObject, IContentProvider)
   protected
-    function get_Data: CObject;
+    function Data(const Filter: CObject): CObject;
   end;
 
 implementation
 
 uses
-  ADato.ObjectModel.List.Tracking.impl, System.Collections.Generic,
+  ADato.ObjectModel.List.Tracking.impl,
   System.SysUtils, System.Collections;
 
 
@@ -60,6 +68,16 @@ begin
     _objectType := ProjectType.Create;
 
   Result := _objectType;
+end;
+
+function TProject.get_PropertyValue(const AProperty: _PropertyInfo): CObject;
+begin
+  _PropertyValue.TryGetValue(AProperty, Result);
+end;
+
+constructor TProject.Create;
+begin
+  _PropertyValue := CDictionary<_PropertyInfo, CObject>.Create;
 end;
 
 function TProject.get_ID: CObject;
@@ -82,9 +100,14 @@ begin
   _Name := Value;
 end;
 
+procedure TProject.set_PropertyValue(const AProperty: _PropertyInfo; const Value: CObject);
+begin
+  _PropertyValue[AProperty] := Value;
+end;
+
 { ProjectProvider }
 
-function ProjectProvider.get_Data: CObject;
+function ProjectProvider.Data(const Filter: CObject): CObject;
 begin
   var model: IObjectListModel := TObjectListModelWithChangeTracking<IProject>.Create(function: IProject begin Result := TProject.Create; end);
 

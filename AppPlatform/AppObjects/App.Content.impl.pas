@@ -9,14 +9,14 @@ uses
 type
   JSContentProvider = class(TBaseInterfacedObject, IContentProvider)
   protected
-    function get_Data: CObject;
+    function Data(const Filter: CObject): CObject;
   end;
 
 implementation
 
 { JSContentProvider }
 
-function JSContentProvider.get_Data: CObject;
+function JSContentProvider.Data(const Filter: CObject): CObject;
 begin
 ;
 end;

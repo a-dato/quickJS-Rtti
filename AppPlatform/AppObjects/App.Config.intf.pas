@@ -16,7 +16,9 @@ type
     function get_Types: List<&Type>;
     function get_ObjectType(const AType: &Type): IObjectType;
 
-    procedure RegisterJSType(const JSObjectType: IJSObjectReference);
+    procedure AddProperty(const AType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const ADescriptor: IPropertyDescriptor);
+
+    procedure RegisterJSType(const JSObjectType: JSObjectReference);
     procedure RegisterType(const AType: &Type; const ObjectType: IObjectType);
 
     function  TypeByName(const Name: string) : &Type;
