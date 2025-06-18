@@ -6,7 +6,8 @@ uses
   System_,
   System.TypInfo,
   System.SysUtils,
-  quickjs, System.Rtti;
+  quickjs,
+  QuickJS.Variant, System.Rtti;
 
 type
   IJSRegisteredObject = interface
@@ -25,7 +26,8 @@ type
   private
     _jsValue: IJSCapturedObject;
 
-    function  InternalInvoke(const Func: AnsiString; argc:Integer; argv: PJSValueConstArr) : JSValue;
+    function InternalInvoke(const Func: AnsiString; argc:Integer; argv: PJSValueConstArr) : JSValue;
+    function get_Ctx: JSContext;
     function get_Value: JSValueConst;
 
   public
@@ -34,6 +36,7 @@ type
     function Invoke<T>(const Func: AnsiString; const P1: CObject) : T; overload;
     function Invoke<T>(const Func: AnsiString; const P1, P2: CObject) : T; overload;
 
+    property Ctx: JSContext read get_Ctx;
     property Value: JSValueConst read get_Value;
 
   public
@@ -58,10 +61,68 @@ type
     destructor Destroy; override;
   end;
 
+  function JSVariant(const Value: IInterface) : Variant;
+  function JSVariantIsNull(const Value: Variant) : Boolean;
+  function JSVariantIsUndefined(const Value: Variant) : Boolean;
+  function WrapIJSObjectInVirtualInterface(Target: PTypeInfo; obj_ref: JSObjectReference) : TValue;
+
 implementation
 
 uses
-  QuickJS.Register.impl;
+  QuickJS.Register.impl, System.Variants;
+
+function JSVariant(const Value: IInterface) : Variant;
+begin
+  Result := VarJSVariantCreate(Value);
+end;
+
+function JSVariantIsNull(const Value: Variant) : Boolean;
+begin
+  Result := VarJSVariantIsNull(Value);
+end;
+
+function JSVariantIsUndefined(const Value: Variant) : Boolean;
+begin
+  Result := VarJSVariantIsUndefined(Value);
+end;
+
+function WrapIJSObjectInVirtualInterface(Target: PTypeInfo; obj_ref: JSObjectReference) : TValue;
+begin
+  var virtual_interface := TVirtualInterface.Create(Target,
+    procedure(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue)
+    begin
+      // Args[0] = Self
+
+      var name: AnsiString;
+
+      if Method.Name.StartsWith('get_') then
+      begin
+        // Getter with indexer called (like Object['ID']) --> Call ID property
+        if (Length(Args) > 1) then
+        begin
+          if Args[1].IsType<string> then
+            name := Args[1].AsString
+          else if Args[1].IsType<CString> then
+            name := Args[1].AsType<CString>
+          else
+            raise Exception.Create('Invalid parameter in call to: ' + Method.Name);
+        end else
+          name := Method.Name.Substring(4);
+      end else
+        name := Method.Name;
+
+      var rt: PTypeInfo := nil;
+      if Method.ReturnType <> nil then
+        rt := Method.ReturnType.Handle;
+
+      Result := obj_ref.Invoke(name, Copy(Args, 1), rt);
+    end);
+
+  var ii: IInterface;
+  if Interfaces.Supports(virtual_interface, Target.TypeData.GUID, ii) then
+    TValue.Make(@ii, Target, Result);
+end;
+
 
 { JSValueRec }
 
@@ -80,6 +141,11 @@ begin
   Result := GetTypeFromJSObjectFunc(_jsValue.ctx, _jsValue.value);
 end;
 
+function JSObjectReference.get_Ctx: JSContext;
+begin
+  Result := _jsValue.ctx;
+end;
+
 function JSObjectReference.get_Value: JSValueConst;
 begin
   Result := _jsValue.Value;
@@ -90,12 +156,27 @@ begin
   Result := JS_GetPropertyStr(_jsValue.ctx, _jsValue.value, PAnsiChar(Func));
   if not TJSRuntime.Check(_jsValue.ctx) then Exit;
 
+  // Property returns a function, call function to get actual value
   if JS_IsFunction(_jsValue.ctx, Result) then
   begin
     var tmp := Result;
     Result := JS_Call(_jsValue.ctx, tmp, _jsValue.Value, argc, argv);
     JS_FreeValue(_jsValue.ctx, tmp);
     if not TJSRuntime.Check(_jsValue.ctx) then Exit;
+  end
+  // Call on property with sub-properties
+  // obj.ObjectWithProps['SUB-PROPERTY']
+  else if (argc = 1) and JS_IsObject(Result) then
+  begin
+    // Result := JS_GetPropertyStr(_jsValue.ctx, Result, PAnsiChar('Customer'));
+    var js_obj := Result;
+    var prop_name := JSConverter.Instance.JSValueToTValue(_jsValue.ctx, argv[0], TypeInfo(string));
+    if not prop_name.IsEmpty then
+    begin
+      var s: AnsiString := prop_name.ToString;
+      Result := JS_GetPropertyStr(_jsValue.ctx, js_obj, PAnsiChar(s));
+    end;
+    JS_FreeValue(_jsValue.ctx, js_obj);
   end;
 end;
 

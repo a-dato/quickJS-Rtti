@@ -70,7 +70,7 @@ uses
   XMLHttpRequest.impl, XMLHttpRequest.intf,
   ADato.Extensions.intf,
   ADato.Extensions.impl, ObjectDesigner, Project.frame, App.Objects.intf,
-  System.Collections, System.Rtti;
+  System.Collections, System.Rtti, App.PropertyDescriptor.intf, System.JSON;
 
 {$R *.fmx}
 
@@ -96,9 +96,48 @@ end;
 procedure TForm1.Button2Click(Sender: TObject);
 begin
   var tp := _app.Config.TypeByName('CustomerType');
-  var descr := _app.Config.ObjectType[tp].PropertyDescriptor['Customer'];
-  var pl: IPicklist := descr.Picklist;
+  var ot := _app.Config.ObjectType[tp];
+  var descr := ot.PropertyDescriptor['CustomerType'];
 
+  var data := ot.Provider.Data(nil).AsType<IList>;
+
+  var value := descr.Formatter.Marshal(nil, data[0]);
+  if value.IsString then
+  begin
+    // var js := TJsonObject.ParseJSONValue(value.ToString(False));
+    var js := TJsonObject.ParseJSONValue('{}');
+    if js <> nil then
+    begin
+      var s: string;
+      if js.TryGetValue<string>('Value', s) then
+        ShowMessage(s);
+    end;
+  end;
+
+  var js2 := TJsonObject.ParseJSONValue('');
+  js2 := TJsonObject.ParseJSONValue('{ID:10}');
+  js2 := TJsonObject.ParseJSONValue('{');
+
+
+//  var v2:= TValue.From<IInterface>(nil);
+//  if v2.IsType<IInterface> and (v2.AsInterface = nil) then
+//    ShowMessage('nil')
+//  else if v2.IsEmpty then
+//    ShowMessage('empty');
+
+  var fmt := JSVariant(descr).Formatter.Format('abc');
+  if Interfaces.Supports<IFormatter>(fmt) then
+
+
+  if JSVariantIsNull(fmt) then
+    ShowMessage('nil');
+
+  if JSVariantIsUndefined(fmt) then
+    ShowMessage('undefined');
+
+  var formatter := descr.Formatter;
+
+  var pl: IPicklist := descr.Picklist;
   var o := pl.Items(nil);
 
   var l: IList;
@@ -106,7 +145,7 @@ begin
   begin
     for var item in l do
     begin
-      var s := pl.Format(item);
+      var s := formatter.Format(nil, item, nil);
       if s = '' then;
     end;
   end;
@@ -170,7 +209,7 @@ begin
 
     TJSRegister.RegisterObject(_context.ctx, 'JSBinder', TypeInfo(IContentBinder),
       function : Pointer begin
-        Result := TJSFrameBinder.Create();
+        Result := TFrameBinder.Create();
       end);
 
     TJSRegister.RegisterObject(_context.ctx, 'JSFrameBuilder', TypeInfo(IContentBuilder),

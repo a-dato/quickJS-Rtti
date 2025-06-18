@@ -35,7 +35,9 @@ uses
   App.EditorManager.impl in 'AppUI\App.EditorManager.impl.pas',
   App.KeyNavigator.intf in 'AppUI\App.KeyNavigator.intf.pas',
   App.UIStateDelegate in 'AppUI\App.UIStateDelegate.pas',
-  App.KeyNavigator.impl in 'AppUI\App.KeyNavigator.impl.pas';
+  App.KeyNavigator.impl in 'AppUI\App.KeyNavigator.impl.pas',
+  App.PropertyDescriptor.intf in 'AppObjects\App.PropertyDescriptor.intf.pas',
+  App.PropertyDescriptor.impl in 'AppObjects\App.PropertyDescriptor.impl.pas';
 
 {$R *.res}
 

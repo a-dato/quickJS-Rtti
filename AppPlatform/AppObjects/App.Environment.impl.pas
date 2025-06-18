@@ -53,13 +53,8 @@ type
       const EditorManager: IEditorManager; const DataType: &Type; const ObjectType: IObjectType);
     procedure Bind(const AContent: CObject; const AType: &Type; const Data: CObject);
 
-    function WrapProperty(const AProp: _PropertyInfo) : _PropertyInfo; virtual;
+    function WrapProperty(const AParentProp: _PropertyInfo; const AProp: _PropertyInfo) : _PropertyInfo; virtual;
   public
-  end;
-
-  TJSFrameBinder = class(TFrameBinder)
-  protected
-    function WrapProperty(const AProp: _PropertyInfo) : _PropertyInfo; override;
   end;
 
 implementation
@@ -116,36 +111,82 @@ end;
 
 procedure TFrameBinder.BindChildren(const Children: TFmxChildrenList; const AModel: IObjectListModel;
   const EditorManager: IEditorManager; const DataType: &Type; const ObjectType: IObjectType);
+
+  procedure ConcatNames(const Names: TArray<string>; out PropertyName: string; out ObjectPropertyName: string);
+  begin
+    PropertyName := '';
+    ObjectPropertyName := '';
+
+    for var i := 1 to High(Names) do
+    begin
+      var d: Integer;
+      if Integer.TryParse(Names[i], d) then
+        break;
+
+      if PropertyName = '' then
+        PropertyName := Names[i] else
+        PropertyName := PropertyName + '.' + Names[i];
+
+      if i >= 2 then
+      begin
+        if ObjectPropertyName = '' then
+          ObjectPropertyName := Names[i] else
+          ObjectPropertyName := ObjectPropertyName + '.' + Names[i];
+      end;
+    end;
+  end;
+
 begin
   for var c in Children do
   begin
     // Name looks like
-    //  ObjectType_Property         -> Customer_Name
-    //  ObjectType_Property_Index   -> Customer_Name_1
+    //  ObjectType_Property                     -> IProject_Name
+    //  ObjectType_Property_Index               -> IProject_Name_1
+    //  ObjectType_Property_SubProperty_Index   -> IProject_Customer_Address_1
     var names := string(c.Name).Split(['_']);
     if (Length(names) >= 2) and (names[0] = DataType.Name) then
     begin
+      var propertyName: string;
+      var objectPropertyName: string;
+      ConcatNames(names, propertyName, objectPropertyName);
+
       var editor: IEditorPanel;
       if Interfaces.Supports<IEditorPanel>(c, editor) then
       begin
-        var prop := DataType.PropertyByName(names[1]);
-        if prop <> nil then
+        var p1 := DataType.PropertyByName(propertyName);
+        if p1 <> nil then
         begin
-          if (ObjectType <> nil) and (ObjectType.PropertyDescriptor <> nil) then
-            editor.PropertyDescriptor := ObjectType.PropertyDescriptor[names[1]];
+//          if (ObjectType <> nil) and (ObjectType.PropertyDescriptor <> nil) then
+//            editor.PropertyDescriptor := ObjectType.PropertyDescriptor[names[1]];
 
-          EditorManager.AddEditorBinding(WrapProperty(prop), editor);
+          EditorManager.AddEditorBinding(WrapProperty(nil, p1), editor);
         end;
       end
-      else if (c is TDataControl) and (names[1] = 'Model') then
+      else if (c is TDataControl) and (propertyName = 'Model') then
         (c as TDataControl).Model := AModel
       else
       begin
-        var prop := DataType.PropertyByName(names[1]);
-        if prop <> nil then
+        // propertyName   -> 'Customer'
+        //                -> 'Customer.Address'
+        var p2 := DataType.PropertyByName(propertyName);
+        if p2 <> nil then
         begin
           var bind := TPropertyBinding.CreateBindingByControl(c);
-          AModel.ObjectModelContext.Bind(WrapProperty(prop), bind);
+
+          var pt := p2.GetType;  // CustomerType
+          var pt_ot := _app.Config.ObjectType[p2.GetType];
+          if pt_ot <> nil then
+          begin
+            if objectPropertyName <> '' then
+              bind.Descriptor := pt_ot.PropertyDescriptor[objectPropertyName] else
+              bind.Descriptor := pt_ot.PropertyDescriptor[pt.Name];
+          end;
+
+          var parentProp: _PropertyInfo := nil;
+          if objectPropertyName <> '' then
+            parentProp := DataType.PropertyByName(names[1]);  // Customer
+
+          AModel.ObjectModelContext.Bind(WrapProperty(parentProp, p2), bind);
         end;
       end;
     end;
@@ -155,10 +196,14 @@ begin
   end;
 end;
 
-function TFrameBinder.WrapProperty(const AProp: _PropertyInfo): _PropertyInfo;
+function TFrameBinder.WrapProperty(const AParentProp: _PropertyInfo; const AProp: _PropertyInfo): _PropertyInfo;
 begin
   if not Interfaces.Supports<IObjectModelProperty>(AProp) then
-    Result := TObjectModelPropertyWrapper.Create(AProp) else
+  begin
+    if AParentProp <> nil then
+      Result := TObjectModelSubPropertyWrapper.Create(AParentProp, AProp) else
+      Result := TObjectModelPropertyWrapper.Create(AProp)
+  end else
     Result := AProp;
 end;
 
@@ -195,13 +240,6 @@ begin
     end else
       raise CException.Create('Data is invalid');
   end;
-end;
-
-{ TJSFrameBinder }
-
-function TJSFrameBinder.WrapProperty(const AProp: _PropertyInfo): _PropertyInfo;
-begin
-  Result := TObjectModelPropertyWrapper.Create(AProp);
 end;
 
 end.

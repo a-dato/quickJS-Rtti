@@ -30,8 +30,6 @@ type
 
     function JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue; override;
     function TValueToJSValue(ctx: JSContext; const Value: TValue) : JSValue; override;
-
-    function WrapIJSObjectInVirtualInterface(Target: PTypeInfo; obj_ref: JSObjectReference) : TValue;
   end;
 
   TJSPropertyInfo = class(TBaseInterfacedObject, _PropertyInfo)
@@ -375,46 +373,15 @@ begin
   // JS_FreeValue(ctx, proto);
 end;
 
-function TJSTypedConverter.WrapIJSObjectInVirtualInterface(Target: PTypeInfo; obj_ref: JSObjectReference) : TValue;
-begin
-  var virtual_interface := TVirtualInterface.Create(Target,
-    procedure(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue)
-    begin
-      // Args[0] = Self
-
-      var name: string;
-
-      if Method.Name.StartsWith('get_') then
-      begin
-        // Getter with indexer called (like Object['ID']) --> Call ID property
-        if (Length(Args) > 1) then
-        begin
-          if Args[1].IsType<string> then
-            name := Args[1].AsString
-          else if Args[1].IsType<CString> then
-            name := Args[1].AsType<CString>
-          else
-            raise Exception.Create('Invalid parameter in call to: ' + Method.Name);
-        end else
-          name := Method.Name.Substring(4);
-      end else
-        name := Method.Name;
-
-
-      Result := obj_ref.Invoke(name, Copy(Args, 1), Method.ReturnType.Handle).AsType<TValue>;
-    end);
-
-  var ii: IInterface;
-  if Interfaces.Supports(virtual_interface, Target.TypeData.GUID, ii) then
-    TValue.Make(@ii, Target, Result);
-end;
-
 function TJSTypedConverter.JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
 begin
   if Target = nil then
   begin
-    if JS_IsNull(Value) then
-      Result := TValue.From<JSObjectReference>(JSObjectReference.Empty)
+    if JS_IsUndefined(Value) then
+      Result := TValue.Empty
+
+    else if JS_IsNull(Value) then
+      Result := TValue.From<IInterface>(nil)
 
     else if JS_IsBool(Value) then
       Result := JS_ToBool(ctx, Value) <> 0

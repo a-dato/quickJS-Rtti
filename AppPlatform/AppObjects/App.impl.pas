@@ -21,7 +21,7 @@ type
     function get_Environment: IEnvironment;
     function get_Windows: IWindows;
 
-    function  Test(const Value: JSObjectReference) : Boolean;
+    function  Test(const Value: CObject) : Boolean;
 
   public
     constructor Create(const Environment: IEnvironment);
@@ -47,7 +47,7 @@ implementation
 uses
   App.Objects.intf,
   App.Config.impl,
-  App.Windows.impl;
+  App.Windows.impl, quickjs;
 
 { TAppObject }
 
@@ -73,16 +73,34 @@ begin
   Result := _Windows;
 end;
 
-function TAppObject.Test(const Value: JSObjectReference) : Boolean;
+function TAppObject.Test(const Value: CObject) : Boolean;
 begin
-  var descr := Value.Invoke<IPropertyDescriptors>('PropertyDescriptors');
-  if descr <> nil then
+  var js_ref: JSObjectReference;
+  if Value.TryAsType<JSObjectReference>(js_ref) then
   begin
-    var prop := descr['ID'];
-    var v := prop.Visible;
-    if v then;
 
   end;
+
+//  var d := JS_GetPropertyStr(Value.Ctx, Value.Value, 'PropertyDescriptor');
+//  var e := JS_GetPropertyStr(Value.Ctx, d, 'Customer');
+//  var p := JS_GetPropertyStr(Value.Ctx, e, 'Picklist');
+//
+//  var g := JS_GetPropertyStr(Value.Ctx, Value.Value, 'PropertyDescriptor.Customer.Picklist');
+//
+//  var i := JS_GetPropertyStr(Value.Ctx, p, 'Items');
+//  var c := JS_GetPropertyStr(Value.Ctx, i, 'Count');
+//
+//  if JS_IsNumber(c) then;
+
+
+//  var descr := Value.Invoke<IPropertyDescriptor>('PropertyDescriptor');
+//  if descr <> nil then
+//  begin
+//    var prop := descr['ID'];
+//    var v := prop.Visible;
+//    if v then;
+//
+//  end;
 
   // var n := descr.Invoke('ID', TypeInfo(IJSObjectReference));
 

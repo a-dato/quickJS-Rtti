@@ -8,7 +8,8 @@ uses
   App.Config.intf,
   App.Objects.intf,
   App.Objects.impl,
-  QuickJS.Register.dn4d.intf, App.Content.intf, ADato.ObjectModel.List.intf;
+  QuickJS.Register.dn4d.intf, App.Content.intf, ADato.ObjectModel.List.intf,
+  App.PropertyDescriptor.intf;
 
 type
   TAppConfig = class(TBaseInterfacedObject, IAppConfig)
@@ -18,7 +19,7 @@ type
     function get_ObjectType(const AType: &Type): IObjectType;
     function get_Types: List<&Type>;
 
-    procedure AddProperty(const AType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const ADescriptor: IPropertyDescriptor);
+    procedure AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type);
     procedure RegisterJSType(const JSObjectType: JSObjectReference);
     procedure RegisterType(const AType: &Type; const ObjectType: IObjectType);
     function  TypeByName(const Name: string) : &Type;
@@ -34,7 +35,9 @@ type
     function  get_Binder: IContentBinder; override;
     function  get_Builder: IContentBuilder; override;
     function  get_Provider: IContentProvider; override;
-    function  get_PropertyDescriptor: IPropertyDescriptors; override;
+    function  get_PropertyDescriptor(const Name: CString) : IPropertyDescriptor; override;
+
+    //function  get_PropertyDescriptor: IPropertyDescriptors; override;
 
   public
     constructor Create(const JSProto: JSObjectReference);
@@ -69,18 +72,15 @@ begin
   Result := CList<&Type>.Create(_Types.Keys);
 end;
 
-procedure TAppConfig.AddProperty(const AType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const ADescriptor: IPropertyDescriptor);
+procedure TAppConfig.AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type);
 begin
   if ExtensionManager <> nil then
   begin
-    var objectType := get_ObjectType(AType);
-    var ownerType := objectType.GetType;
+    var objectType := get_ObjectType(OwnerType);
+    var dataObjectType := objectType.GetType;
 
-    var prop: _PropertyInfo := CustomProperty.Create(ownerType, Name, ALabel, AType);
-    ExtensionManager.AddProperty(ownerType, prop);
-
-    if (objectType.PropertyDescriptor <> nil) and (ADescriptor <> nil) then
-      objectType.PropertyDescriptor.AddPropertyDescriptor(Name, ADescriptor);
+    var prop: _PropertyInfo := CustomProperty.Create(dataObjectType, Name, ALabel, PropType);
+    ExtensionManager.AddProperty(dataObjectType, prop);
   end;
 end;
 
@@ -125,9 +125,9 @@ begin
   Result := _JSProto.Invoke<IContentBuilder>('Builder');
 end;
 
-function TJSObjectType.get_PropertyDescriptor: IPropertyDescriptors;
+function TJSObjectType.get_PropertyDescriptor(const Name: CString) : IPropertyDescriptor;
 begin
-  Result := _JSProto.Invoke<IPropertyDescriptors>('PropertyDescriptor');
+  Result := _JSProto.Invoke<IPropertyDescriptor>('PropertyDescriptor', Name);
 end;
 
 function TJSObjectType.get_Provider: IContentProvider;

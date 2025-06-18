@@ -345,6 +345,8 @@
         <DCCReference Include="AppUI\App.KeyNavigator.intf.pas"/>
         <DCCReference Include="AppUI\App.UIStateDelegate.pas"/>
         <DCCReference Include="AppUI\App.KeyNavigator.impl.pas"/>
+        <DCCReference Include="AppObjects\App.PropertyDescriptor.intf.pas"/>
+        <DCCReference Include="AppObjects\App.PropertyDescriptor.impl.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

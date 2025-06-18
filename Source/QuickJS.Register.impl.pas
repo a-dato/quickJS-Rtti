@@ -1414,7 +1414,13 @@ begin
 //    tkChar:
     tkEnumeration, tkSet:
     begin
-      if JS_IsNumber(Value) then
+      if Target = TypeInfo(Boolean) then
+      begin
+        if JS_IsBool(value) and (JS_ToBool(ctx, value) <> 0) then
+          Result := TValue.From<Boolean>(True) else
+          Result := TValue.From<Boolean>(False);
+      end
+      else if JS_IsNumber(Value) then
       begin
         var v: Integer;
         TJSRuntime.Check(JS_ToInt32(ctx, @v, Value));
@@ -2131,7 +2137,6 @@ const
   add_fetch: PAnsiChar =
     'import fetch from ''./fetch.js'';'#10+
     'globalThis.fetch = fetch;'#10;
-
 
 begin
   _ctx := JS_NewContext(_runtime.rt);

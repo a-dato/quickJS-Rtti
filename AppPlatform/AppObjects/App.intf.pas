@@ -24,7 +24,7 @@ type
   {$M+}
   IAppObject = interface(IBaseInterface)
     ['{0519E4B9-3CD3-4B42-A776-7E62173F5967}']
-    function  Test(const Value: JSObjectReference) : Boolean;
+    function  Test(const Value: CObject) : Boolean;
 
     function get_Config: IAppConfig;
     function get_Environment: IEnvironment;

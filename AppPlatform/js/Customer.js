@@ -1,30 +1,4 @@
-const visible = {
-  hidden: 0,
-  visible: 1
-};
-
-const editor = {
-	Text: 0,
-	Edit: 1,
-	Date: 2,
-	Time: 3,
-	DateTime: 4, 
-	Check: 5,
-	Memo: 6,
-	Number: 7, 
-	Combo: 8, 
-	ComboEdit: 9, 
-	Tags: 10, 
-	Color: 11, 
-	CustomEditor: 12
-}
-
-const status = {
-	None: 0,
-	Started: 1,
-	Released: 3,
-	Closed: 4
-}
+import {visible,editor,status} from './lynx_app.js';
 
 export class Customer {
   constructor(id, n) {
@@ -58,10 +32,13 @@ export class Customer {
 	return this._Status;
   }
 
-  set Status(status) {
-	this._Status = status;
-  }
+	set Status(status) {
+		this._Status = status;
+	}
   
+	toString() {
+		return this._Name;
+	}
 }
 
 export class CustomerType {
@@ -75,23 +52,48 @@ export class CustomerType {
 	}
 
 	constructor() {
-		this.Binder = new JSBinder();
-		this.Builder = new JSFrameBuilder();
-		this.Provider = new CustomerProvider();
-		this.Format = (Item) => {return Item.Name};
-		this.Parse = (value) => {return this.Provider.Locate(value)};
+		this.Binder = new JSBinder();			// IContentBinder
+		this.Builder = new JSFrameBuilder();	// IContentBuilder
+		this.Provider = new CustomerProvider();	// IContentProvider
 		this.PropertyDescriptor = {
 			// Object descriptor
-			Customer: {
+			CustomerType: {
 				EditorType: editor.Combo,
+				// IFormatter
+				Formatter: {
+					Format: (ctx, item, format) => { 
+						if(item != null)
+							return item.Name;
+					},
+					Url: (ctx, item) => {
+							return `https://lynx.a-dato.com/customer/${item.ID}`;
+					},
+					Marshal: (ctx, item) => {
+						let json = {
+							ID: `${item.ID}`,
+							Value: `${item.Name}`
+						}
+						return JSON.stringify(json);
+					},
+					Unmarshal: (ctx, item) => {
+						return Provider.Lookup(JSON.parse(item));
+					}
+				},
 				Picklist: {
-					Items: (filter) => {return this.Provider.Data(filter)},
-					Format: this.Format,
-					Parse: this.Parse
+					Items: (filter) => { return this.Provider.Data(filter) }
 				}
 			},
 			ID: {
 				Visible: false
+			},
+			Address: {
+				EditorType: editor.Text,
+				Formatter: {
+					Format: (ctx, item, format) => { 
+						if(item != null)
+							return `Address: ${item.Address}`;
+					}
+				}
 			},
 			Name: {
 				EditorType: editor.Edit
@@ -140,11 +142,27 @@ class CustomerProvider {
 		return result;
 	}
 	
-	Uri(customer) {
-		return 'https:////lynx.a-dato.com//customer//' + customer.ID.toString();
+	Lookup(item) {
+		if(typeof item === 'string') 
+		{
+			for(const c of this._Data)
+				if(CustomerType.ct.Format(c).includes(item))
+					return c;
+		}
+		else
+		{
+			let id = null;
+			if(typeof item === 'number')
+				id = item;
+			else
+				id = item.ID;
+				
+			if(id != null) {
+				for(const c of this._Data)
+					if(c.ID == id)
+						return c;
+			}
+		}
+		
 	}
-
-	Locate(ID) {
-		return ID;
-	}	
 }
