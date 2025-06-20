@@ -78,32 +78,14 @@ begin
   var js_ref: JSObjectReference;
   if Value.TryAsType<JSObjectReference>(js_ref) then
   begin
+    var d := js_ref.Invoke<JSObjectReference>('Address');
+    if d.Ctx <> nil then
+    begin
+      var z := d.Invoke<string>('Zip');
+    end;
 
+    var x := js_ref.Invoke<string>('Address.Zip');
   end;
-
-//  var d := JS_GetPropertyStr(Value.Ctx, Value.Value, 'PropertyDescriptor');
-//  var e := JS_GetPropertyStr(Value.Ctx, d, 'Customer');
-//  var p := JS_GetPropertyStr(Value.Ctx, e, 'Picklist');
-//
-//  var g := JS_GetPropertyStr(Value.Ctx, Value.Value, 'PropertyDescriptor.Customer.Picklist');
-//
-//  var i := JS_GetPropertyStr(Value.Ctx, p, 'Items');
-//  var c := JS_GetPropertyStr(Value.Ctx, i, 'Count');
-//
-//  if JS_IsNumber(c) then;
-
-
-//  var descr := Value.Invoke<IPropertyDescriptor>('PropertyDescriptor');
-//  if descr <> nil then
-//  begin
-//    var prop := descr['ID'];
-//    var v := prop.Visible;
-//    if v then;
-//
-//  end;
-
-  // var n := descr.Invoke('ID', TypeInfo(IJSObjectReference));
-
 end;
 
 { TDataObject }

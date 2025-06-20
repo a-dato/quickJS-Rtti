@@ -2,9 +2,9 @@ import {visible,editor,status} from './lynx_app.js';
 
 export class Customer {
   constructor(id, n) {
-	this._id = id;
+		this._id = id;
     this._Name = n;
-	this._Address = "";
+		this._Address = null;
     this._Status = status.None;
   }
 
@@ -76,7 +76,7 @@ export class CustomerType {
 						return JSON.stringify(json);
 					},
 					Unmarshal: (ctx, item) => {
-						return Provider.Lookup(JSON.parse(item));
+						return this.Provider.Lookup(JSON.parse(item));
 					}
 				},
 				Picklist: {
@@ -89,9 +89,11 @@ export class CustomerType {
 			Address: {
 				EditorType: editor.Text,
 				Formatter: {
-					Format: (ctx, item, format) => { 
-						if(item != null)
-							return `Address: ${item.Address}`;
+					Format: (ctx, item, format) => { 				
+						if(typeof item === 'string')
+							item = this.Provider.Lookup(JSON.parse(item));
+												
+						return `Project: ${ctx.Name} @ ${item.Address}`;
 					}
 				}
 			},
@@ -124,7 +126,10 @@ class CustomerProvider {
 			this._Data = new List();
 			for(let i=0; i<100;i++) {
 				var c = new Customer(i, 'Customer ' + i);
-				c.Address = 'Zuideindseweg ' + i;
+				c.Address = {
+					Name: `Zuideindseweg ${i}`,
+					Zip: `2645BG-${i}`
+				};
 				c.Age = i;
 				this._Data.Add(c);
 			}
@@ -143,26 +148,16 @@ class CustomerProvider {
 	}
 	
 	Lookup(item) {
-		if(typeof item === 'string') 
-		{
-			for(const c of this._Data)
-				if(CustomerType.ct.Format(c).includes(item))
-					return c;
-		}
+		let id = null;
+		if(typeof item === 'number')
+			id = item;
 		else
-		{
-			let id = null;
-			if(typeof item === 'number')
-				id = item;
-			else
-				id = item.ID;
+			id = item.ID;
 				
-			if(id != null) {
-				for(const c of this._Data)
-					if(c.ID == id)
-						return c;
-			}
-		}
-		
+		if(id != null) {
+			for(const c of this._Data)
+				if(c.ID == id)
+					return c;
+		}		
 	}
 }
