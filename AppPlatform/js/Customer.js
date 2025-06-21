@@ -76,6 +76,8 @@ export class CustomerType {
 						return JSON.stringify(json);
 					},
 					Unmarshal: (ctx, item) => {
+						console.log('Unmarshal');
+						console.log(item);
 						return this.Provider.Lookup(JSON.parse(item));
 					}
 				},
@@ -93,7 +95,7 @@ export class CustomerType {
 						if(typeof item === 'string')
 							item = this.Provider.Lookup(JSON.parse(item));
 												
-						return `Project: ${ctx.Name} @ ${item.Address}`;
+						return `Project: ${ctx.Name} @ ${item.Address.Zip}`;
 					}
 				}
 			},

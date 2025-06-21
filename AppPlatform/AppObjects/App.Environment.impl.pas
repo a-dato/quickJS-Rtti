@@ -68,7 +68,7 @@ uses
   ADato.ObjectModel.Binders,
   FMX.DataControl.Impl, System.Collections,
   ADato.ObjectModel.List.Tracking.impl, ADato.ObjectModel.impl,
-  App.EditorPanel.intf, ADato.ObjectModel.intf;
+  App.EditorPanel.intf, ADato.ObjectModel.intf, App.PropertyDescriptor.intf;
 
 { Environment }
 
@@ -172,21 +172,25 @@ begin
         if p2 <> nil then
         begin
           var bind := TPropertyBinding.CreateBindingByControl(c);
+          var parentDescriptor: IPropertyDescriptor := nil;
+          var propertyDescriptor: IPropertyDescriptor := nil;
 
           var pt := p2.GetType;  // CustomerType
           var pt_ot := _app.Config.ObjectType[p2.GetType];
+
           if pt_ot <> nil then
           begin
-            if objectPropertyName <> '' then
-              bind.Descriptor := pt_ot.PropertyDescriptor[objectPropertyName] else
-              bind.Descriptor := pt_ot.PropertyDescriptor[pt.Name];
+            parentDescriptor := pt_ot.PropertyDescriptor[pt.Name];
+            propertyDescriptor := pt_ot.PropertyDescriptor[objectPropertyName];
           end;
 
           var parentProp: _PropertyInfo := nil;
           if objectPropertyName <> '' then
             parentProp := DataType.PropertyByName(names[1]);  // Customer
 
-          AModel.ObjectModelContext.Bind(WrapProperty(parentProp, p2), bind);
+          var wrapped := TObjectModelMarshalledPropertyWrapper(parentProp, parentDescriptor, p2, propertyDescriptor);
+          AModel.ObjectModelContext.Bind(wrapped, bind);
+          // AModel.ObjectModelContext.Bind(WrapProperty(parentProp, p2), bind);
         end;
       end;
     end;
@@ -200,9 +204,9 @@ function TFrameBinder.WrapProperty(const AParentProp: _PropertyInfo; const AProp
 begin
   if not Interfaces.Supports<IObjectModelProperty>(AProp) then
   begin
-    if AParentProp <> nil then
-      Result := TObjectModelSubPropertyWrapper.Create(AParentProp, AProp) else
-      Result := TObjectModelPropertyWrapper.Create(AProp)
+//    if AParentProp <> nil then
+//      Result := TObjectModelSubPropertyWrapper.Create(AParentProp, AProp) else
+    Result := TObjectModelPropertyWrapper.Create(AProp)
   end else
     Result := AProp;
 end;
