@@ -9,7 +9,7 @@ uses
   App.Windows.intf,
   App.Environment.intf,
   QuickJS.Register.dn4d.intf,
-  ADato.ObjectModel.List.intf;
+  ADato.ObjectModel.List.intf, App.PropertyDescriptor.intf;
 
 type
   {$M+}
@@ -24,7 +24,8 @@ type
   {$M+}
   IAppObject = interface(IBaseInterface)
     ['{0519E4B9-3CD3-4B42-A776-7E62173F5967}']
-    function  Test(const Value: CObject) : Boolean;
+    function  Test(const Descriptor: IPropertyDescriptor) : Boolean;
+    function  Test2(const Customer: CObject) : Boolean;
 
     function get_Config: IAppConfig;
     function get_Environment: IEnvironment;

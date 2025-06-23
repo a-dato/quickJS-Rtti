@@ -20,6 +20,7 @@ type
   protected
     _ID: CObject;
     _Name: string;
+    _Child: IProject;
 
     _PropertyValue: Dictionary<_PropertyInfo, CObject>;
 
@@ -27,6 +28,7 @@ type
     procedure set_ID(const Value: CObject);
     function  get_Name: string;
     procedure set_Name(const Value: string);
+    function  get_ChildProject: IProject;
 
     // IExtendableObject
     function  get_PropertyValue(const AProperty: _PropertyInfo): CObject;
@@ -88,6 +90,18 @@ end;
 function TProject.get_Name: string;
 begin
   Result := _Name;
+end;
+
+function TProject.get_ChildProject: IProject;
+begin
+  if _Child = nil then
+  begin
+    _Child := TProject.Create;
+    _Child.ID := Int64(_ID) + 100;
+    _Child.Name := 'Child of ' + _Name;
+  end;
+
+  Result := _Child;
 end;
 
 procedure TProject.set_ID(const Value: CObject);

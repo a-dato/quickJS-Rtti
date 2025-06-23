@@ -62,13 +62,17 @@ export class CustomerType {
 				// IFormatter
 				Formatter: {
 					Format: (ctx, item, format) => { 
+						console.log('Format');					
 						if(item != null)
 							return item.Name;
 					},
 					Url: (ctx, item) => {
 							return `https://lynx.a-dato.com/customer/${item.ID}`;
 					},
+				},
+				Marshaller: {
 					Marshal: (ctx, item) => {
+						console.log('Marshal');
 						let json = {
 							ID: `${item.ID}`,
 							Value: `${item.Name}`

@@ -112,27 +112,26 @@ end;
 procedure TFrameBinder.BindChildren(const Children: TFmxChildrenList; const AModel: IObjectListModel;
   const EditorManager: IEditorManager; const DataType: &Type; const ObjectType: IObjectType);
 
-  procedure ConcatNames(const Names: TArray<string>; out PropertyName: string; out ObjectPropertyName: string);
+  procedure ConcatNames(const Names: TArray<string>; out PropertyName: string; out SubProperties: TArray<string>);
   begin
-    PropertyName := '';
-    ObjectPropertyName := '';
+    // names: ['IProject', 'Customer', 'Address', 'Zip', '1' <-- Name indexer]
 
-    for var i := 1 to High(Names) do
+    var n := High(Names);
+    // Do we have an indexer?
+    var d: Integer;
+    if Integer.TryParse(Names[High(Names)], d) then
+      dec(n);
+
+     // ['Customer', 'Address', 'Zip']
+    SubProperties := Copy(Names, 1, n);
+
+    PropertyName := '';   // Customer.Address.Zip
+
+    for var i := 1 to n do
     begin
-      var d: Integer;
-      if Integer.TryParse(Names[i], d) then
-        break;
-
       if PropertyName = '' then
         PropertyName := Names[i] else
         PropertyName := PropertyName + '.' + Names[i];
-
-      if i >= 2 then
-      begin
-        if ObjectPropertyName = '' then
-          ObjectPropertyName := Names[i] else
-          ObjectPropertyName := ObjectPropertyName + '.' + Names[i];
-      end;
     end;
   end;
 
@@ -146,54 +145,84 @@ begin
     var names := string(c.Name).Split(['_']);
     if (Length(names) >= 2) and (names[0] = DataType.Name) then
     begin
-      var propertyName: string;
-      var objectPropertyName: string;
-      ConcatNames(names, propertyName, objectPropertyName);
+      var propertyName: string;           // 'Customer.Address.Zip'
+      var subProperties: TArray<string>;  // ['Customer', 'Address', 'Zip']
 
-      var editor: IEditorPanel;
-      if Interfaces.Supports<IEditorPanel>(c, editor) then
+      ConcatNames(names, {out}propertyName, {out}subProperties);
+      var hasNestedProperty: Boolean := Length(subProperties) > 1;
+
+      if (c is TDataControl) and (propertyName = 'Model') then
       begin
-        var p1 := DataType.PropertyByName(propertyName);
-        if p1 <> nil then
-        begin
-//          if (ObjectType <> nil) and (ObjectType.PropertyDescriptor <> nil) then
-//            editor.PropertyDescriptor := ObjectType.PropertyDescriptor[names[1]];
+        (c as TDataControl).Model := AModel;
+        continue;
+      end;
 
-          EditorManager.AddEditorBinding(WrapProperty(nil, p1), editor);
-        end;
-      end
-      else if (c is TDataControl) and (propertyName = 'Model') then
-        (c as TDataControl).Model := AModel
-      else
+      var objectProperty := DataType.PropertyByName(propertyName);
+      if objectProperty <> nil then
       begin
-        // propertyName   -> 'Customer'
-        //                -> 'Customer.Address'
-        var p2 := DataType.PropertyByName(propertyName);
-        if p2 <> nil then
+        for var propName in subProperties do
         begin
-          var bind := TPropertyBinding.CreateBindingByControl(c);
-          var parentDescriptor: IPropertyDescriptor := nil;
-          var propertyDescriptor: IPropertyDescriptor := nil;
 
-          var pt := p2.GetType;  // CustomerType
-          var pt_ot := _app.Config.ObjectType[p2.GetType];
-
-          if pt_ot <> nil then
-          begin
-            parentDescriptor := pt_ot.PropertyDescriptor[pt.Name];
-            propertyDescriptor := pt_ot.PropertyDescriptor[objectPropertyName];
-          end;
-
-          var parentProp: _PropertyInfo := nil;
-          if objectPropertyName <> '' then
-            parentProp := DataType.PropertyByName(names[1]);  // Customer
-
-          var wrapped := TObjectModelMarshalledPropertyWrapper(parentProp, parentDescriptor, p2, propertyDescriptor);
-          AModel.ObjectModelContext.Bind(wrapped, bind);
-          // AModel.ObjectModelContext.Bind(WrapProperty(parentProp, p2), bind);
         end;
       end;
-    end;
+
+
+//      var editor: IEditorPanel;
+//      if Interfaces.Supports<IEditorPanel>(c, editor) then
+//      begin
+//        var p1 := DataType.PropertyByName(propertyName);
+//        if p1 <> nil then
+//        begin
+////          if (ObjectType <> nil) and (ObjectType.PropertyDescriptor <> nil) then
+////            editor.PropertyDescriptor := ObjectType.PropertyDescriptor[names[1]];
+//
+//          EditorManager.AddEditorBinding(WrapProperty(nil, p1), editor);
+//        end;
+//      end
+//      else if (c is TDataControl) and (propertyName = 'Model') then
+//        (c as TDataControl).Model := AModel
+//      else
+//      begin
+//        // Gets the property from the parent object (IProject):
+//        // propertyName   -> 'Customer'
+//        //                -> 'Customer.Address'
+//        //                -> 'Customer.Address.Zip'
+//        var objectProperty := DataType.PropertyByName(propertyName);
+//        if objectProperty <> nil then
+//        begin
+//          var parentDescriptor: IPropertyDescriptor := nil;
+//          var propertyDescriptor: IPropertyDescriptor := nil;
+//
+//          // Get's type of the property
+//          var objectPropertyType := objectProperty.GetType;  // CustomerType
+//
+//          // Get IObjectType from type register
+//          var objectPropertyObjectType := _app.Config.ObjectType[objectPropertyType];
+//
+//          if objectPropertyObjectType <> nil then
+//          begin
+//
+//
+//            // Get property descriptor aka: CustomerType.PropertyDescriptor[CustomerType]
+//            parentDescriptor := objectPropertyObjectType.PropertyDescriptor[objectPropertyType.Name];
+//            if (parentDescriptor <> nil) and (parentDescriptor.Marshaller <> nil) then
+//
+//
+//
+//            propertyDescriptor := objectPropertyObjectType.PropertyDescriptor[objectPropertyName];
+//          end;
+//
+//          var parentProp: _PropertyInfo := nil;
+//          if objectPropertyName <> '' then
+//            parentProp := DataType.PropertyByName(names[1]);  // Customer
+//
+//          var bind := TPropertyBinding.CreateBindingByControl(c);
+//
+//          var wrapped := TObjectModelMarshalledPropertyWrapper.Create(parentProp, parentDescriptor, p2, propertyDescriptor);
+//          AModel.ObjectModelContext.Bind(wrapped, bind);
+//          // AModel.ObjectModelContext.Bind(WrapProperty(parentProp, p2), bind);
+//        end;
+      end;
 
     if c.ChildrenCount > 0 then
       BindChildren(c.Children, AModel, EditorManager, DataType, ObjectType);

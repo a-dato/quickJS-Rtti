@@ -8,7 +8,7 @@ uses
   QuickJS.Register.intf, FMX.Memo.Types, FMX.Controls.Presentation,
   FMX.ScrollBox, FMX.Memo,
   App.intf, System.Actions, FMX.ActnList, FMX.StdCtrls, System.Net.URLClient,
-  System.Net.HttpClient, System.Net.HttpClientComponent;
+  System.Net.HttpClient, System.Net.HttpClientComponent, System_;
 
 type
   TForm1 = class(TForm)
@@ -28,11 +28,13 @@ type
     Timer1: TTimer;
     Button4: TButton;
     mmInitialize: TMemo;
+    Button5: TButton;
     procedure acExecuteExecute(Sender: TObject);
     procedure btnCustomerClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private
@@ -57,7 +59,6 @@ uses
   QuickJS.Register.dn4d.impl,
   App.impl,
   App.Environment.impl,
-  System_,
   Project.intf,
   Project.impl,
   ObjectWindow,
@@ -70,7 +71,8 @@ uses
   XMLHttpRequest.impl, XMLHttpRequest.intf,
   ADato.Extensions.intf,
   ADato.Extensions.impl, ObjectDesigner, Project.frame, App.Objects.intf,
-  System.Collections, System.Rtti, App.PropertyDescriptor.intf, System.JSON;
+  System.Collections, System.Rtti, App.PropertyDescriptor.intf, System.JSON,
+  ADato.ObjectModel.impl, SubProperty;
 
 {$R *.fmx}
 
@@ -101,7 +103,7 @@ begin
 
   var data := ot.Provider.Data(nil).AsType<IList>;
 
-  var value := descr.Formatter.Marshal(nil, data[0]);
+  var value := descr.Marshaller.Marshal(nil, data[0]);
   if value.IsString then
   begin
     // var js := TJsonObject.ParseJSONValue(value.ToString(False));
@@ -167,6 +169,29 @@ begin
   var frm := TObjectDesignerForm.Create(Self);
   frm.Load(_app);
   frm.Show;
+end;
+
+procedure TForm1.Button5Click(Sender: TObject);
+begin
+  var tp := &Type.From<IProject>;
+
+  var pr := tp.PropertyByName('ChildProject.Name');
+
+  var sub_prop: _PropertyInfo := TPathProperty.Create(pr);
+
+  var p := tp.PropertyByName('ChildProject');
+  //var p_plus := TPropertyWithDescriptor.Create(p, descr);
+
+
+  var p2 := p.GetType.PropertyByName('Name');
+
+  (sub_prop as ISubProperty).Add(p).Add(p2);
+
+  var prj: IProject := TProject.Create;
+  prj.ID := 0;
+  prj.Name := 'Project 0';
+
+  var v := sub_prop.GetValue(prj, []);
 end;
 
 procedure TForm1.InitializeAppEnvironment;

@@ -8,7 +8,8 @@ uses
   App.Config.intf,
   App.Windows.intf,
   App.Environment.intf,
-  QuickJS.Register.dn4d.intf, ADato.ObjectModel.List.intf, System.Collections;
+  QuickJS.Register.dn4d.intf, ADato.ObjectModel.List.intf, System.Collections,
+  App.PropertyDescriptor.intf;
 
 type
   TAppObject = class(TBaseInterfacedObject, IAppObject)
@@ -21,7 +22,8 @@ type
     function get_Environment: IEnvironment;
     function get_Windows: IWindows;
 
-    function  Test(const Value: CObject) : Boolean;
+    function  Test(const Descriptor: IPropertyDescriptor) : Boolean;
+    function  Test2(const Customer: CObject) : Boolean;
 
   public
     constructor Create(const Environment: IEnvironment);
@@ -73,19 +75,20 @@ begin
   Result := _Windows;
 end;
 
-function TAppObject.Test(const Value: CObject) : Boolean;
+function TAppObject.Test(const Descriptor: IPropertyDescriptor) : Boolean;
 begin
-  var js_ref: JSObjectReference;
-  if Value.TryAsType<JSObjectReference>(js_ref) then
-  begin
-    var d := js_ref.Invoke<JSObjectReference>('Address');
-    if d.Ctx <> nil then
-    begin
-      var z := d.Invoke<string>('Zip');
-    end;
+  var fmt := Descriptor.Formatter;
+  if fmt <> nil then
+    fmt.Format(nil, nil, nil);
 
-    var x := js_ref.Invoke<string>('Address.Zip');
-  end;
+  var mrs := Descriptor.Marshaller;
+  if mrs <> nil then
+    mrs.Marshal(nil, nil);
+end;
+
+function TAppObject.Test2(const Customer: CObject): Boolean;
+begin
+
 end;
 
 { TDataObject }
