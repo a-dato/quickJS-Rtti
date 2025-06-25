@@ -23,8 +23,9 @@ type
     function get_Windows: IWindows;
 
     function  Test(const Descriptor: IPropertyDescriptor) : Boolean;
-    function  Test2(const Customer: CObject) : Boolean;
-
+    function  Test1(const AObject: CObject) : Boolean;
+    function  Test2(const AObject: JSObjectReference) : Boolean;
+    function  Test3(const AObject: &Type) : Boolean;
   public
     constructor Create(const Environment: IEnvironment);
   end;
@@ -86,9 +87,27 @@ begin
     mrs.Marshal(nil, nil);
 end;
 
-function TAppObject.Test2(const Customer: CObject): Boolean;
+function TAppObject.Test1(const AObject: CObject) : Boolean;
 begin
+  if AObject = nil then;
+end;
 
+function TAppObject.Test2(const AObject: JSObjectReference) : Boolean;
+begin
+  if AObject.Ctx = nil then;
+end;
+
+function TAppObject.Test3(const AObject: &Type) : Boolean;
+begin
+  if AObject <> nil then
+  begin
+    var props := AObject.GetProperties;
+    for var p in props do
+    begin
+      var s: string := p.Name;
+    end;
+
+  end;
 end;
 
 { TDataObject }

@@ -38,7 +38,7 @@ uses
   App.KeyNavigator.impl in 'AppUI\App.KeyNavigator.impl.pas',
   App.PropertyDescriptor.intf in 'AppObjects\App.PropertyDescriptor.intf.pas',
   App.PropertyDescriptor.impl in 'AppObjects\App.PropertyDescriptor.impl.pas',
-  SubProperty in 'SubProperty.pas';
+  App.PathProperty in 'App.PathProperty.pas';
 
 {$R *.res}
 

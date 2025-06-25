@@ -98,16 +98,16 @@ begin
       if Method.Name.StartsWith('get_') then
       begin
         // Getter with indexer called (like Object['ID']) --> Call ID property
-        if (Length(Args) > 1) then
-        begin
-          if Args[1].IsType<string> then
-            name := Args[1].AsString
-          else if Args[1].IsType<CString> then
-            name := Args[1].AsType<CString>
-          else
-            raise Exception.Create('Invalid parameter in call to: ' + Method.Name);
-        end else
-          name := Method.Name.Substring(4);
+//        if (Length(Args) > 1) then
+//        begin
+//          if Args[1].IsType<string> then
+//            name := Args[1].AsString
+//          else if Args[1].IsType<CString> then
+//            name := Args[1].AsType<CString>
+//          else
+//            raise Exception.Create('Invalid parameter in call to: ' + Method.Name);
+//        end else
+        name := Method.Name.Substring(4);
       end else
         name := Method.Name;
 

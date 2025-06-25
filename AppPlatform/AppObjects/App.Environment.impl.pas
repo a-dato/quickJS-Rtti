@@ -53,7 +53,7 @@ type
       const EditorManager: IEditorManager; const DataType: &Type; const ObjectType: IObjectType);
     procedure Bind(const AContent: CObject; const AType: &Type; const Data: CObject);
 
-    function WrapProperty(const AParentProp: _PropertyInfo; const AProp: _PropertyInfo) : _PropertyInfo; virtual;
+    function WrapProperty(const AProp: _PropertyInfo) : _PropertyInfo; virtual;
   public
   end;
 
@@ -68,7 +68,8 @@ uses
   ADato.ObjectModel.Binders,
   FMX.DataControl.Impl, System.Collections,
   ADato.ObjectModel.List.Tracking.impl, ADato.ObjectModel.impl,
-  App.EditorPanel.intf, ADato.ObjectModel.intf, App.PropertyDescriptor.intf;
+  App.EditorPanel.intf, ADato.ObjectModel.intf, App.PropertyDescriptor.intf,
+  App.PathProperty;
 
 { Environment }
 
@@ -160,10 +161,48 @@ begin
       var objectProperty := DataType.PropertyByName(propertyName);
       if objectProperty <> nil then
       begin
-        for var propName in subProperties do
+        if hasNestedProperty then
         begin
+          var path_prop: _PropertyInfo := TPathProperty.Create(objectProperty);
+          var sub_property: ISubProperty := path_prop as ISubProperty;
+          var sub_prop_type := DataType;
 
+          for var propName in subProperties do
+          begin
+            var sub_prop := sub_prop_type.PropertyByName(propName);
+
+            if sub_prop = nil then
+              break;
+
+            sub_prop_type := sub_prop.GetType;
+            var sub_property_objectType := _app.Config.ObjectType[sub_prop_type];
+            if sub_property_objectType <> nil then
+            begin
+              // Get PropertyDescriptor for 'CustomerType' in CustomerType class
+              var descriptor: IPropertyDescriptor := sub_property_objectType.PropertyDescriptor[sub_prop_type.Name];
+              if descriptor <> nil then
+                sub_prop := TPropertyWithDescriptor.Create(sub_prop, descriptor);
+            end;
+
+            sub_property := sub_property.Add(sub_prop);
+          end;
+
+          objectProperty := path_prop;
+        end
+        else
+        begin
+          // 'Customer' property => type = Customer
+          var property_objectType := _app.Config.ObjectType[objectProperty.GetType];
+          if property_objectType <> nil then
+          begin
+            var descriptor: IPropertyDescriptor := property_objectType.PropertyDescriptor[objectProperty.GetType.Name];
+            if descriptor <> nil then
+              objectProperty := TPropertyWithDescriptor.Create(objectProperty, descriptor);
+          end;
         end;
+
+        var bind := TPropertyBinding.CreateBindingByControl(c);
+        AModel.ObjectModelContext.Bind(WrapProperty(objectProperty), bind);
       end;
 
 
@@ -229,14 +268,10 @@ begin
   end;
 end;
 
-function TFrameBinder.WrapProperty(const AParentProp: _PropertyInfo; const AProp: _PropertyInfo): _PropertyInfo;
+function TFrameBinder.WrapProperty(const AProp: _PropertyInfo): _PropertyInfo;
 begin
   if not Interfaces.Supports<IObjectModelProperty>(AProp) then
-  begin
-//    if AParentProp <> nil then
-//      Result := TObjectModelSubPropertyWrapper.Create(AParentProp, AProp) else
-    Result := TObjectModelPropertyWrapper.Create(AProp)
-  end else
+    Result := TObjectModelPropertyWrapper.Create(AProp) else
     Result := AProp;
 end;
 
@@ -246,7 +281,7 @@ begin
   if AContent.TryAsType<TControl>(ctrl) then
   begin
     var objectType := _app.Config.ObjectType[AType];
-    var dataType := objectType.GetType;
+//    var dataType := objectType.GetType;
 
     var model: IObjectListModel := nil;
     if not Data.TryAsType<IObjectListModel>(model) then
@@ -254,7 +289,8 @@ begin
       var list: IList;
       if Data.TryAsType<IList>(list) then
       begin
-        model := TObjectListModelWithChangeTracking<IBaseInterface>.Create(dataType);
+//        model := TObjectListModelWithChangeTracking<IBaseInterface>.Create(dataType);
+        model := TObjectListModelWithChangeTracking<IBaseInterface>.Create(AType);
         model.Context := list;
       end;
     end;
@@ -268,7 +304,8 @@ begin
         if Interfaces.Supports<IEditorManager>(ctrl, editorManager) then
           editorManager.Bind(model.ObjectModelContext);
 
-        BindChildren(ctrl.Children, model, editorManager, dataType, objectType);
+        BindChildren(ctrl.Children, model, editorManager, AType, objectType);
+        // BindChildren(ctrl.Children, model, editorManager, dataType, objectType);
       end;
     end else
       raise CException.Create('Data is invalid');

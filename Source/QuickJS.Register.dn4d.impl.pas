@@ -343,17 +343,48 @@ class function TJSTypedConverter.GetTypeFromJSObject(ctx: JSContext; Value: JSVa
 begin
   var proto := JS_GetProtoType(ctx, Value);
   var reg: IRegisteredObject;
+  var shouldRegister := not TJSRegister.TryGetRegisteredJSObject(proto, reg);
+  var name: PAnsiChar := nil;
 
   // Try to find registration under the prototype.
-  if not TJSRegister.TryGetRegisteredJSObject(proto, reg) then
+  if shouldRegister then
   begin
     var c := JS_GetPropertyStr(ctx, proto, 'constructor');
     var n := JS_GetPropertyStr(ctx, c, 'name');
-    var name: PAnsiChar;
+
     if JS_IsString(n) then
-      name := JS_ToCString(ctx, n) else
+    begin
+      name := JS_ToCString(ctx, n);
+
+      // 'Function' means we are dealing with a type (not instance) => app.Test(Customer)
+      // Otherwise we dealing with an instance => app.Test(new Customer())
+      if name = 'Function' then
+      begin
+        JS_FreeCString(ctx, name);
+        JS_FreeValue(ctx, n);
+        JS_FreeValue(ctx, c);
+        JS_FreeValue(ctx, proto);
+
+        // Call function.prototype to get the actual type
+        proto := JS_GetPropertyStr(ctx, Value, 'prototype');
+        shouldRegister := not TJSRegister.TryGetRegisteredJSObject(proto, reg);
+        if shouldRegister then
+        begin
+          c := JS_GetPropertyStr(ctx, proto, 'constructor');
+          n := JS_GetPropertyStr(ctx, c, 'name');
+          name := JS_ToCString(ctx, n);
+        end;
+      end;
+
+    end else
       raise CException.Create('Could not get type from object');
 
+    JS_FreeValue(ctx, n);
+    JS_FreeValue(ctx, c);
+  end;
+
+  if shouldRegister then
+  begin
     var tp: PTypeInfo := New(PTypeInfo);
     tp.Kind := TJSRegisterTypedObjects.tkJSType;
     tp.Name := name;
@@ -361,8 +392,6 @@ begin
     reg := TJSRegister.RegisterJSObject(ctx, proto, tp);
 
     JS_FreeCString(ctx, name);
-    JS_FreeValue(ctx, n);
-    JS_FreeValue(ctx, c);
   end;
 
   var js_reg: IJSRegisteredObject;

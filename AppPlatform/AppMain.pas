@@ -175,23 +175,29 @@ procedure TForm1.Button5Click(Sender: TObject);
 begin
   var tp := &Type.From<IProject>;
 
-  var pr := tp.PropertyByName('ChildProject.Name');
+  var customer := tp.PropertyByName('Customer');
+  var cust_type := customer.GetType;
 
-  var sub_prop: _PropertyInfo := TPathProperty.Create(pr);
+  var props := cust_type.GetProperties;
 
-  var p := tp.PropertyByName('ChildProject');
-  //var p_plus := TPropertyWithDescriptor.Create(p, descr);
+  var objectType := _app.Config.ObjectType[cust_type];
 
+  var descriptor := objectType.PropertyDescriptor['Customer'];
 
-  var p2 := p.GetType.PropertyByName('Name');
-
-  (sub_prop as ISubProperty).Add(p).Add(p2);
-
-  var prj: IProject := TProject.Create;
-  prj.ID := 0;
-  prj.Name := 'Project 0';
-
-  var v := sub_prop.GetValue(prj, []);
+  if descriptor <> nil then
+  begin
+    var p := descriptor.Picklist.Items(nil);
+    var l: IList;
+    if interfaces.Supports<IList>(p, l) then
+    begin
+      var n := l.Count;
+      for var item in l do
+      begin
+        var s: CString := descriptor.Formatter.Format(nil, item, nil);
+        var ss: string := CStringToString(s);
+      end;
+    end;
+  end;
 end;
 
 procedure TForm1.InitializeAppEnvironment;

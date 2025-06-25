@@ -61,7 +61,8 @@ uses
 { TProject }
 class function TProject.get_Type: &Type;
 begin
-  Result := System_.&Type.From<ProjectType>;
+  // Result := System_.&Type.From<ProjectType>;
+  Result := System_.&Type.From<IProject>;
 end;
 
 class function TProject.get_ObjectType: IObjectType;

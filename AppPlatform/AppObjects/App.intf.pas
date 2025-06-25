@@ -25,7 +25,9 @@ type
   IAppObject = interface(IBaseInterface)
     ['{0519E4B9-3CD3-4B42-A776-7E62173F5967}']
     function  Test(const Descriptor: IPropertyDescriptor) : Boolean;
-    function  Test2(const Customer: CObject) : Boolean;
+    function  Test1(const AObject: CObject) : Boolean;
+    function  Test2(const AObject: JSObjectReference) : Boolean;
+    function  Test3(const AObject: &Type) : Boolean;
 
     function get_Config: IAppConfig;
     function get_Environment: IEnvironment;
