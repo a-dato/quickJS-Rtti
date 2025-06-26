@@ -180,23 +180,27 @@ begin
 
   var props := cust_type.GetProperties;
 
+  for var prop in props do
+  begin
+    var n := prop.Name;
+    if n = nil then;
+
+    var prop_type := prop.GetType;
+  end;
+
   var objectType := _app.Config.ObjectType[cust_type];
 
   var descriptor := objectType.PropertyDescriptor['Customer'];
 
-  if descriptor <> nil then
+  var data := objectType.Provider.Data(nil);
+  var l: IList;
+  if interfaces.Supports<IList>(data, l) then
   begin
-    var p := descriptor.Picklist.Items(nil);
-    var l: IList;
-    if interfaces.Supports<IList>(p, l) then
-    begin
-      var n := l.Count;
-      for var item in l do
-      begin
-        var s: CString := descriptor.Formatter.Format(nil, item, nil);
-        var ss: string := CStringToString(s);
-      end;
-    end;
+    var c1 := l[0];
+    var c2 := l[1];
+
+    if c1.Equals(c2) then
+      ;
   end;
 end;
 

@@ -204,7 +204,6 @@ export class CustomerType {
 				// IFormatter
 				Formatter: {
 					Format: (ctx, item, format) => { 
-						console.log('Format');					
 						if(item != null)
 							return item.Name;
 					},
@@ -214,7 +213,6 @@ export class CustomerType {
 				},
 				Marshaller: {
 					Marshal: (ctx, item) => {
-						console.log('Marshal');
 						let json = {
 							ID: `${item.ID}`,
 							Value: `${item.Name}`
@@ -222,9 +220,9 @@ export class CustomerType {
 						return JSON.stringify(json);
 					},
 					Unmarshal: (ctx, item) => {
-						console.log('Unmarshal');
 						console.log(item);
-						return this.Provider.Lookup(JSON.parse(item));
+						if(typeof item === 'string')
+							return this.Provider.Lookup(JSON.parse(item));
 					}
 				},
 				Picklist: {
@@ -232,6 +230,7 @@ export class CustomerType {
 				}
 			},
 			ID: {
+				Type: BigInt,
 				Visible: false
 			},
 			Address: {
@@ -249,11 +248,7 @@ export class CustomerType {
 				}
 			}
 		}
-	}
-  
-	GetType() {
-		return new Customer();
-	}
+	} 
 }
 
 class CustomerProvider {
