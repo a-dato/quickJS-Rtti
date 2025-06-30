@@ -35,10 +35,10 @@ object Form1: TForm1
       OnClick = btnCustomerClick
     end
     object Button2: TButton
-      Position.X = 849.000000000000000000
+      Position.X = 719.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 2
-      Text = 'Button2'
+      Text = 'Customer'
       TextSettings.Trimming = None
       OnClick = Button2Click
     end
@@ -62,10 +62,13 @@ object Form1: TForm1
       OnClick = Button4Click
     end
     object Button5: TButton
-      Position.X = 763.000000000000000000
+      Position.X = 807.000000000000000000
       Position.Y = 8.000000000000000000
+      Size.Width = 131.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
       TabOrder = 5
-      Text = 'Button5'
+      Text = 'Customer.Address'
       TextSettings.Trimming = None
       OnClick = Button5Click
     end
@@ -74,10 +77,9 @@ object Form1: TForm1
     Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
     DataDetectorTypes = []
     Lines.Strings = (
-      'const ct = new CustomerType();'
-      'const w = app.Windows.CreateWindow(null, ct);'
+      'const w = app.Windows.CreateWindow(null, Customer);'
       'w.Build();'
-      'var data = ct.Provider.Data();'
+      'var data = CustomerType.ct.Provider.Data();'
       'w.Bind(data);'
       'w.Show();')
     StyledSettings = [Size, Style, FontColor]
@@ -87,8 +89,8 @@ object Form1: TForm1
     Size.Height = 415.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 3
-    Viewport.Width = 673.000000000000000000
-    Viewport.Height = 415.000000000000000000
+    Viewport.Width = 669.000000000000000000
+    Viewport.Height = 411.000000000000000000
   end
   object mmLog: TMemo
     Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
@@ -99,8 +101,8 @@ object Form1: TForm1
     Size.Height = 145.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
-    Viewport.Width = 946.000000000000000000
-    Viewport.Height = 145.000000000000000000
+    Viewport.Width = 942.000000000000000000
+    Viewport.Height = 141.000000000000000000
   end
   object Splitter1: TSplitter
     Align = Bottom
@@ -142,15 +144,20 @@ object Form1: TForm1
         'import {Address, AddressType,Customer, CustomerType} from '#39'../..' +
         '/js/Customer.js'#39';'
       'AddressType.register();'
-      'CustomerType.register();')
+      'CustomerType.register();'
+      ''
+      
+        'import {SFAccount, SFAccountType} from '#39'../../js/SalesForceAccou' +
+        'nt.js'#39';'
+      'SFAccountType.register();')
     Align = Left
     Position.Y = 38.000000000000000000
     Size.Width = 273.000000000000000000
     Size.Height = 415.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 11
-    Viewport.Width = 273.000000000000000000
-    Viewport.Height = 415.000000000000000000
+    Viewport.Width = 269.000000000000000000
+    Viewport.Height = 395.000000000000000000
   end
   object ActionList1: TActionList
     Left = 328

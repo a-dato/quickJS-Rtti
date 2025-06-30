@@ -58,7 +58,7 @@ constructor TAppObject.Create(const Environment: IEnvironment);
 begin
   _Environment := Environment;
   _Config := TAppConfig.Create;
-  _Windows := Windows.Create(Self);
+  _Windows := Windows.Create;
 end;
 
 function TAppObject.get_Config: IAppConfig;

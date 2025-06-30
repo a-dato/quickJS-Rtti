@@ -731,13 +731,16 @@ begin
     SetLength(Result, p_len);
     for var i := 0 to p_len -1 do
     begin
-      var atom := PJSPropertyEnumArr(p_enum)[i].atom;
-      var name := JS_AtomToCString(_ctx, atom);
-
+      var name := AtomToString(_ctx, PJSPropertyEnumArr(p_enum)[i].atom);
       Result[i] := TJSPropertyInfo.Create(_ctx, ownerType, name);
 
-      JS_FreeCString(_ctx, name);
-      JS_FreeAtom(_ctx, atom);
+//      var atom := PJSPropertyEnumArr(p_enum)[i].atom;
+//      var name := JS_AtomToCString(_ctx, atom);
+//
+//      Result[i] := TJSPropertyInfo.Create(_ctx, ownerType, name);
+//
+//      JS_FreeCString(_ctx, name);
+//      JS_FreeAtom(_ctx, atom);
     end;
   end;
 

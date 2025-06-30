@@ -8,7 +8,7 @@ uses
   App.Objects.intf,
   App.Objects.impl,
   App.Content.intf,
-  ADato.ObjectModel.List.intf, System.Collections.Generic;
+  ADato.ObjectModel.List.intf, System.Collections.Generic, System.Collections;
 
 type
   TProject = class(TBaseInterfacedObject, IProject, IExtendableObject)
@@ -48,6 +48,8 @@ type
 
   ProjectProvider = class(TBaseInterfacedObject, IContentProvider)
   protected
+    _data: List<IProject>;
+
     function Data(const Filter: CObject): CObject;
   end;
 
@@ -55,7 +57,7 @@ implementation
 
 uses
   ADato.ObjectModel.List.Tracking.impl,
-  System.SysUtils, System.Collections;
+  System.SysUtils;
 
 
 { TProject }
@@ -124,22 +126,25 @@ end;
 
 function ProjectProvider.Data(const Filter: CObject): CObject;
 begin
-  var model: IObjectListModel := TObjectListModelWithChangeTracking<IProject>.Create(function: IProject begin Result := TProject.Create; end);
+  // var model: IObjectListModel := TObjectListModelWithChangeTracking<IProject>.Create(function: IProject begin Result := TProject.Create; end);
 
-  var l: List<IProject> := CList<IProject>.Create;
-
-  for var i := 0 to 9 do
+  if _data = nil then
   begin
-    var p: IProject := TProject.Create;
-    p.ID := i;
-    p.Name := 'Project ' + i.ToString;
+    _data := CList<IProject>.Create;
 
-    l.Add(p);
+    for var i := 0 to 9 do
+    begin
+      var p: IProject := TProject.Create;
+      p.ID := i;
+      p.Name := 'Project ' + i.ToString;
+
+      _data.Add(p);
+    end;
   end;
 
-  model.Context := l as IList;
-
-  Result := model;
+  Result := _data;
+//  model.Context := l as IList;
+//  Result := model;
 end;
 
 { CustomerType }

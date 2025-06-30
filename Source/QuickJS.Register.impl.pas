@@ -324,6 +324,8 @@ type
     class property OnGetMemberNames: TOnGetMemberNames read FOnGetMemberNames write FOnGetMemberNames;
   end;
 
+  function AtomToString(ctx: JSContext; Atom: JSAtom) : string;
+
 var
   OutputLogString: TProc<string>;
   // To keep the RTTI Pool alive and avoid continuously creating/destroying it
@@ -335,6 +337,16 @@ implementation
 uses
   System.Classes,
   QuickJS.Fetch.impl;
+
+
+function AtomToString(ctx: JSContext; Atom: JSAtom) : string;
+begin
+  var jv := JS_AtomToString(ctx, Atom);
+  var ansistr := JS_ToCString(ctx, jv);
+  Result := ansistr;
+  JS_FreeCString(ctx, ansistr);
+  JS_FreeValue(ctx, jv);
+end;
 
 class procedure TJSRegister.Clear(ClearAll: Boolean);
 begin
@@ -645,9 +657,11 @@ begin
   // Can't explain why it calls this method a second time (with desc = nil), for now ignore second call
   if desc = nil then Exit(1);
 
-  var ansistr := JS_AtomToCString(ctx, prop);
-  var member_name: string := ansistr;
-  JS_FreeCString(ctx, ansistr);
+  var member_name := AtomToString(ctx, prop);
+
+//  var ansistr := JS_AtomToCString(ctx, prop);
+//  var member_name: string := ansistr;
+//  JS_FreeCString(ctx, ansistr);
 
   {$IFDEF DEBUG}
   var obj_type: string;
@@ -885,13 +899,18 @@ begin
   begin
     for var i := 0 to p_len -1 do
     begin
-      var atom := PJSPropertyEnumArr(p_enum)[i].atom;
-      var name := JS_AtomToCString(ctx, atom);
+      var name := AtomToString(ctx, PJSPropertyEnumArr(p_enum)[i].atom);
       if Result = '' then
         Result := name else
         Result := Result + ', ' + name;
-      JS_FreeCString(ctx, name);
-      JS_FreeAtom(ctx, atom);
+
+//      var atom := PJSPropertyEnumArr(p_enum)[i].atom;
+//      var name := JS_AtomToCString(ctx, atom);
+//      if Result = '' then
+//        Result := name else
+//        Result := Result + ', ' + name;
+//      JS_FreeCString(ctx, name);
+//      JS_FreeAtom(ctx, atom);
     end;
   end;
 

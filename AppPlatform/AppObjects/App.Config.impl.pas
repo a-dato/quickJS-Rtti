@@ -8,7 +8,9 @@ uses
   App.Config.intf,
   App.Objects.intf,
   App.Objects.impl,
-  QuickJS.Register.dn4d.intf, App.Content.intf, ADato.ObjectModel.List.intf,
+  QuickJS.Register.dn4d.intf,
+  App.Content.intf,
+  ADato.ObjectModel.List.intf,
   App.PropertyDescriptor.intf;
 
 type
@@ -19,8 +21,7 @@ type
     function get_ObjectType(const AType: &Type): IObjectType;
     function get_Types: List<&Type>;
 
-    procedure AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type);
-    procedure RegisterJSType(const JSObjectType: JSObjectReference);
+    function  AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
     procedure RegisterType(const AType: &Type; const ObjectType: IObjectType);
     function  TypeByName(const Name: string) : &Type;
 
@@ -48,7 +49,11 @@ type
 implementation
 
 uses
-  App.Windows.impl, System.ClassHelpers, System.Rtti, ADato.Extensions.intf;
+  App.Windows.impl,
+  System.ClassHelpers,
+  System.Rtti,
+  ADato.Extensions.intf,
+  ADato.ObjectModel.impl;
 
 { TAppConfig }
 
@@ -72,23 +77,37 @@ begin
   Result := CList<&Type>.Create(_Types.Keys);
 end;
 
-procedure TAppConfig.AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type);
+function TAppConfig.AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
 begin
   if ExtensionManager <> nil then
   begin
-    var objectType := get_ObjectType(OwnerType);
-    var dataObjectType := objectType.GetType;
+    var prop: _PropertyInfo := CustomProperty.Create(OwnerType, Name, ALabel, PropType);
 
-    var prop: _PropertyInfo := CustomProperty.Create(dataObjectType, Name, ALabel, PropType);
-    ExtensionManager.AddProperty(dataObjectType, prop);
+    if Descriptor <> nil then
+      prop := TPropertyWithDescriptor.Create(prop, descriptor);
+
+    if Name.Contains('.') then
+    begin
+      var sub_properties := Name.Split(['.']);
+
+      var path: TArray<_PropertyInfo>;
+      SetLength(path, Length(sub_properties));
+      var property_type := OwnerType;
+
+      for var i := 0 to High(sub_properties) do
+      begin
+        var sub_property := property_type.PropertyByName(sub_properties[i]);
+        path[i] := sub_property;
+        property_type := sub_property.GetType;
+      end;
+
+      prop := TPathProperty.Create(prop, path);
+    end;
+
+    ExtensionManager.AddProperty(OwnerType, prop);
+
+    Result := prop;
   end;
-end;
-
-
-procedure TAppConfig.RegisterJSType(const JSObjectType: JSObjectReference);
-begin
-  var tp := JSObjectType.GetType;
-  RegisterType(tp, TJSObjectType.Create(JSObjectType));
 end;
 
 procedure TAppConfig.RegisterType(const AType: &Type; const ObjectType: IObjectType);

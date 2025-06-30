@@ -28,21 +28,12 @@ type
   end;
 
   Windows = class(CList<IWindow>, IWindows)
-    [weak] _app: IAppObject;
     function  CreateWindow(const AOwner: CObject; const AType: &Type) : IWindow;
-
-  public
-    constructor Create(const App: IAppObject);
   end;
 
 implementation
 
 { Windows }
-
-constructor Windows.Create(const App: IAppObject);
-begin
-  _app := App;
-end;
 
 function Windows.CreateWindow(const AOwner: CObject; const AType: &Type): IWindow;
 begin

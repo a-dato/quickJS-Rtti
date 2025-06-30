@@ -28,7 +28,6 @@ type
 
     Customer_Model: TDataControl;
     Customer_Age_1: TEdit;
-    Customer_Name_0: TADatoEditorPanel;
     Customer_Name_1: TLabel;
     Customer_Name_2: TEdit;
     lyEditors: TLayout;

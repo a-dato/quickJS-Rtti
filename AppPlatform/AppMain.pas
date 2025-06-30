@@ -72,7 +72,7 @@ uses
   ADato.Extensions.intf,
   ADato.Extensions.impl, ObjectDesigner, Project.frame, App.Objects.intf,
   System.Collections, System.Rtti, App.PropertyDescriptor.intf, System.JSON,
-  ADato.ObjectModel.impl, SubProperty;
+  ADato.ObjectModel.impl, System.ClassHelpers;
 
 {$R *.fmx}
 
@@ -97,65 +97,30 @@ end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
-  var tp := _app.Config.TypeByName('CustomerType');
-  var ot := _app.Config.ObjectType[tp];
-  var descr := ot.PropertyDescriptor['CustomerType'];
+  var tp := &Type.From<IProject>;
+  var customerType := _app.Config.TypeByName('Customer');
+  var customer_objecttype := _app.Config.ObjectType[customerType];
 
-  var data := ot.Provider.Data(nil).AsType<IList>;
+//  var descr := customer_objecttype.PropertyDescriptor['Customer'];
+//  _app.Config.AddProperty(tp, 'Customer', 'Customer', customerType, descr);
 
-  var value := descr.Marshaller.Marshal(nil, data[0]);
-  if value.IsString then
-  begin
-    // var js := TJsonObject.ParseJSONValue(value.ToString(False));
-    var js := TJsonObject.ParseJSONValue('{}');
-    if js <> nil then
-    begin
-      var s: string;
-      if js.TryGetValue<string>('Value', s) then
-        ShowMessage(s);
-    end;
-  end;
+  var cust_prop := tp.PropertyByName('Customer');
 
-  var js2 := TJsonObject.ParseJSONValue('');
-  js2 := TJsonObject.ParseJSONValue('{ID:10}');
-  js2 := TJsonObject.ParseJSONValue('{');
+  var data := customer_objecttype.Provider.Data(nil).AsType<IList>;
 
+  var c := data[0]; // Customer
 
-//  var v2:= TValue.From<IInterface>(nil);
-//  if v2.IsType<IInterface> and (v2.AsInterface = nil) then
-//    ShowMessage('nil')
-//  else if v2.IsEmpty then
-//    ShowMessage('empty');
+  var project_type := _app.Config.ObjectType[&Type.From<IProject>];
+  var d := project_type.Provider.Data(nil).AsType<IList>;
+  var prj := d[0].AsType<IProject>;
 
-  var fmt := JSVariant(descr).Formatter.Format('abc');
-  if Interfaces.Supports<IFormatter>(fmt) then
+  cust_prop.SetValue(prj, c, []);
 
-
-  if JSVariantIsNull(fmt) then
-    ShowMessage('nil');
-
-  if JSVariantIsUndefined(fmt) then
-    ShowMessage('undefined');
-
-  var formatter := descr.Formatter;
-
-  var pl: IPicklist := descr.Picklist;
-  var o := pl.Items(nil);
-
-  var l: IList;
-  if o.TryGetValue<IList>(l) then
-  begin
-    for var item in l do
-    begin
-      var s := formatter.Format(nil, item, nil);
-      if s = '' then;
-    end;
-  end;
+  var v := cust_prop.GetValue(prj, []);
 end;
 
 procedure TForm1.Button3Click(Sender: TObject);
 begin
-
 //  var tp := &Type.From<ICustomer>;
 
 //  _app.Windows.CreateWindow(Self, tp).
@@ -174,33 +139,19 @@ end;
 procedure TForm1.Button5Click(Sender: TObject);
 begin
   var tp := &Type.From<IProject>;
+  var objectProperty := tp.PropertyByName('Customer.Address');
 
-  var customer := tp.PropertyByName('Customer');
-  var cust_type := customer.GetType;
-
-  var props := cust_type.GetProperties;
-
-  for var prop in props do
-  begin
-    var n := prop.Name;
-    if n = nil then;
-
-    var prop_type := prop.GetType;
-  end;
-
-  var objectType := _app.Config.ObjectType[cust_type];
-
-  var descriptor := objectType.PropertyDescriptor['Customer'];
-
-  var data := objectType.Provider.Data(nil);
+  var ot := _app.Config.ObjectType[tp];
+  var d := ot.Provider.Data(nil);
   var l: IList;
-  if interfaces.Supports<IList>(data, l) then
+  if Interfaces.Supports<IList>(d, l) then
   begin
-    var c1 := l[0];
-    var c2 := l[1];
+    var prj := l[0].AsType<IProject>;
+    var value := objectProperty.GetValue(prj, []);
 
-    if c1.Equals(c2) then
-      ;
+    var descr: IPropertyDescriptor;
+    if Interfaces.Supports<IPropertyDescriptor>(objectProperty, descr) then
+      ShowMessage(descr.Formatter.Format(nil, value, nil));
   end;
 end;
 

@@ -75,8 +75,8 @@ object CustomerFrame: TCustomerFrame
       ExplicitSize.cx = 61.000000000000000000
       ExplicitSize.cy = 26.000000000000000000
       object Label2: TLabel
-        Position.X = 64.000000000000000000
-        Position.Y = 190.000000000000000000
+        Position.X = 56.000000000000000000
+        Position.Y = 70.000000000000000000
         Size.Width = 120.000000000000000000
         Size.Height = 22.000000000000000000
         Size.PlatformDefault = False
@@ -87,15 +87,15 @@ object CustomerFrame: TCustomerFrame
       object Customer_Name_2: TEdit
         Touch.InteractiveGestures = [LongTap, DoubleTap]
         TabOrder = 3
-        Position.X = 200.000000000000000000
-        Position.Y = 190.000000000000000000
+        Position.X = 192.000000000000000000
+        Position.Y = 70.000000000000000000
         Size.Width = 193.000000000000000000
         Size.Height = 22.000000000000000000
         Size.PlatformDefault = False
       end
       object Label3: TLabel
-        Position.X = 64.000000000000000000
-        Position.Y = 220.000000000000000000
+        Position.X = 56.000000000000000000
+        Position.Y = 100.000000000000000000
         Size.Width = 120.000000000000000000
         Size.Height = 22.000000000000000000
         Size.PlatformDefault = False
@@ -106,8 +106,8 @@ object CustomerFrame: TCustomerFrame
       object Customer_Age_1: TEdit
         Touch.InteractiveGestures = [LongTap, DoubleTap]
         TabOrder = 1
-        Position.X = 200.000000000000000000
-        Position.Y = 220.000000000000000000
+        Position.X = 192.000000000000000000
+        Position.Y = 100.000000000000000000
         Size.Width = 193.000000000000000000
         Size.Height = 22.000000000000000000
         Size.PlatformDefault = False
@@ -118,18 +118,6 @@ object CustomerFrame: TCustomerFrame
         Size.Height = 50.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 4
-        object Customer_Name_0: TADatoEditorPanel
-          Align = Top
-          Size.Width = 483.000000000000000000
-          Size.Height = 24.000000000000000000
-          Size.PlatformDefault = False
-          TabOrder = 0
-          Justify = Left
-          JustifyLastLine = Left
-          FlowDirection = LeftToRight
-          Title = '...'
-          InnerControls = <>
-        end
       end
     end
     object tbCustomfields: TTabItem

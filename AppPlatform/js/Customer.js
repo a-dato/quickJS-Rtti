@@ -52,6 +52,7 @@ export class AddressType {
 				// IFormatter
 				Formatter: {
 					Format: (ctx, item, format) => { 
+						console.log('Address.Format');				
 						if(item != null)
 							return item.Street;
 					},
@@ -61,7 +62,7 @@ export class AddressType {
 				},
 				Marshaller: {
 					Marshal: (ctx, item) => {
-						console.log('Marshal');
+						console.log('Address marshal');
 						let json = {
 							ID: `${item.ID}`,
 							Value: `${item.Street}`
@@ -69,7 +70,7 @@ export class AddressType {
 						return JSON.stringify(json);
 					},
 					Unmarshal: (ctx, item) => {
-						console.log('Unmarshal');
+						console.log('Address unmarshal');
 						console.log(item);
 						return this.Provider.Lookup(JSON.parse(item));
 					}
@@ -201,6 +202,7 @@ export class CustomerType {
 			// object property descriptor
 			Customer: {
 				EditorType: editor.Combo,
+				Label: 'Customer',
 				// IFormatter
 				Formatter: {
 					Format: (ctx, item, format) => { 
@@ -210,6 +212,13 @@ export class CustomerType {
 					Url: (ctx, item) => {
 							return `https://lynx.a-dato.com/customer/${item.ID}`;
 					},
+				},
+				Notify: {
+					OnChanging: (ctx, item) => {
+						return item;
+					},
+					OnChanged: (ctx, item) => {
+					}				
 				},
 				Marshaller: {
 					Marshal: (ctx, item) => {
@@ -221,8 +230,13 @@ export class CustomerType {
 					},
 					Unmarshal: (ctx, item) => {
 						console.log(item);
-						if(typeof item === 'string')
-							return this.Provider.Lookup(JSON.parse(item));
+						if(typeof item === 'string') {
+							var js = JSON.parse(item);
+							if ('Value' in js) {
+								return js.Value;
+							}
+							// return this.Provider.Lookup(js);
+						}
 					}
 				},
 				Picklist: {
@@ -261,11 +275,8 @@ class CustomerProvider {
 			this._Data = new List();
 			for(let i=0; i<100;i++) {
 				var c = new Customer(i, `Customer ${i}`);
-				c.Address = {
-					ID: i,
-					Value: `Parkway ${i}`
-				};
-				c.Age = i;
+				c.Address = new Address(i, `Parkway ${i}`, `2645BG-${i}`);
+ 				c.Age = i;
 				this._Data.Add(c);
 			}
 		}

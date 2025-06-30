@@ -7,7 +7,8 @@ uses
   System.Collections.Generic,
   App.Windows.intf,
   App.Objects.intf,
-  QuickJS.Register.dn4d.intf, App.PropertyDescriptor.intf;
+  QuickJS.Register.dn4d.intf,
+  App.PropertyDescriptor.intf;
 
 type
   {$M+}
@@ -16,9 +17,8 @@ type
     function get_Types: List<&Type>;
     function get_ObjectType(const AType: &Type): IObjectType;
 
-    procedure AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type);
+    function AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
 
-    procedure RegisterJSType(const JSObjectType: JSObjectReference);
     procedure RegisterType(const AType: &Type; const ObjectType: IObjectType);
 
     function  TypeByName(const Name: string) : &Type;
