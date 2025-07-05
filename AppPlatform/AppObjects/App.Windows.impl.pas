@@ -33,6 +33,9 @@ type
 
 implementation
 
+uses
+  FMX.Controls, FMX.Types;
+
 { Windows }
 
 function Windows.CreateWindow(const AOwner: CObject; const AType: &Type): IWindow;
@@ -57,6 +60,7 @@ end;
 function Window.Build: IWindow;
 begin
   _frame.Content := _app.Config.ObjectType[_Type].Builder.Build(_frame.Owner);
+  _frame.Content.AsType<TControl>.Align := TAlignLayout.Client;
   Result := Self;
 end;
 

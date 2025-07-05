@@ -330,7 +330,6 @@
             <FormType>fmx</FormType>
             <DesignClass>TFrame</DesignClass>
         </DCCReference>
-        <DCCReference Include="..\Source\QuickJS.Fetch.impl.pas"/>
         <DCCReference Include="AppObjects\App.Content.impl.pas"/>
         <DCCReference Include="AppDialogs\ObjectDesigner.pas">
             <Form>ObjectDesignerForm</Form>

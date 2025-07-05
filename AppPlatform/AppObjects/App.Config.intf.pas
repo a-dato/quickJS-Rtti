@@ -22,6 +22,7 @@ type
     procedure RegisterType(const AType: &Type; const ObjectType: IObjectType);
 
     function  TypeByName(const Name: string) : &Type;
+    function  TypeDescriptorByName(const Name: string) : IObjectType;
 
     property Types: List<&Type> read get_Types;
     property ObjectType[const AType: &Type]: IObjectType read get_ObjectType;

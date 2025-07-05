@@ -6,7 +6,10 @@ uses
   System.SysUtils,
   System.Net.HttpClientComponent,
   XMLHttpRequest.intf,
-  quickjs, System.Rtti, System.Net.HttpClient, System.Classes;
+  quickjs_ng,
+  System.Rtti,
+  System.Net.HttpClient,
+  System.Classes;
 
 type
   {$M+}

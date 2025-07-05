@@ -6,7 +6,7 @@ uses
   System_,
   System.TypInfo,
   System.Rtti,
-  quickjs,
+  quickjs_ng,
   QuickJS.Register.intf,
   QuickJS.Register.impl,
   QuickJS.Register.dn4d.intf,
@@ -436,12 +436,12 @@ begin
       Result := v;
     end
 
-    else if JS_IsBigFloat(Value) then
-    begin
-      var v: Double;
-      JS_ToFloat64(ctx, @v, Value);
-      Result := v;
-    end
+//    else if JS_IsBigFloat(Value) then
+//    begin
+//      var v: Double;
+//      JS_ToFloat64(ctx, @v, Value);
+//      Result := v;
+//    end
 
     else if JS_IsObject(Value) then
     begin
@@ -609,9 +609,6 @@ begin
 
     if Value.TypeInfo = TypeInfo(CDateTime) then
     begin
-//      var dt := CDateTime(Value.GetReferenceToRawData^).ToUniversalTime;
-//      var epoch := CDateTime.Create(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
-//      var ts := (dt - epoch).TotalMilliSeconds;
       var u_milis := DateTimeOffset.ToUnixTimeMiliSeconds(CDateTime(Value.GetReferenceToRawData^).Ticks);
       Exit(TJSRegister.JS_NewDate(ctx, u_milis));
     end;

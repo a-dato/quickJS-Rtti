@@ -24,7 +24,7 @@ type
     function  AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
     procedure RegisterType(const AType: &Type; const ObjectType: IObjectType);
     function  TypeByName(const Name: string) : &Type;
-
+    function  TypeDescriptorByName(const Name: string) : IObjectType;
   public
     constructor Create;
   end;
@@ -53,7 +53,7 @@ uses
   System.ClassHelpers,
   System.Rtti,
   ADato.Extensions.intf,
-  ADato.ObjectModel.impl;
+  ADato.ObjectModel.impl, App.PropertyDescriptor.impl;
 
 { TAppConfig }
 
@@ -120,6 +120,11 @@ begin
   for var entry in _Types do
     if CString.Equals(entry.Key.Name, Name) then
       Exit(entry.Key);
+end;
+
+function TAppConfig.TypeDescriptorByName(const Name: string): IObjectType;
+begin
+  Result := get_ObjectType(TypeByName(Name));
 end;
 
 { TJSObjectType }

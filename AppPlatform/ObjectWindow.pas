@@ -8,6 +8,7 @@ uses
 
 type
   TfrmObjectWindow = class(TForm)
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
   private
     { Private declarations }
   public
@@ -20,5 +21,10 @@ var
 implementation
 
 {$R *.fmx}
+
+procedure TfrmObjectWindow.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  Action := TCloseAction.caFree;
+end;
 
 end.

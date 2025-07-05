@@ -6,7 +6,8 @@ uses
   System.Variants,
   System.Rtti,
   System.TypInfo,
-  quickjs, System.SysUtils;
+  quickjs_ng,
+  System.SysUtils;
 
 type
   IJSExtendableObject = interface;

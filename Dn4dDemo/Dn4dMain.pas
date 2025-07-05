@@ -12,7 +12,8 @@ uses
   ADato.Extensions.intf,
   ADato.Extensions.impl,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
-  FMX.Controls.Presentation, FMX.StdCtrls, QuickJS.Register.intf,
+  FMX.Controls.Presentation, FMX.StdCtrls,
+  QuickJS.Register.intf,
   QuickJS.Register.impl, FMX.Memo.Types, FMX.ScrollBox, FMX.Memo, FMX.Layouts,
   System.Collections.Generic, System.Generics.Collections, System.Rtti,
   System.TypInfo;
@@ -208,7 +209,12 @@ var
 implementation
 
 uses
-  quickjs, QuickJS.Register.dn4d.impl;
+  {$IFDEF NG}
+  quickjs_ng,
+  {$ELSE}
+  quickjs,
+  {$ENDIF}
+  QuickJS.Register.dn4d.impl;
 
 {$R *.fmx}
 
@@ -221,6 +227,7 @@ begin
     _context := TJSContext.Create(TJSRuntime.Create);
 
     TJSRegisterTypedObjects.Initialize(_context);
+
     TRegisteredTypedObject.OnGetMemberByName := OnGetMemberByName;
 
     //TJSRegister.RegisterObject<TEnumerableObj>(_context.ctx, 'EObj', function : TEnumerableObj begin Result := TEnumerableObj.Create; end);
@@ -230,10 +237,8 @@ begin
 
     var t: ITask := TTask.Create;
     t.Name := 'Live task';
-
     TJSRegister.RegisterLiveObject(_context.ctx, 'tk', TypeInfo(ITask), t);
-    TJSRegister.RegisterLiveObject(_context.ctx, 'form', Self, False);
-
+//    TJSRegister.RegisterLiveObject(_context.ctx, 'form', Self, False);
 
 
 

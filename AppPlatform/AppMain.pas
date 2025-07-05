@@ -54,7 +54,7 @@ var
 implementation
 
 uses
-  QuickJS,
+  quickjs_ng,
   QuickJS.Register.impl,
   QuickJS.Register.dn4d.impl,
   App.impl,

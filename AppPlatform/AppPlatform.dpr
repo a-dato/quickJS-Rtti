@@ -24,7 +24,6 @@ uses
   App.Models.intf in 'AppObjects\App.Models.intf.pas',
   App.Models.impl in 'AppObjects\App.Models.impl.pas',
   JSGeneral.frame in 'DataObjectsFrames\JSGeneral.frame.pas' {JSGeneralFrame: TFrame},
-  QuickJS.Fetch.impl in '..\Source\QuickJS.Fetch.impl.pas',
   App.Content.impl in 'AppObjects\App.Content.impl.pas',
   ObjectDesigner in 'AppDialogs\ObjectDesigner.pas' {ObjectDesignerForm},
   Project.impl in 'DataObjects\Project.impl.pas',

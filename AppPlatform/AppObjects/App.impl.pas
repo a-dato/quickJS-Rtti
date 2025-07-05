@@ -50,7 +50,8 @@ implementation
 uses
   App.Objects.intf,
   App.Config.impl,
-  App.Windows.impl, quickjs;
+  App.Windows.impl,
+  quickjs_ng;
 
 { TAppObject }
 
@@ -89,7 +90,16 @@ end;
 
 function TAppObject.Test1(const AObject: CObject) : Boolean;
 begin
-  if AObject = nil then;
+  var sfAccounts := _app.Config.TypeByName('SFAccount');
+  var ot := _app.Config.ObjectType[sfAccounts];
+
+  var d := ot.Provider.Data(nil);
+  var l: IList;
+
+  if Interfaces.Supports<IList>(d, l) then
+  begin
+    var c := l.Count;
+  end;
 end;
 
 function TAppObject.Test2(const AObject: JSObjectReference) : Boolean;

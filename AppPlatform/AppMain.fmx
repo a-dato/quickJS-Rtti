@@ -149,7 +149,8 @@ object Form1: TForm1
       
         'import {SFAccount, SFAccountType} from '#39'../../js/SalesForceAccou' +
         'nt.js'#39';'
-      'SFAccountType.register();')
+      'SFAccountType.register();'
+      '')
     Align = Left
     Position.Y = 38.000000000000000000
     Size.Width = 273.000000000000000000

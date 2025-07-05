@@ -7,7 +7,7 @@ uses
   System.Rtti,
   System.SysUtils,
   System.Generics.Collections,
-  quickjs,
+  quickjs_ng,
   QuickJS.Register.intf;
 
 type
@@ -38,6 +38,7 @@ type
     class function  Check(ctx: JSContext; Value: JSValue) : Boolean; overload;
     class function  Check(ctx: JSContext) : Boolean; overload;
     class procedure Check(FuncResult: Integer); overload;
+    class function WaitForJobs(Ctx: JSContext; APromise: JSValue) : JSValue;
 
     function CreateContext: IJSContext;
   end;
@@ -57,7 +58,7 @@ type
     function  eval_buf(Buf: PAnsiChar; buf_len: Integer; Filename: PAnsiChar; eval_flags: Integer): Integer;
 
     class function logme(ctx : JSContext; {%H-}this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue; cdecl; static;
-    class function fetch(ctx : JSContext; {%H-}this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue; cdecl; static;
+    // class function fetch(ctx : JSContext; {%H-}this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue; cdecl; static;
     procedure Initialize;
 
   public
@@ -191,6 +192,14 @@ type
   TAutoReference = class(TObjectReference)
   public
     procedure BeforeDestruction; override;
+  end;
+
+  TRecordReference = class
+  public
+    Value: TValue; // Holds the record captured, frees Record when no longer in use
+
+    constructor Create(APointer: Pointer; PType: PTypeInfo); overload;
+    constructor Create(const AValue: TValue); overload;
   end;
 
   TPropertyDescriptor = class(TInterfacedObject, IPropertyDescriptor)
@@ -335,9 +344,7 @@ var
 implementation
 
 uses
-  System.Classes,
-  QuickJS.Fetch.impl;
-
+  System.Classes;
 
 function AtomToString(ctx: JSContext; Atom: JSAtom) : string;
 begin
@@ -390,7 +397,7 @@ end;
 class function TJSRegister.GenericInvokeCallBack(ctx: JSContext; this_val: JSValueConst;
   argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue;
 begin
-  Result := JS_NewInt64(ctx, 500);
+  Result := JS_NewBigInt64(ctx, 500);
 end;
 
 class function TJSRegister.GenericMethodCallData(ctx : JSContext; this_val : JSValueConst;
@@ -399,7 +406,7 @@ class function TJSRegister.GenericMethodCallData(ctx : JSContext; this_val : JSV
 
 begin
   var prtti: Int64;
-  TJSRuntime.Check(JS_ToInt64(ctx, @prtti, PJSValueConstArr(func_data)[1]));
+  TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, PJSValueConstArr(func_data)[1]));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
   var m_descr: IMethodsPropertyDescriptor := nil;
 
@@ -414,7 +421,7 @@ begin
     Result := m_descr.Call(ctx, ptr, argc, argv);
   end;
 
-  // JS_FreeValue(ctx, this_val);
+  JS_FreeValue(ctx, PJSValueConstArr(func_data)[1]);
 end;
 
 class function TJSRegister.GenericGetItem(ctx : JSContext; this_val : JSValueConst;
@@ -423,10 +430,11 @@ class function TJSRegister.GenericGetItem(ctx : JSContext; this_val : JSValueCon
 
 begin
   var prtti: Int64;
-  TJSRuntime.Check(JS_ToInt64(ctx, @prtti, func_data^));
+  TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
   var ptr := TJSRegister.GetObjectFromJSValue(this_val, False {Ptr is an IInterface} );
   var vt := descr.GetValue(ptr, [magic]);
+  JS_FreeValue(ctx, func_data^);
   Result := JSConverter.Instance.TValueToJSValue(ctx, vt);
 end;
 
@@ -436,7 +444,7 @@ class function TJSRegister.GenericSetItem(ctx : JSContext; this_val : JSValueCon
 
 begin
   var prtti: Int64;
-  TJSRuntime.Check(JS_ToInt64(ctx, @prtti, func_data^));
+  TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
   var ptr := TJSRegister.GetObjectFromJSValue(this_val, False {Ptr is an IInterface} );
 
@@ -446,6 +454,7 @@ begin
   var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[0], descr.PropertyType);
 
   descr.SetValue(ptr, [magic], v);
+  JS_FreeValue(ctx, func_data^);
   Result := JS_UNDEFINED;
 end;
 
@@ -455,10 +464,11 @@ class function TJSRegister.GenericPropertyGetter(ctx : JSContext; this_val : JSV
 
 begin
   var prtti: Int64;
-  TJSRuntime.Check(JS_ToInt64(ctx, @prtti, func_data^));
+  TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
   var ptr := TJSRegister.GetObjectFromJSValue(this_val, not descr.IsInterface {Ptr is an IInterface} );
   var vt := descr.GetValue(ptr, []);
+  JS_FreeValue(ctx, func_data^);
   Result := JSConverter.Instance.TValueToJSValue(ctx, vt);
 end;
 
@@ -468,7 +478,7 @@ class function TJSRegister.GenericPropertySetter(ctx : JSContext; this_val : JSV
 
 begin
   var prtti: Int64;
-  TJSRuntime.Check(JS_ToInt64(ctx, @prtti, func_data^));
+  TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
   var ptr := TJSRegister.GetObjectFromJSValue(this_val, not descr.IsInterface {Ptr is an IInterface} );
 
@@ -477,6 +487,7 @@ begin
   var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[0], descr.PropertyType);
 
   descr.SetValue(ptr, [], v);
+  JS_FreeValue(ctx, func_data^);
   Result := JS_UNDEFINED;
 end;
 
@@ -541,26 +552,22 @@ var
 
   procedure SetRttiArrayIndexProperty(Index: Integer);
   begin
-    var data: JSValue := JS_NewInt64(ctx, Int64(Pointer(rtti_descriptor)));
+    var data: JSValue := JS_NewBigInt64(ctx, Int64(Pointer(rtti_descriptor)));
 
     desc^.flags := JS_PROP_GETSET or JS_PROP_HAS_GET or JS_PROP_HAS_SET or JS_PROP_ENUMERABLE;
     desc^.value := JS_UNDEFINED;
     desc^.getter := JS_NewCFunctionData(ctx, @GenericGetItem, 0 {length}, Index {magic=index}, 1 {data_len}, @data {PJSValueConst});
     desc^.setter := JS_NewCFunctionData(ctx, @GenericSetItem, 0 {length}, Index {magic=index}, 1 {data_len}, @data {PJSValueConst});
-
-    JS_FreeValue(ctx, data);
   end;
 
   procedure SetRttiPropertyDesriptorCallBack;
   begin
-    var data: JSValue := JS_NewInt64(ctx, Int64(Pointer(rtti_descriptor)));
+    var data: JSValue := JS_NewBigInt64(ctx, Int64(Pointer(rtti_descriptor)));
 
     desc^.flags := JS_PROP_GETSET or JS_PROP_HAS_GET or JS_PROP_HAS_SET or JS_PROP_ENUMERABLE;
     desc^.value := JS_UNDEFINED;
     desc^.getter := JS_NewCFunctionData(ctx, @GenericPropertyGetter, 0 {length}, 999 {magic}, 1 {data_len}, @data {PJSValueConst});
     desc^.setter := JS_NewCFunctionData(ctx, @GenericPropertySetter, 0 {length}, 999 {magic}, 1 {data_len}, @data {PJSValueConst});
-
-    JS_FreeValue(ctx, data);
   end;
 
   procedure SetRttiMethodCallBack;
@@ -570,38 +577,32 @@ var
     data[0] := obj; // Add Self pointer
     // 7/6/2025 Do not increase ref count --> dubugging shows that this creates a dangling object
     // data[0] := JS_DupValue(ctx, obj); // Add Self pointer
-    data[1] := JS_NewInt64(ctx, Int64(Pointer(rtti_descriptor))); // Method to call
+    data[1] := JS_NewBigInt64(ctx, Int64(Pointer(rtti_descriptor))); // Method to call
 
     desc^.flags := JS_PROP_HAS_VALUE or JS_PROP_ENUMERABLE;
     desc^.value := JS_NewCFunctionData(ctx, @GenericMethodCallData, 0 {length}, 999 {magic}, 2, PJSValueConst(data) {PJSValueConst});
     desc^.getter := JS_UNDEFINED;
     desc^.setter := JS_UNDEFINED;
-
-    JS_FreeValue(ctx, data[1]);
   end;
 
   procedure SetIteratorProperty;
   begin
-    var data: JSValue := JS_NewInt64(ctx, Int64(Pointer(rtti_descriptor)));
+    var data: JSValue := JS_NewBigInt64(ctx, Int64(Pointer(rtti_descriptor)));
 
     desc^.flags := JS_PROP_HAS_GET or JS_PROP_ENUMERABLE;
     desc^.value := JS_NewCFunctionData(ctx, @GenericClassIterator, 0 {length}, 999 {magic}, 1 {data_len}, @data {PJSValueConst});
     desc^.getter := JS_UNDEFINED;
     desc^.setter := JS_UNDEFINED;
-
-    JS_FreeValue(ctx, data);
   end;
 
   procedure SetIteratorNextProperty;
   begin
-    var data: JSValue := JS_NewInt64(ctx, Int64(Pointer(rtti_descriptor)));
+    var data: JSValue := JS_NewBigInt64(ctx, Int64(Pointer(rtti_descriptor)));
 
     desc^.flags := JS_PROP_HAS_GET or JS_PROP_ENUMERABLE;
     desc^.value := JS_NewCFunctionData(ctx, @GenericIteratorNext, 0 {length}, 999 {magic}, 1 {data_len}, @data {PJSValueConst});
     desc^.getter := JS_UNDEFINED;
     desc^.setter := JS_UNDEFINED;
-
-    JS_FreeValue(ctx, data);
   end;
 
   procedure SetExtendableObjectGetterSetter(const PropertyName: string);
@@ -614,8 +615,6 @@ var
     desc^.value := JS_UNDEFINED;
     desc^.getter := JS_NewCFunctionData(ctx, @ExtendablePropertyGetter, 0 {length}, 999 {magic}, 1 {data_len}, @data {PJSValueConst});
     desc^.setter := JS_NewCFunctionData(ctx, @ExtendablePropertySetter, 0 {length}, 999 {magic}, 1 {data_len}, @data {PJSValueConst});
-
-    JS_FreeValue(ctx, data);
   end;
 
   function TestObjectSupportsExtension(const reg: IRegisteredObject; const PropertyName: string): Boolean;
@@ -827,7 +826,7 @@ class function TJSRegister.GenericClassIterator(ctx: JSContext; this_val: JSValu
   argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue): JSValue; cdecl;
 begin
   var prtti: Int64;
-  TJSRuntime.Check(JS_ToInt64(ctx, @prtti, func_data^));
+  TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
   var ptr := TJSRegister.GetObjectFromJSValue(this_val, False {Ptr is an IInterface} );
   var iter := descr.GetValue(ptr, []);
@@ -942,7 +941,7 @@ begin
 
   // Create New Class id.
   classID := 0;
-  JS_NewClassID(@classID);
+  JS_NewClassID(JS_GetRuntime(ctx), @classID);
 
   if First_ClassID = 0 then
     First_ClassID := classID;
@@ -1455,12 +1454,12 @@ begin
         TJSRuntime.Check(JS_ToInt32(ctx, @v, Value));
         Result := TValue.From<Double>(Double(v));
       end
-      else if JS_IsBigFloat(Value) then
-      begin
-        var v: Double;
-        TJSRuntime.Check(JS_ToFloat64(ctx, @v, Value));
-        Result := TValue.From<Double>(v);
-      end;
+//      else if JS_IsFloat64(Value) then
+//      begin
+//        var v: Double;
+//        TJSRuntime.Check(JS_ToFloat64(ctx, @v, Value));
+//        Result := TValue.From<Double>(v);
+//      end;
     end;
 
     tkString, tkUString:
@@ -1536,7 +1535,7 @@ begin
     tkInt64:
     begin
       var v: Int64;
-      TJSRuntime.Check(JS_ToInt64(ctx, @v, Value));
+      TJSRuntime.Check(JS_ToBigInt64(ctx, @v, Value));
       Result := TValue.From<Int64>(v);
     end;
 
@@ -1613,10 +1612,14 @@ begin
         Result := JS_NewArrayBufferCopy(ctx, Pointer(arr), Length(arr));
     end;
     tkRecord:
+    // Records are copied and then returned as 'objects'
     begin
-      var v: TValue;
-      if Value.TryAsType<TValue>(v) then
-        Result := TValueToJSValue(ctx, v);
+      var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
+      Result := JS_NewObjectClass(ctx, reg.ClassID);
+      // Objects retrieved from get_property are passed by reference
+      // They will not be freed when CFinalize is called
+      var rec := TRecordReference.Create(Value);
+      JS_SetOpaque(Result, rec);
     end;
     tkInterface:
     begin
@@ -1630,17 +1633,20 @@ begin
         else
         begin
           var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
-          Result := JS_NewObjectClass(ctx, reg.ClassID);
-          var ptr: Pointer;
-          // No need to call _AddRef, Supports will bump reference count
-          Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
-          JS_SetOpaque(Result, ptr);
+          if reg <> nil then
+          begin
+            Result := JS_NewObjectClass(ctx, reg.ClassID);
+            var ptr: Pointer;
+            // No need to call _AddRef, Supports will bump reference count
+            Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
+            JS_SetOpaque(Result, ptr);
+          end;
         end;
       end;
     end;
 
     tkInt64:
-      Result := JS_NewInt64(ctx, Value.AsInt64);
+      Result := JS_NewBigInt64(ctx, Value.AsInt64);
 
 //    tkDynArray:
     // tkClassRef:
@@ -1715,6 +1721,17 @@ procedure TAutoReference.BeforeDestruction;
 begin
   inherited;
   TObject(ObjectRef).Free;
+end;
+
+{ TRecordReference }
+constructor TRecordReference.Create(APointer: Pointer; PType: PTypeInfo);
+begin
+  TValue.Make(APointer, PType, Value);
+end;
+
+constructor TRecordReference.Create(const AValue: TValue);
+begin
+  Value := AValue;
 end;
 
 { TPropertyDescriptor }
@@ -1940,7 +1957,7 @@ end;
 
 class function TJSRuntime.Check(ctx: JSContext; Value: JSValue) : Boolean;
 begin
-  Result := True; // Success
+  Result := Check(ctx);  // Check for Exception
 
   if JS_IsError(ctx, Value) then
   begin
@@ -2059,6 +2076,32 @@ begin
   OutputLogString := Value;
 end;
 
+class function TJSRuntime.WaitForJobs(Ctx: JSContext; APromise: JSValue) : JSValue;
+begin
+  var ptr: Pointer;
+
+  if TJSRuntime._ActiveContexts.TryGetValue(Ctx, ptr) then
+  begin
+    var runtime := IJSContext(ptr).Runtime;
+    while JS_IsJobPending(runtime.rt) do
+    begin
+      var unused: JSContext;
+      var r := JS_ExecutePendingJob(runtime.rt, @unused);
+      if r < 0 then
+        raise Exception.Create('Job error');
+    end;
+
+    if JS_IsPromise(APromise) then
+    begin
+      var resolve := JS_PromiseResult(Ctx, APromise);
+      TJSRuntime.Check(Ctx, resolve);
+      JS_FreeValue(Ctx, APromise);
+      Result := resolve;
+    end else
+      Result := APromise;
+  end else
+    Result := APromise;
+end;
 { TJSContext }
 
 procedure TJSContext.BeforeDestruction;
@@ -2081,25 +2124,11 @@ end;
 
 function TJSContext.eval_buf(Buf: PAnsiChar; buf_len: Integer; FileName: PAnsiChar; eval_flags: Integer): Integer;
 begin
-  var eval_result := JS_Eval(_ctx, buf, buf_len, Filename, eval_flags);
-
-  while JS_IsJobPending(_runtime.rt) do
-    JS_ExecutePendingJob(_runtime.rt, _ctx);
-
-  if not TJSRuntime.Check(_ctx) then
-    Result := 0 else
-    Result := -1; // Succes
-
-  if JS_GetClassID(eval_result) = JS_CLASS_PROMISE then
-  begin
-    var resolve := JS_PromiseResult(_ctx, eval_result);
-    TJSRuntime.Check(_ctx, resolve);
-    JS_FreeValue(_ctx, resolve);
-  end;
-
-  JS_FreeValue(_ctx, eval_result);
-
-  // TJSRegister.Clear(False);
+  var res := JS_Eval(_ctx, buf, buf_len, Filename, eval_flags);
+  if not TJSRuntime.Check(_ctx, res) then Exit;
+  res := TJSRuntime.WaitForJobs(_ctx, res);
+  TJSRuntime.Check(_ctx, res);
+  JS_FreeValue(_ctx, res);
 end;
 
 class function TJSContext.logme(ctx : JSContext; {%H-}this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue;
@@ -2124,11 +2153,11 @@ begin
   Result := JS_UNDEFINED;
 end;
 
-class function TJSContext.fetch(ctx : JSContext; this_val: JSValueConst; argc: Integer; argv: PJSValueConstArr): JSValue;
-begin
-  var f: IFetch := TFetch.Create(ctx, argc, argv);
-  Result := f.Promise.Value;
-end;
+//class function TJSContext.fetch(ctx : JSContext; this_val: JSValueConst; argc: Integer; argv: PJSValueConstArr): JSValue;
+//begin
+//  var f: IFetch := TFetch.Create(ctx, argc, argv);
+//  Result := f.Promise.Value;
+//end;
 
 function TJSContext.get_ctx: JSContext;
 begin
@@ -2146,8 +2175,10 @@ var
 
 const
   std_helper : PAnsiChar =
-    'import * as std from ''std'';'#10+
-    'import * as os from ''os'';'#10+
+    'import * as bjson from ''qjs:bjson'';'#10+
+    'import * as std from ''qjs:std'';'#10+
+    'import * as os from ''qjs:os'';'#10+
+    'globalThis.bjson = bjson;'#10+
     'globalThis.std = std;'#10+
     'globalThis.os = os;'#10;
 
@@ -2158,16 +2189,20 @@ const
     'globalThis.fetch = fetch;'#10;
 
 begin
+  js_std_init_handlers(_runtime.rt);
+
   _ctx := JS_NewContext(_runtime.rt);
 
   // ES6 Module loader.
   JS_SetModuleLoaderFunc(_runtime.rt, nil, @js_module_loader, nil);
 
-  js_std_init_handlers(_runtime.rt);
+  JS_SetHostPromiseRejectionTracker(_runtime.rt, @js_std_promise_rejection_tracker, nil);
+
   js_std_add_helpers(_ctx, 0, nil);
 
-  js_init_module_std(_ctx, 'std');
-  js_init_module_os(_ctx, 'os');
+  js_init_module_std(_ctx, 'qjs:std');
+  js_init_module_os(_ctx, 'qjs:os');
+  js_init_module_bjson(_ctx, 'qjs:bjson');
 
   eval_buf(std_helper, Length(std_helper), 'initialize', JS_EVAL_TYPE_MODULE);
 
@@ -2177,10 +2212,8 @@ begin
   JS_SetPropertyStr(_ctx, global, 'log', JS_NewCFunction(_ctx, @logme, 'log', 1));
   JS_SetPropertyStr(_ctx, global, 'alert', JS_NewCFunction(_ctx, @logme, 'alert', 1));
 
-
   eval_buf(console_log, Length(console_log), 'initialize', JS_EVAL_TYPE_MODULE);
   eval_buf(add_fetch, Length(add_fetch), 'initialize', JS_EVAL_TYPE_MODULE);
-
   TJSRegister.RegisterObject(_ctx, 'JSIterator', TypeInfo(TJSIterator));
 
   JS_FreeValue(_ctx, global);

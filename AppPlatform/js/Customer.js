@@ -65,14 +65,17 @@ export class AddressType {
 						console.log('Address marshal');
 						let json = {
 							ID: `${item.ID}`,
-							Value: `${item.Street}`
+							Street: `${item.Street}`
 						}
 						return JSON.stringify(json);
 					},
 					Unmarshal: (ctx, item) => {
-						console.log('Address unmarshal');
 						console.log(item);
-						return this.Provider.Lookup(JSON.parse(item));
+						if(typeof item === 'string') {
+							var js = JSON.parse(item);
+							return new Address(js.ID, js.Street, js.Zip);
+						}
+						// return this.Provider.Lookup(JSON.parse(item));
 					}
 				},
 				Picklist: {
@@ -224,7 +227,7 @@ export class CustomerType {
 					Marshal: (ctx, item) => {
 						let json = {
 							ID: `${item.ID}`,
-							Value: `${item.Name}`
+							Name: `${item.Name}`
 						}
 						return JSON.stringify(json);
 					},
@@ -232,9 +235,7 @@ export class CustomerType {
 						console.log(item);
 						if(typeof item === 'string') {
 							var js = JSON.parse(item);
-							if ('Value' in js) {
-								return js.Value;
-							}
+							return new Customer(js.ID, js.Name)
 							// return this.Provider.Lookup(js);
 						}
 					}
@@ -272,6 +273,8 @@ class CustomerProvider {
 	
 	Data(filter) {
 		if(this._Data == null) {
+			console.log('Items loading');
+			
 			this._Data = new List();
 			for(let i=0; i<100;i++) {
 				var c = new Customer(i, `Customer ${i}`);

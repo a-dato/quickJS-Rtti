@@ -8,7 +8,8 @@ uses
   App.Objects.intf,
   App.Objects.impl,
   App.Content.intf,
-  ADato.ObjectModel.List.intf, System.Collections.Generic, System.Collections;
+  ADato.ObjectModel.List.intf, System.Collections.Generic, System.Collections,
+  ADato.AvailabilityProfile.intf;
 
 type
   TProject = class(TBaseInterfacedObject, IProject, IExtendableObject)
@@ -21,6 +22,7 @@ type
     _ID: CObject;
     _Name: string;
     _Child: IProject;
+    _TimeInterval: TimeInterval;
 
     _PropertyValue: Dictionary<_PropertyInfo, CObject>;
 
@@ -29,6 +31,8 @@ type
     function  get_Name: string;
     procedure set_Name(const Value: string);
     function  get_ChildProject: IProject;
+    function  get_TimeInterval: TimeInterval;
+    procedure set_TimeInterval(const Value: TimeInterval);
 
     // IExtendableObject
     function  get_PropertyValue(const AProperty: _PropertyInfo): CObject;
@@ -57,10 +61,15 @@ implementation
 
 uses
   ADato.ObjectModel.List.Tracking.impl,
-  System.SysUtils;
+  System.SysUtils, System.Rtti;
 
 
 { TProject }
+function TProject.get_TimeInterval: TimeInterval;
+begin
+  Result := _TimeInterval;
+end;
+
 class function TProject.get_Type: &Type;
 begin
   // Result := System_.&Type.From<ProjectType>;
@@ -122,12 +131,16 @@ begin
   _PropertyValue[AProperty] := Value;
 end;
 
+procedure TProject.set_TimeInterval(const Value: TimeInterval);
+begin
+  _TimeInterval := Value;
+end;
+
 { ProjectProvider }
 
 function ProjectProvider.Data(const Filter: CObject): CObject;
+var abc: TValue;
 begin
-  // var model: IObjectListModel := TObjectListModelWithChangeTracking<IProject>.Create(function: IProject begin Result := TProject.Create; end);
-
   if _data = nil then
   begin
     _data := CList<IProject>.Create;
@@ -143,8 +156,12 @@ begin
   end;
 
   Result := _data;
-//  model.Context := l as IList;
-//  Result := model;
+
+  var tp := Result.GetType;
+  if tp.IsInterfaceType then
+  abc := Result.AsType<TValue>;
+  if abc.IsOrdinal then
+
 end;
 
 { CustomerType }

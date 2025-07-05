@@ -6,7 +6,7 @@ uses
   System_,
   System.TypInfo,
   System.SysUtils,
-  quickjs,
+  quickjs_ng,
   QuickJS.Variant, System.Rtti;
 
 type
@@ -154,13 +154,18 @@ end;
 function JSObjectReference.InternalInvoke(const Func: AnsiString; argc: Integer; argv: PJSValueConstArr): JSValue;
 begin
   Result := JS_GetPropertyStr(_jsValue.ctx, _jsValue.value, PAnsiChar(Func));
-  if not TJSRuntime.Check(_jsValue.ctx) then Exit;
+  TJSRuntime.Check(_jsValue.ctx, Result);
+  Result := TJSRuntime.WaitForJobs(_jsValue.ctx, Result);
+  TJSRuntime.Check(_jsValue.ctx, Result);
 
   // Property returns a function, call function to get actual value
   if JS_IsFunction(_jsValue.ctx, Result) then
   begin
     var tmp := Result;
     Result := JS_Call(_jsValue.ctx, tmp, _jsValue.Value, argc, argv);
+    TJSRuntime.Check(_jsValue.ctx, Result);
+    Result := TJSRuntime.WaitForJobs(_jsValue.ctx, Result);
+    TJSRuntime.Check(_jsValue.ctx, Result);
     JS_FreeValue(_jsValue.ctx, tmp);
     if not TJSRuntime.Check(_jsValue.ctx) then Exit;
   end
@@ -175,6 +180,9 @@ begin
     begin
       var s: AnsiString := prop_name.ToString;
       Result := JS_GetPropertyStr(_jsValue.ctx, js_obj, PAnsiChar(s));
+      TJSRuntime.Check(_jsValue.ctx, Result);
+      Result := TJSRuntime.WaitForJobs(_jsValue.ctx, Result);
+      TJSRuntime.Check(_jsValue.ctx, Result);
     end;
     JS_FreeValue(_jsValue.ctx, js_obj);
   end;
