@@ -1,4 +1,4 @@
-unit XMLHttpRequest.impl;
+﻿unit XMLHttpRequest.impl;
 
 interface
 
@@ -215,3 +215,4 @@ begin
 end;
 
 end.
+

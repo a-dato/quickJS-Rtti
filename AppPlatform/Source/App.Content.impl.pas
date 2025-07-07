@@ -1,4 +1,4 @@
-unit App.Content.impl;
+﻿unit App.Content.impl;
 
 interface
 
@@ -22,3 +22,4 @@ begin
 end;
 
 end.
+

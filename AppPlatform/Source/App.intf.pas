@@ -1,4 +1,4 @@
-unit App.intf;
+﻿unit App.intf;
 
 interface
 
@@ -44,3 +44,4 @@ var
 implementation
 
 end.
+

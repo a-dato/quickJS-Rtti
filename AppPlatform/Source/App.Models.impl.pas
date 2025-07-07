@@ -1,4 +1,4 @@
-unit App.Models.impl;
+﻿unit App.Models.impl;
 
 interface
 
@@ -35,7 +35,7 @@ function AppModels.CreateOrGet(const AType: &Type): IObjectListModel;
 begin
   if not _models.TryGetValue(AType, Result) then
   begin
-    var ot := _app.Config.ObjectType[AType];
+    var ot := _app.Config.ObjectType(AType);
     if ot = nil then
       raise CException.Create('Unknown type');
     // Result := ot.CreateModel;
@@ -44,4 +44,5 @@ begin
 end;
 
 end.
+
 

@@ -1,4 +1,4 @@
-unit App.Windows.intf;
+﻿unit App.Windows.intf;
 
 interface
 
@@ -49,3 +49,4 @@ type
 implementation
 
 end.
+

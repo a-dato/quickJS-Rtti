@@ -1,4 +1,4 @@
-unit HtmlCanvas.intf;
+﻿unit HtmlCanvas.intf;
 
 interface
 
@@ -185,3 +185,4 @@ type
 implementation
 
 end.
+

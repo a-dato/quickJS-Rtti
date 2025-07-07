@@ -1,4 +1,4 @@
-unit QuickJS.Register.intf;
+﻿unit QuickJS.Register.intf;
 
 interface
 
@@ -129,3 +129,4 @@ begin
 end;
 
 end.
+

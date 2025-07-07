@@ -1,4 +1,4 @@
-unit Project.intf;
+﻿unit Project.intf;
 
 interface
 
@@ -21,9 +21,10 @@ type
     property Name: string read get_Name write set_Name;
     property TimeInterval: TimeInterval read get_TimeInterval write set_TimeInterval;
 
-    property ChildProject: IProject read get_ChildProject;
+    property Child: IProject read get_ChildProject;
   end;
 
 implementation
 
 end.
+

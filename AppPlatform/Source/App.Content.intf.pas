@@ -1,4 +1,4 @@
-unit App.Content.intf;
+﻿unit App.Content.intf;
 
 interface
 
@@ -24,3 +24,4 @@ type
 implementation
 
 end.
+

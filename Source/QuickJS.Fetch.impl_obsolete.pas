@@ -1,4 +1,4 @@
-unit QuickJS.Fetch.impl;
+﻿unit QuickJS.Fetch.impl;
 
 interface
 
@@ -159,3 +159,4 @@ begin
 end;
 
 end.
+

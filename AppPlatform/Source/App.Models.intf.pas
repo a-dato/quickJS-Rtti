@@ -1,4 +1,4 @@
-unit App.Models.intf;
+﻿unit App.Models.intf;
 
 interface
 
@@ -15,3 +15,4 @@ type
 implementation
 
 end.
+

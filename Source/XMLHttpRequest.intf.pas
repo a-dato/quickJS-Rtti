@@ -1,4 +1,4 @@
-unit XMLHttpRequest.intf;
+﻿unit XMLHttpRequest.intf;
 
 interface
 
@@ -41,3 +41,4 @@ type
 implementation
 
 end.
+

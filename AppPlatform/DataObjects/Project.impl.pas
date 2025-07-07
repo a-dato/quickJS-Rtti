@@ -1,12 +1,12 @@
-unit Project.impl;
+﻿unit Project.impl;
 
 interface
 
 uses
   System_,
   Project.intf,
-  App.Objects.intf,
-  App.Objects.impl,
+  App.TypeDescriptor.intf,
+  App.TypeDescriptor.impl,
   App.Content.intf,
   ADato.ObjectModel.List.intf, System.Collections.Generic, System.Collections,
   ADato.AvailabilityProfile.intf;
@@ -14,9 +14,9 @@ uses
 type
   TProject = class(TBaseInterfacedObject, IProject, IExtendableObject)
   protected
-    class var _objectType: IObjectType;
+    class var _typeDescriptor: ITypeDescriptor;
     class function get_Type: &Type; static;
-    class function get_ObjectType: IObjectType; static;
+    class function get_TypeDescriptor: ITypeDescriptor; static;
 
   protected
     _ID: CObject;
@@ -42,10 +42,10 @@ type
     constructor Create;
 
     class property &Type: &Type read get_Type;
-    class property ObjectType: IObjectType read get_ObjectType;
+    class property TypeDescriptor: ITypeDescriptor read get_TypeDescriptor;
   end;
 
-  ProjectType = class(ObjectType)
+  ProjectType = class(TTypeDescriptor)
   protected
     function GetType: &Type; override;
   end;
@@ -76,12 +76,12 @@ begin
   Result := System_.&Type.From<IProject>;
 end;
 
-class function TProject.get_ObjectType: IObjectType;
+class function TProject.get_TypeDescriptor: ITypeDescriptor;
 begin
-  if _objectType = nil then
-    _objectType := ProjectType.Create;
+  if _typeDescriptor = nil then
+    _typeDescriptor := ProjectType.Create;
 
-  Result := _objectType;
+  Result := _typeDescriptor;
 end;
 
 function TProject.get_PropertyValue(const AProperty: _PropertyInfo): CObject;
@@ -92,6 +92,7 @@ end;
 constructor TProject.Create;
 begin
   _PropertyValue := CDictionary<_PropertyInfo, CObject>.Create;
+  _TimeInterval := TimeInterval.Create(CDateTime.Now, CDateTime.Now.AddDays(10));
 end;
 
 function TProject.get_ID: CObject;
@@ -155,13 +156,7 @@ begin
     end;
   end;
 
-  Result := _data;
-
-  var tp := Result.GetType;
-  if tp.IsInterfaceType then
-  abc := Result.AsType<TValue>;
-  if abc.IsOrdinal then
-
+  Result := CObject.From<List<IProject>>(_data);
 end;
 
 { CustomerType }
@@ -172,3 +167,4 @@ begin
 end;
 
 end.
+

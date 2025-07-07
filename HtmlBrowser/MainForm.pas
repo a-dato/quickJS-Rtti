@@ -1,4 +1,4 @@
-unit MainForm;
+﻿unit MainForm;
 
 interface
 
@@ -170,3 +170,4 @@ begin
 end;
 
 end.
+

@@ -1,4 +1,4 @@
-unit HtDocumentExtension;
+﻿unit HtDocumentExtension;
 
 interface
 
@@ -12,3 +12,4 @@ type
 implementation
 
 end.
+

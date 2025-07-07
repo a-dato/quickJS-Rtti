@@ -1,4 +1,4 @@
-unit HtmlCanvas.impl;
+﻿unit HtmlCanvas.impl;
 
 interface
 
@@ -859,3 +859,4 @@ begin
 end;
 
 end.
+

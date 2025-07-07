@@ -1,4 +1,4 @@
-unit App.Objects.intf;
+﻿unit App.TypeDescriptor.intf;
 
 interface
 
@@ -20,7 +20,7 @@ type
 //  end;
 
   {$M+}
-  IObjectType = interface(IBaseInterface)
+  ITypeDescriptor = interface(IBaseInterface)
     ['{87B5C48E-38C7-4E6E-874D-0F22D1D5DC00}']
     function  get_Name: CString;
     function  get_Binder: IContentBinder;
@@ -43,3 +43,4 @@ type
 implementation
 
 end.
+

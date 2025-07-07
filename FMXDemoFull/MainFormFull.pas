@@ -1,4 +1,4 @@
-unit MainFormFull;
+﻿unit MainFormFull;
 
 interface
 
@@ -674,3 +674,4 @@ begin
 end;
 
 end.
+

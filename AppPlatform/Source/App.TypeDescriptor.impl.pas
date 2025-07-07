@@ -1,4 +1,4 @@
-unit App.Objects.impl;
+﻿unit App.TypeDescriptor.impl;
 
 interface
 
@@ -6,7 +6,7 @@ uses
   System_,
   System.Collections.Generic,
   App.Content.intf,
-  App.Objects.intf,
+  App.TypeDescriptor.intf,
   App.PropertyDescriptor.intf;
 
 type
@@ -21,7 +21,7 @@ type
 //    constructor Create;
 //  end;
 
-  ObjectType = class(TBaseInterfacedObject, IObjectType)
+  TTypeDescriptor = class(TBaseInterfacedObject, ITypeDescriptor)
   protected
     _binder: IContentBinder;
     _builder: IContentBuilder;
@@ -49,54 +49,56 @@ uses
   System.ClassHelpers;
 
 { ObjectType }
-constructor ObjectType.Create;
+constructor TTypeDescriptor.Create;
 begin
   _PropertyDescriptor := CDictionary<CString, IPropertyDescriptor>.Create;
 end;
 
-function ObjectType.AddPropertyDescriptor(const Name: CString; const Value: IPropertyDescriptor): Boolean;
+function TTypeDescriptor.AddPropertyDescriptor(const Name: CString; const Value: IPropertyDescriptor): Boolean;
 begin
   _PropertyDescriptor[Name] := Value;
+  Result := True;
 end;
 
-function ObjectType.get_Binder: IContentBinder;
+function TTypeDescriptor.get_Binder: IContentBinder;
 begin
   Result := _binder;
 end;
 
-function ObjectType.get_Builder: IContentBuilder;
+function TTypeDescriptor.get_Builder: IContentBuilder;
 begin
   Result := _builder;
 end;
 
-function ObjectType.get_PropertyDescriptor(const Name: CString): IPropertyDescriptor;
+function TTypeDescriptor.get_PropertyDescriptor(const Name: CString): IPropertyDescriptor;
 begin
   _PropertyDescriptor.TryGetValue(Name, Result);
 end;
 
-function ObjectType.get_Name: CString;
+function TTypeDescriptor.get_Name: CString;
 begin
   Result := GetType().Name;
 end;
 
-function ObjectType.get_Provider: IContentProvider;
+function TTypeDescriptor.get_Provider: IContentProvider;
 begin
   Result := _provider;
 end;
 
-procedure ObjectType.set_Binder(const Value: IContentBinder);
+procedure TTypeDescriptor.set_Binder(const Value: IContentBinder);
 begin
   _Binder := Value;
 end;
 
-procedure ObjectType.set_Builder(const Value: IContentBuilder);
+procedure TTypeDescriptor.set_Builder(const Value: IContentBuilder);
 begin
   _builder := Value;
 end;
 
-procedure ObjectType.set_Provider(const Value: IContentProvider);
+procedure TTypeDescriptor.set_Provider(const Value: IContentProvider);
 begin
   _provider := Value;
 end;
 
 end.
+

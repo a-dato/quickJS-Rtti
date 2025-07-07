@@ -1,4 +1,4 @@
-unit ObjectWindow;
+﻿unit ObjectWindow;
 
 interface
 
@@ -28,3 +28,4 @@ begin
 end;
 
 end.
+

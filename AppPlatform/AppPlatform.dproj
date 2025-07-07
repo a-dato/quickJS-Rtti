@@ -309,8 +309,8 @@
         <DCCReference Include="AppObjects\App.impl.pas"/>
         <DCCReference Include="AppObjects\App.Environment.intf.pas"/>
         <DCCReference Include="AppObjects\App.Config.impl.pas"/>
-        <DCCReference Include="AppObjects\App.Objects.intf.pas"/>
-        <DCCReference Include="AppObjects\App.Objects.impl.pas"/>
+        <DCCReference Include="AppObjects\App.TypeDescriptor.intf.pas"/>
+        <DCCReference Include="AppObjects\App.TypeDescriptor.impl.pas"/>
         <DCCReference Include="AppObjects\App.Windows.impl.pas"/>
         <DCCReference Include="ObjectWindow.pas">
             <Form>frmObjectWindow</Form>

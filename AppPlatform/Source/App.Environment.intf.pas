@@ -1,10 +1,10 @@
-unit App.Environment.intf;
+﻿unit App.Environment.intf;
 
 interface
 
 uses
   System_,
-  App.Objects.intf,
+  App.TypeDescriptor.intf,
   App.Windows.intf;
 
 type
@@ -21,3 +21,4 @@ type
 implementation
 
 end.
+

@@ -1,17 +1,17 @@
-unit App.Environment.impl;
+﻿unit App.Environment.impl;
 
 interface
 
 uses
   System_,
   App.Environment.intf,
-  App.Objects.intf,
+  App.TypeDescriptor.intf,
   App.Windows.intf,
   FMX.Forms,
   FMX.Types,
   ADato.ObjectModel.List.intf,
   App.intf,
-  App.Content.intf, App.EditorManager.intf;
+  App.Content.intf;
 
 type
   Environment = class(TBaseInterfacedObject, IEnvironment)
@@ -49,8 +49,9 @@ type
 
   TFrameBinder = class(TBaseInterfacedObject, IContentBinder)
   protected
-    procedure BindChildren(const Children: TFmxChildrenList; const AModel: IObjectListModel;
-      const EditorManager: IEditorManager; const DataType: &Type; const ObjectType: IObjectType);
+    procedure BindChildren(const Children: TFmxChildrenList;
+      const AModel: IObjectListModel;
+      const AType: &Type; const TypeDescriptor: ITypeDescriptor);
     procedure Bind(const AContent: CObject; const AType: &Type; const Data: CObject);
 
     function WrapProperty(const AProp: _PropertyInfo) : _PropertyInfo; virtual;
@@ -67,8 +68,10 @@ uses
   FMX.Controls,
   ADato.ObjectModel.Binders,
   FMX.DataControl.Impl, System.Collections,
-  ADato.ObjectModel.List.Tracking.impl, ADato.ObjectModel.impl,
-  App.EditorPanel.intf, ADato.ObjectModel.intf, App.PropertyDescriptor.intf;
+  ADato.ObjectModel.List.Tracking.impl,
+  ADato.ObjectModel.impl,
+  ADato.ObjectModel.intf,
+  App.PropertyDescriptor.intf;
 
 { Environment }
 
@@ -110,7 +113,7 @@ end;
 { TFrameBinder }
 
 procedure TFrameBinder.BindChildren(const Children: TFmxChildrenList; const AModel: IObjectListModel;
-  const EditorManager: IEditorManager; const DataType: &Type; const ObjectType: IObjectType);
+  const AType: &Type; const TypeDescriptor: ITypeDescriptor);
 
   function ConcatNames(const Names: TArray<string>) : string;
   begin
@@ -140,7 +143,7 @@ begin
     //  ObjectType_Property_Index               -> IProject_Name_1
     //  ObjectType_Property_SubProperty_Index   -> IProject_Customer_Address_1
     var names := string(c.Name).Split(['_']);
-    if (Length(names) >= 2) and (names[0] = DataType.Name) then
+    if (Length(names) >= 2) and (names[0] = AType.Name) then
     begin
       var propertyName := ConcatNames(names); // 'Customer.Address.Zip'
 
@@ -150,7 +153,7 @@ begin
         continue;
       end;
 
-      var objectProperty := DataType.PropertyByName(propertyName);
+      var objectProperty := AType.PropertyByName(propertyName);
       if objectProperty <> nil then
       begin
         var bind := TPropertyBinding.CreateBindingByControl(c);
@@ -159,7 +162,7 @@ begin
     end;
 
     if c.ChildrenCount > 0 then
-      BindChildren(c.Children, AModel, EditorManager, DataType, ObjectType);
+      BindChildren(c.Children, AModel, AType, TypeDescriptor);
   end;
 end;
 
@@ -175,7 +178,7 @@ begin
   var ctrl: TControl;
   if AContent.TryAsType<TControl>(ctrl) then
   begin
-    var objectType := _app.Config.ObjectType[AType];
+    var objectType := _app.Config.ObjectType(AType);
 //    var dataType := objectType.GetType;
 
     var model: IObjectListModel := nil;
@@ -195,12 +198,12 @@ begin
       // var tp := model.ObjectModel.GetType;
       if ctrl.ChildrenCount > 0 then
       begin
-        var editorManager: IEditorManager;
-        if Interfaces.Supports<IEditorManager>(ctrl, editorManager) then
-          editorManager.Bind(model.ObjectModelContext);
-
-        BindChildren(ctrl.Children, model, editorManager, AType, objectType);
-        // BindChildren(ctrl.Children, model, editorManager, dataType, objectType);
+//        var editorManager: IEditorManager;
+//        if Interfaces.Supports<IEditorManager>(ctrl, editorManager) then
+//          editorManager.Bind(model.ObjectModelContext);
+//
+//        BindChildren(ctrl.Children, model, editorManager, AType, objectType);
+        BindChildren(ctrl.Children, model, AType, objectType);
       end;
     end else
       raise CException.Create('Data is invalid');
@@ -208,3 +211,4 @@ begin
 end;
 
 end.
+

@@ -1,4 +1,4 @@
-unit QuickJS.Register.impl;
+﻿unit QuickJS.Register.impl;
 
 interface
 
@@ -86,6 +86,7 @@ type
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; virtual;
     function CreateRegisteredJSObject(ctx: JSContext; Value: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; virtual;
 
+    // Static method callbacks to be called by QuickJS
     class function GenericInvokeCallBack(ctx: JSContext; this_val: JSValueConst;
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
     class function GenericGetItem(ctx: JSContext; this_val: JSValueConst;
@@ -200,6 +201,8 @@ type
 
     constructor Create(APointer: Pointer; PType: PTypeInfo); overload;
     constructor Create(const AValue: TValue); overload;
+
+    destructor Destroy; override;
   end;
 
   TPropertyDescriptor = class(TInterfacedObject, IPropertyDescriptor)
@@ -467,7 +470,15 @@ begin
   TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
   var ptr := TJSRegister.GetObjectFromJSValue(this_val, not descr.IsInterface {Ptr is an IInterface} );
+
+  {$IFDEF DEBUG}
+  var arr: TArray<TValue> := nil;
+  for var i := 0 to argc - 1 do
+    arr[i] := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[i], nil);
+  var vt := descr.GetValue(ptr, arr);
+  {$ELSE}
   var vt := descr.GetValue(ptr, []);
+  {$ENDIF}
   JS_FreeValue(ctx, func_data^);
   Result := JSConverter.Instance.TValueToJSValue(ctx, vt);
 end;
@@ -560,7 +571,7 @@ var
     desc^.setter := JS_NewCFunctionData(ctx, @GenericSetItem, 0 {length}, Index {magic=index}, 1 {data_len}, @data {PJSValueConst});
   end;
 
-  procedure SetRttiPropertyDesriptorCallBack;
+  procedure SetRttiPropertyDescriptorCallBack;
   begin
     var data: JSValue := JS_NewBigInt64(ctx, Int64(Pointer(rtti_descriptor)));
 
@@ -697,8 +708,14 @@ begin
       SetRttiMethodCallBack
     else if rtti_descriptor.MemberType = TMemberType.ArrayIndexer then
       SetRttiArrayIndexProperty(item_index)
+
+    {$IFDEF DEBUG}
+    else if rtti_descriptor.PropertyType.Name = 'IObjectType' then
+      SetRttiArrayIndexProperty(item_index)
+    {$ENDIF}
+
     else
-      SetRttiPropertyDesriptorCallBack;
+      SetRttiPropertyDescriptorCallBack;
 
     Exit(1);
   end;
@@ -768,8 +785,8 @@ end;
 class function TJSRegister.GetClassName(Value: PTypeInfo) : string;
 begin
   Result  := string(Value.Name);
-  if Result[1] = 'T' then
-    Result := Result.Substring(1);
+//  if Result[1] = 'T' then
+//    Result := Result.Substring(1);
 end;
 
 class function TJSRegister.GetObjectFromJSValue(Value: JSValueConst; PointerIsAnObject: Boolean) : Pointer;
@@ -778,8 +795,13 @@ begin
   if classID >= First_ClassID then
   begin
     Result := JS_GetOpaque(Value, classID);
-    if PointerIsAnObject and (TObject(Result) is TObjectReference) then
-      Result := (TObject(Result) as TObjectReference).ObjectRef;
+    if PointerIsAnObject then
+    begin
+      if (TObject(Result) is TObjectReference) then
+        Result := (TObject(Result) as TObjectReference).ObjectRef
+      else if (TObject(Result) is TRecordReference) then
+        Result := (TObject(Result) as TRecordReference).Value.GetReferenceToRawData;
+    end;
   end else
     Result := nil;
 end;
@@ -1734,6 +1756,11 @@ begin
   Value := AValue;
 end;
 
+destructor TRecordReference.Destroy;
+begin
+  inherited;
+end;
+
 { TPropertyDescriptor }
 constructor TPropertyDescriptor.Create(AInfo: PTypeInfo);
 begin
@@ -1829,7 +1856,12 @@ begin
 
     var v: TValue;
     var vt: TValue;
-    TValue.Make(@ptr, FTypeInfo, vt);
+    // Reference type?
+    if FTypeInfo.Kind in [tkInterface, tkClass] then
+      TValue.Make(@Ptr, FTypeInfo, vt) else
+      // Value types (aka Records)
+      TValue.Make(Ptr, FTypeInfo, vt);
+
     v := Method.Invoke(vt, arr);
     Result := JSConverter.Instance.TValueToJSValue(ctx, v);
   except
@@ -2326,3 +2358,4 @@ finalization
   _RttiContext.Free();
 
 end.
+

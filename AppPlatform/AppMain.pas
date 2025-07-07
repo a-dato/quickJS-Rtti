@@ -1,4 +1,4 @@
-unit AppMain;
+﻿unit AppMain;
 
 interface
 
@@ -70,9 +70,13 @@ uses
   JSGeneral.frame, Winapi.Windows, App.Content.impl, System.Diagnostics,
   XMLHttpRequest.impl, XMLHttpRequest.intf,
   ADato.Extensions.intf,
-  ADato.Extensions.impl, ObjectDesigner, Project.frame, App.Objects.intf,
-  System.Collections, System.Rtti, App.PropertyDescriptor.intf, System.JSON,
-  ADato.ObjectModel.impl, System.ClassHelpers;
+  ADato.Extensions.impl,
+  ObjectDesigner,
+  Project.frame,
+  App.TypeDescriptor.intf,
+  System.Collections,
+  System.Rtti, App.PropertyDescriptor.intf, System.JSON,
+  ADato.ObjectModel.impl;
 
 {$R *.fmx}
 
@@ -91,7 +95,7 @@ procedure TForm1.btnCustomerClick(Sender: TObject);
 begin
   _app.Windows.CreateWindow(Self, TProject.Type).
     Build.
-      Bind(TProject.ObjectType.Provider.Data(nil)).
+      Bind(TProject.TypeDescriptor.Provider.Data(nil)).
         Show;
 end;
 
@@ -99,7 +103,7 @@ procedure TForm1.Button2Click(Sender: TObject);
 begin
   var tp := &Type.From<IProject>;
   var customerType := _app.Config.TypeByName('Customer');
-  var customer_objecttype := _app.Config.ObjectType[customerType];
+  var customer_objecttype := _app.Config.ObjectType(customerType);
 
 //  var descr := customer_objecttype.PropertyDescriptor['Customer'];
 //  _app.Config.AddProperty(tp, 'Customer', 'Customer', customerType, descr);
@@ -110,7 +114,7 @@ begin
 
   var c := data[0]; // Customer
 
-  var project_type := _app.Config.ObjectType[&Type.From<IProject>];
+  var project_type := _app.Config.ObjectType(&Type.From<IProject>);
   var d := project_type.Provider.Data(nil).AsType<IList>;
   var prj := d[0].AsType<IProject>;
 
@@ -121,12 +125,20 @@ end;
 
 procedure TForm1.Button3Click(Sender: TObject);
 begin
-//  var tp := &Type.From<ICustomer>;
+  var t := &Type.From<&Type>;
 
-//  _app.Windows.CreateWindow(Self, tp).
-//    Build.
-//      Bind(_app.Models.CreateOrGet(tp)).
-//        Show;
+  ShowMessage(t.Name);
+
+
+  var prjType := _app.Config.TypeByName('IProject');
+  var prj_objecttype := _app.Config.ObjectType(prjType);
+
+  var data := prj_objecttype.Provider.Data(nil);
+
+  var vt: TValue := data.AsType<TValue>;
+  var n := vt.TypeInfo.Name;
+
+  ShowMessage(n);
 end;
 
 procedure TForm1.Button4Click(Sender: TObject);
@@ -141,7 +153,7 @@ begin
   var tp := &Type.From<IProject>;
   var objectProperty := tp.PropertyByName('Customer.Address');
 
-  var ot := _app.Config.ObjectType[tp];
+  var ot := _app.Config.ObjectType(tp);
   var d := ot.Provider.Data(nil);
   var l: IList;
   if Interfaces.Supports<IList>(d, l) then
@@ -161,11 +173,11 @@ begin
 
   _app := TAppObject.Create(App.Environment.impl.Environment.Create);
 
-  TProject.ObjectType.Builder := TFrameBuilder.Create(TProjectFrame);
-  TProject.ObjectType.Binder := TFrameBinder.Create();
-  TProject.ObjectType.Provider := ProjectProvider.Create;
+  TProject.TypeDescriptor.Builder := TFrameBuilder.Create(TProjectFrame);
+  TProject.TypeDescriptor.Binder := TFrameBinder.Create();
+  TProject.TypeDescriptor.Provider := ProjectProvider.Create;
 
-  _app.Config.RegisterType(TProject.Type, TProject.ObjectType);
+  _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
 end;
 
 procedure TForm1.Initialize;
@@ -236,3 +248,4 @@ begin
 end;
 
 end.
+

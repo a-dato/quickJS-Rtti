@@ -1,4 +1,4 @@
-unit JSGeneral.frame;
+﻿unit JSGeneral.frame;
 
 interface
 
@@ -19,3 +19,4 @@ implementation
 {$R *.fmx}
 
 end.
+

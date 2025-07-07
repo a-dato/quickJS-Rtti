@@ -1,4 +1,4 @@
-unit App.Config.impl;
+﻿unit App.Config.impl;
 
 interface
 
@@ -6,8 +6,8 @@ uses
   System_,
   System.Collections.Generic,
   App.Config.intf,
-  App.Objects.intf,
-  App.Objects.impl,
+  App.TypeDescriptor.intf,
+  App.TypeDescriptor.impl,
   QuickJS.Register.dn4d.intf,
   App.Content.intf,
   ADato.ObjectModel.List.intf,
@@ -16,20 +16,20 @@ uses
 type
   TAppConfig = class(TBaseInterfacedObject, IAppConfig)
   protected
-    _Types: Dictionary<&Type, IObjectType>;
+    _Types: Dictionary<&Type, ITypeDescriptor>;
 
-    function get_ObjectType(const AType: &Type): IObjectType;
+    function ObjectType(const AType: &Type): ITypeDescriptor;
     function get_Types: List<&Type>;
 
     function  AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
-    procedure RegisterType(const AType: &Type; const ObjectType: IObjectType);
+    procedure RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
     function  TypeByName(const Name: string) : &Type;
-    function  TypeDescriptorByName(const Name: string) : IObjectType;
+    function  TypeDescriptorByName(const Name: string) : ITypeDescriptor;
   public
     constructor Create;
   end;
 
-  TJSObjectType = class(ObjectType)
+  TJSObjectType = class(TTypeDescriptor)
   protected
     _JSProto: JSObjectReference;
 
@@ -59,10 +59,10 @@ uses
 
 constructor TAppConfig.Create;
 begin
-  _Types := CDictionary<&Type, IObjectType>.Create(10, TypeEqualityComparer.Create);
+  _Types := CDictionary<&Type, ITypeDescriptor>.Create(10, TypeEqualityComparer.Create);
 end;
 
-function TAppConfig.get_ObjectType(const AType: &Type): IObjectType;
+function TAppConfig.ObjectType(const AType: &Type): ITypeDescriptor;
 begin
   {$IFDEF DEBUG}
   if not _Types.TryGetValue(AType, Result) then
@@ -110,9 +110,9 @@ begin
   end;
 end;
 
-procedure TAppConfig.RegisterType(const AType: &Type; const ObjectType: IObjectType);
+procedure TAppConfig.RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
 begin
-  _Types[AType] := ObjectType {can be nil};
+  _Types[AType] := TypeDescriptor {can be nil};
 end;
 
 function TAppConfig.TypeByName(const Name: string): &Type;
@@ -122,9 +122,9 @@ begin
       Exit(entry.Key);
 end;
 
-function TAppConfig.TypeDescriptorByName(const Name: string): IObjectType;
+function TAppConfig.TypeDescriptorByName(const Name: string): ITypeDescriptor;
 begin
-  Result := get_ObjectType(TypeByName(Name));
+  Result := ObjectType(TypeByName(Name));
 end;
 
 { TJSObjectType }
@@ -160,3 +160,4 @@ begin
 end;
 
 end.
+

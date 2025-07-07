@@ -1,4 +1,4 @@
-unit QuickJS.Register.dn4d.impl;
+﻿unit QuickJS.Register.dn4d.impl;
 
 interface
 
@@ -822,3 +822,4 @@ end;
 
 
 end.
+

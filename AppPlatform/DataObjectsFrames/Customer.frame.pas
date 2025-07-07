@@ -1,4 +1,4 @@
-unit Customer.frame;
+﻿unit Customer.frame;
 
 interface
 
@@ -61,3 +61,4 @@ begin
 end;
 
 end.
+

@@ -1,4 +1,4 @@
-unit App.impl;
+﻿unit App.impl;
 
 interface
 
@@ -48,7 +48,7 @@ var
 implementation
 
 uses
-  App.Objects.intf,
+  App.TypeDescriptor.intf,
   App.Config.impl,
   App.Windows.impl,
   quickjs_ng;
@@ -91,7 +91,7 @@ end;
 function TAppObject.Test1(const AObject: CObject) : Boolean;
 begin
   var sfAccounts := _app.Config.TypeByName('SFAccount');
-  var ot := _app.Config.ObjectType[sfAccounts];
+  var ot := _app.Config.ObjectType(sfAccounts);
 
   var d := ot.Provider.Data(nil);
   var l: IList;
@@ -143,3 +143,4 @@ begin
 end;
 
 end.
+

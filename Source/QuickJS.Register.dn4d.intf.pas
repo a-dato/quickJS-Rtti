@@ -1,4 +1,4 @@
-unit QuickJS.Register.dn4d.intf;
+﻿unit QuickJS.Register.dn4d.intf;
 
 interface
 
@@ -263,3 +263,4 @@ begin
 end;
 
 end.
+

@@ -1,4 +1,4 @@
-unit App.intf;
+﻿unit App.intf;
 
 interface
 
@@ -13,3 +13,4 @@ type
 implementation
 
 end.
+
