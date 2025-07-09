@@ -18,6 +18,12 @@ type
 
   {$M+}
   IContentProvider = interface(IBaseInterface)
+//    CreateInstance()
+//    CanAdd() {
+//    CanDelete(item) {
+//    Add(item) {
+//    Remove(item) {
+
     function Data(const Filter: CObject): CObject;
   end;
 

@@ -140,7 +140,6 @@ end;
 { ProjectProvider }
 
 function ProjectProvider.Data(const Filter: CObject): CObject;
-var abc: TValue;
 begin
   if _data = nil then
   begin

@@ -4,42 +4,35 @@ interface
 
 uses
   System_,
+  System.Collections,
+  System.Collections.Generic,
+  quickjs_ng,
+  QuickJS.Register.intf,
   App.intf,
   App.Config.intf,
   App.Windows.intf,
   App.Environment.intf,
-  QuickJS.Register.dn4d.intf, ADato.ObjectModel.List.intf, System.Collections,
+  ADato.ObjectModel.List.intf,
   App.PropertyDescriptor.intf;
 
 type
-  TAppObject = class(TBaseInterfacedObject, IAppObject)
+  TAppObject = class(TBaseInterfacedObject, IAppObject, IJSExtendableObject)
   protected
     _Config: IAppConfig;
     _Environment: IEnvironment;
     _Windows: IWindows;
+    _extendabePropertyValues: Dictionary<string, JSValue>;
+
+    // IJSExtendableObject
+    function  define_own_property(Ctx: JSContext; const Name: string) : Boolean;
+    function  GetValue(Ctx: JSContext; const Name: string): JSValue;
+    procedure SetValue(Ctx: JSContext; const Name: string; Value: JSValue);
 
     function get_Config: IAppConfig;
     function get_Environment: IEnvironment;
     function get_Windows: IWindows;
-
-    function  Test(const Descriptor: IPropertyDescriptor) : Boolean;
-    function  Test1(const AObject: CObject) : Boolean;
-    function  Test2(const AObject: JSObjectReference) : Boolean;
-    function  Test3(const AObject: &Type) : Boolean;
   public
     constructor Create(const Environment: IEnvironment);
-  end;
-
-  TDataObject = class(TBaseINterfacedObject, IDataObject)
-  protected
-    _Name: string;
-
-    function  get_Name: string;
-    procedure set_Name(const Value: string);
-
-  public
-    constructor Create;
-    destructor Destroy; override;
   end;
 
 var
@@ -50,8 +43,7 @@ implementation
 uses
   App.TypeDescriptor.intf,
   App.Config.impl,
-  App.Windows.impl,
-  quickjs_ng;
+  App.Windows.impl;
 
 { TAppObject }
 
@@ -60,6 +52,20 @@ begin
   _Environment := Environment;
   _Config := TAppConfig.Create;
   _Windows := Windows.Create;
+  _extendabePropertyValues := CDictionary<string, JSValue>.Create;
+end;
+
+function TAppObject.define_own_property(Ctx: JSContext; const Name: string): Boolean;
+begin
+  Result := True;
+end;
+
+function TAppObject.GetValue(Ctx: JSContext; const Name: string): JSValue;
+begin
+  var val: JSValue;
+  if _extendabePropertyValues.TryGetValue(Name, val) then
+    Result := JS_DupValue(Ctx, val) else
+    Result := JS_UNDEFINED;
 end;
 
 function TAppObject.get_Config: IAppConfig;
@@ -77,69 +83,15 @@ begin
   Result := _Windows;
 end;
 
-function TAppObject.Test(const Descriptor: IPropertyDescriptor) : Boolean;
+procedure TAppObject.SetValue(Ctx: JSContext; const Name: string; Value: JSValue);
 begin
-  var fmt := Descriptor.Formatter;
-  if fmt <> nil then
-    fmt.Format(nil, nil, nil);
+  var val: JSValue;
+  if _extendabePropertyValues.TryGetValue(Name, val) then
+    JS_FreeValue(Ctx, val);
 
-  var mrs := Descriptor.Marshaller;
-  if mrs <> nil then
-    mrs.Marshal(nil, nil);
-end;
-
-function TAppObject.Test1(const AObject: CObject) : Boolean;
-begin
-  var sfAccounts := _app.Config.TypeByName('SFAccount');
-  var ot := _app.Config.ObjectType(sfAccounts);
-
-  var d := ot.Provider.Data(nil);
-  var l: IList;
-
-  if Interfaces.Supports<IList>(d, l) then
-  begin
-    var c := l.Count;
-  end;
-end;
-
-function TAppObject.Test2(const AObject: JSObjectReference) : Boolean;
-begin
-  if AObject.Ctx = nil then;
-end;
-
-function TAppObject.Test3(const AObject: &Type) : Boolean;
-begin
-  if AObject <> nil then
-  begin
-    var props := AObject.GetProperties;
-    for var p in props do
-    begin
-      var s: string := p.Name;
-    end;
-
-  end;
-end;
-
-{ TDataObject }
-
-constructor TDataObject.Create;
-begin
-
-end;
-
-destructor TDataObject.Destroy;
-begin
-  inherited;
-end;
-
-function TDataObject.get_Name: string;
-begin
-  Result := _Name;
-end;
-
-procedure TDataObject.set_Name(const Value: string);
-begin
-  _Name := Value;
+  if JS_IsUndefined(Value) then
+    _extendabePropertyValues.Remove(Name) else
+    _extendabePropertyValues[Name] := JS_DupValue(Ctx, Value);
 end;
 
 end.

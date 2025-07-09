@@ -23,7 +23,7 @@ type
     property Value: Variant read FValue;
   end;
 
-  TMemberType = (None, Methods, &Property, Iterator, IteratorNext, ArrayIndexer);
+  TMemberType = (None, Methods, &Property, Iterator, IteratorNext, ArrayIndexer, ExtensionProperty);
   TMemberTypes = set of TMemberType;
   TObjectSupportsExtension = (Unknown, Supported, NotSupported);
 
@@ -106,9 +106,9 @@ type
 
   IJSExtendableObject = interface
     ['{05E3C6B4-C097-4767-9D33-4BA0B0A6371D}']
-    function  define_own_property(const Name: string) : Boolean;
-    function  GetValue(const Name: string): JSValue;
-    procedure SetValue(const Name: string; Value: JSValue);
+    function  define_own_property(Ctx: JSContext; const Name: string) : Boolean;
+    function  GetValue(Ctx: JSContext; const Name: string): JSValue;
+    procedure SetValue(Ctx: JSContext; const Name: string; Value: JSValue);
   end;
 
   TOnGetMemberByName = function(const AObject: IRegisteredObject; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean) : IPropertyDescriptor of Object;

@@ -286,6 +286,16 @@ type
     function  get_MemberType: TMemberType; override;
   end;
 
+  TRttiExtensionPropertyDescriptor = class(TPropertyDescriptor)
+  protected
+    _propertyName: string;
+
+    function  get_MemberType: TMemberType; override;
+
+  public
+    constructor Create(const PropertyName: string);
+  end;
+
   TRegisteredObject = class(TInterfacedObject, IRegisteredObject)
   protected
     class var FOnGetMemberByName: TOnGetMemberByName;
@@ -521,7 +531,7 @@ begin
       var prop_name := JS_ToCString(ctx, func_data^);
       if Assigned(prop_name) then
       begin
-        Result := ext.GetValue(string(prop_name));
+        Result := ext.GetValue(ctx, string(prop_name));
         JS_FreeCString(ctx, prop_name);
       end;
     end;
@@ -550,7 +560,7 @@ begin
       var prop_name := JS_ToCString(ctx, func_data^);
       if Assigned(prop_name) then
       begin
-        ext.SetValue(string(prop_name), JS_DupValue(ctx, PJSValueConstArr(argv)[0]));
+        ext.SetValue(ctx, string(prop_name), PJSValueConstArr(argv)[0]);
         JS_FreeCString(ctx, prop_name);
       end;
     end;
@@ -650,7 +660,7 @@ var
             Exit;
         end;
 
-        if ext.define_own_property(PropertyName) then
+        if ext.define_own_property(Ctx, PropertyName) then
           reg.ObjectSupportsExtension := TObjectSupportsExtension.Supported else
           reg.ObjectSupportsExtension := TObjectSupportsExtension.NotSupported;
       end;
@@ -695,8 +705,14 @@ begin
     if not reg.TryGetRttiDescriptor(member_name, rtti_descriptor) then
     begin
       rtti_descriptor := reg.GetMemberByName(member_name, [TMemberType.Methods, TMemberType.Property]);
+
       if rtti_descriptor = nil then
-        Exit;
+      begin
+        if TestObjectSupportsExtension(reg, member_name) then
+          rtti_descriptor := TRttiExtensionPropertyDescriptor.Create(member_name) else
+          Exit;
+      end;
+
       reg.AddRttiDescriptor(member_name, rtti_descriptor);
     end;
 
@@ -708,12 +724,8 @@ begin
       SetRttiMethodCallBack
     else if rtti_descriptor.MemberType = TMemberType.ArrayIndexer then
       SetRttiArrayIndexProperty(item_index)
-
-    {$IFDEF DEBUG}
-    else if rtti_descriptor.PropertyType.Name = 'IObjectType' then
-      SetRttiArrayIndexProperty(item_index)
-    {$ENDIF}
-
+    else if rtti_descriptor.MemberType = TMemberType.ExtensionProperty then
+      SetExtendableObjectGetterSetter(member_name)
     else
       SetRttiPropertyDescriptorCallBack;
 
@@ -2322,6 +2334,17 @@ begin
   Result := TMemberType.IteratorNext;
 end;
 
+{ TRttiExtensionPropertyDescriptor }
+constructor TRttiExtensionPropertyDescriptor.Create(const PropertyName: string);
+begin
+  _propertyName := PropertyName;
+end;
+
+function TRttiExtensionPropertyDescriptor.get_MemberType: TMemberType;
+begin
+  Result := TMemberType.ExtensionProperty;
+end;
+
 { TRttiArrayIndexDescriptor }
 
 constructor TRttiArrayIndexDescriptor.Create(AInfo: PTypeInfo);
@@ -2344,11 +2367,9 @@ begin
 
 end;
 
-procedure TRttiArrayIndexDescriptor.SetValue(const Ptr: Pointer;
-  const Index: array of TValue; const Value: TValue);
+procedure TRttiArrayIndexDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
 begin
   inherited;
-
 end;
 
 initialization

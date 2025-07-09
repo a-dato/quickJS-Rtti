@@ -1,0 +1,18 @@
+Windows x64: from Ubuntu shell, call:
+
+	cd /mnt/d/Program\ Files/quickjs_ng
+	make -f MakeFile_Win64
+
+Wasm/Webassembly:
+
+Quickjs
+	cd /mnt/d/Program\ Files/emsdk
+	source ./emsdk_env.sh
+	cd /mnt/d/Program\ Files/quickjs_ng
+	emcc quickjs.c libregexp.c libunicode.c cutils.c -o quickjs.js -DCONFIG_VERSION=\"24\" -s MODULARIZE=1 -s EXPORT_NAME="QuickJS" -s EXPORTED_RUNTIME_METHODS="['ccall', 'cwrap']" -s ALLOW_MEMORY_GROWTH=1 -s ENVIRONMENT=web
+	
+Quickjs_ng
+	cd /mnt/d/Program\ Files/emsdk
+	source ./emsdk_env.sh
+	cd /mnt/d/Program\ Files/quickjs_ng
+	emcc quickjs.c libunicode.c libregexp.c cutils.c xsum.c quickjs-libc.c -o qjs.wasm -s STANDALONE_WASM -s NO_EXIT_RUNTIME=0 -s ERROR_ON_UNDEFINED_SYMBOLS=0 -s "EXPORTED_FUNCTIONS=['_main']"

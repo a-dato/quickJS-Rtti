@@ -174,7 +174,7 @@ export class Customer {
   }
 
   get Status() {
-	return this._Status;
+		return this._Status;
   }
 
 	set Status(status) {
@@ -193,7 +193,6 @@ export class CustomerType {
 		CustomerType.ct = new CustomerType();
 		globalThis.Customer = Customer;
 		globalThis.CustomerType = CustomerType;
-		// app.Config.RegisterJSType(CustomerType.ct);
 		app.Config.RegisterType(Customer, CustomerType.ct);
 	}
 
@@ -256,10 +255,14 @@ export class CustomerType {
 			},
 			Status: {
 				EditorType: editor.Combo,
-				Format: '#.##',
+				// IFormatter
+				Formatter: {
+					Format: (ctx, item, format) => { 
+						return item;
+					}
+				},
 				Picklist: {
 					Items: (filter) => {return Object.values(status)},
-					Format: (Item) => {return Item.Name;}			
 				}
 			}
 		}
@@ -269,6 +272,26 @@ export class CustomerType {
 class CustomerProvider {
 	constructor() {
 		this._Data = null;
+	}
+
+	CreateInstance() {
+		return new Customer();
+	}
+
+	CanAdd() {
+		return true;
+	}
+
+	CanDelete(item) {
+		return true;
+	}
+
+	Add(item) {
+		this._Data.Add(item);
+	}
+
+	Remove(item) {
+		this._Data.Remove(item);
 	}
 	
 	Data(filter) {

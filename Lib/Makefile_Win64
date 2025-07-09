@@ -1,0 +1,15 @@
+CC = x86_64-w64-mingw32-gcc
+CFLAGS = -O2 -fPIC -Wall -D_GNU_SOURCE -DCONFIG_VERSION=\"V16\"
+LDFLAGS = -static -shared
+
+SRC = quickjs.c libunicode.c libregexp.c cutils.c xsum.c quickjs-libc.c
+OBJ = $(SRC:.c=.o)
+
+all: quickjs64.dll
+
+quickjs64.dll: $(OBJ)
+	$(CC) $(LDFLAGS) -o $@ $^
+
+clean:
+	del *.o *.dll
+
