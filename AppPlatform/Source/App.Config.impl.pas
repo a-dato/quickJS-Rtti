@@ -18,12 +18,12 @@ type
   protected
     _Types: Dictionary<&Type, ITypeDescriptor>;
 
-    function ObjectType(const AType: &Type): ITypeDescriptor;
     function get_Types: List<&Type>;
 
     function  AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
     procedure RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
     function  TypeByName(const Name: string) : &Type;
+    function  TypeDescriptor(const AType: &Type): ITypeDescriptor;
     function  TypeDescriptorByName(const Name: string) : ITypeDescriptor;
   public
     constructor Create;
@@ -62,7 +62,7 @@ begin
   _Types := CDictionary<&Type, ITypeDescriptor>.Create(10, TypeEqualityComparer.Create);
 end;
 
-function TAppConfig.ObjectType(const AType: &Type): ITypeDescriptor;
+function TAppConfig.TypeDescriptor(const AType: &Type): ITypeDescriptor;
 begin
   {$IFDEF DEBUG}
   if not _Types.TryGetValue(AType, Result) then
@@ -124,7 +124,7 @@ end;
 
 function TAppConfig.TypeDescriptorByName(const Name: string): ITypeDescriptor;
 begin
-  Result := ObjectType(TypeByName(Name));
+  Result := TypeDescriptor(TypeByName(Name));
 end;
 
 { TJSObjectType }

@@ -303,34 +303,18 @@
             <Form>Form1</Form>
             <FormType>fmx</FormType>
         </DCCReference>
-        <DCCReference Include="AppObjects\App.intf.pas"/>
-        <DCCReference Include="AppObjects\App.Windows.intf.pas"/>
-        <DCCReference Include="AppObjects\App.Config.intf.pas"/>
-        <DCCReference Include="AppObjects\App.impl.pas"/>
-        <DCCReference Include="AppObjects\App.Environment.intf.pas"/>
-        <DCCReference Include="AppObjects\App.Config.impl.pas"/>
-        <DCCReference Include="AppObjects\App.TypeDescriptor.intf.pas"/>
-        <DCCReference Include="AppObjects\App.TypeDescriptor.impl.pas"/>
-        <DCCReference Include="AppObjects\App.Windows.impl.pas"/>
         <DCCReference Include="ObjectWindow.pas">
             <Form>frmObjectWindow</Form>
             <FormType>fmx</FormType>
         </DCCReference>
-        <DCCReference Include="AppObjects\App.Factory.pas"/>
-        <DCCReference Include="AppObjects\App.Environment.impl.pas"/>
-        <DCCReference Include="AppObjects\App.Windows.FMX.impl.pas"/>
         <DCCReference Include="DataObjectsFrames\Customer.frame.pas">
             <Form>CustomerFrame</Form>
         </DCCReference>
-        <DCCReference Include="AppObjects\App.Content.intf.pas"/>
-        <DCCReference Include="AppObjects\App.Models.intf.pas"/>
-        <DCCReference Include="AppObjects\App.Models.impl.pas"/>
         <DCCReference Include="DataObjectsFrames\JSGeneral.frame.pas">
             <Form>JSGeneralFrame</Form>
             <FormType>fmx</FormType>
             <DesignClass>TFrame</DesignClass>
         </DCCReference>
-        <DCCReference Include="AppObjects\App.Content.impl.pas"/>
         <DCCReference Include="AppDialogs\ObjectDesigner.pas">
             <Form>ObjectDesignerForm</Form>
             <FormType>fmx</FormType>
@@ -344,8 +328,6 @@
         <DCCReference Include="AppUI\App.KeyNavigator.intf.pas"/>
         <DCCReference Include="AppUI\App.UIStateDelegate.pas"/>
         <DCCReference Include="AppUI\App.KeyNavigator.impl.pas"/>
-        <DCCReference Include="AppObjects\App.PropertyDescriptor.intf.pas"/>
-        <DCCReference Include="AppObjects\App.PropertyDescriptor.impl.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

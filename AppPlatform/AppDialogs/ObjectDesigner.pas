@@ -54,7 +54,7 @@ uses
 
 function TObjectDesignerForm.GetDescriptor(const AType: &Type) : IPropertyDescriptor;
 begin
-  var ot := _app.Config.ObjectType(AType);
+  var ot := _app.Config.TypeDescriptor(AType);
   if ot <> nil then
     Result := ot.PropertyDescriptor[AType.Name];
 end;

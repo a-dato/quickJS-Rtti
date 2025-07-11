@@ -17,6 +17,8 @@ type
     function  get_TimeInterval: TimeInterval;
     procedure set_TimeInterval(const Value: TimeInterval);
 
+    function  Equals(const Other: IProject): Boolean;
+
     property ID: CObject read get_ID write set_ID;
     property Name: string read get_Name write set_Name;
     property TimeInterval: TimeInterval read get_TimeInterval write set_TimeInterval;

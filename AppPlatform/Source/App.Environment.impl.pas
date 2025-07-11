@@ -178,7 +178,7 @@ begin
   var ctrl: TControl;
   if AContent.TryAsType<TControl>(ctrl) then
   begin
-    var objectType := _app.Config.ObjectType(AType);
+    var objectType := _app.Config.TypeDescriptor(AType);
 //    var dataType := objectType.GetType;
 
     var model: IObjectListModel := nil;

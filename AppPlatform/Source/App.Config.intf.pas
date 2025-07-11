@@ -22,7 +22,7 @@ type
 
     function  TypeByName(const Name: string) : &Type;
     function  TypeDescriptorByName(const Name: string) : ITypeDescriptor;
-    function  ObjectType(const AType: &Type): ITypeDescriptor;
+    function  TypeDescriptor(const AType: &Type): ITypeDescriptor;
 
     property  Types: List<&Type> read get_Types;
   end;

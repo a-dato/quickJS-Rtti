@@ -41,7 +41,7 @@ uses
 
 function Windows.CreateWindow(const AOwner: CObject; const AType: &Type): IWindow;
 begin
-  var ot := _app.Config.ObjectType(AType);
+  var ot := _app.Config.TypeDescriptor(AType);
   if ot = nil then
     raise CException.Create('Unknown type');
 
@@ -54,13 +54,13 @@ end;
 function Window.Bind(const Data: CObject): IWindow;
 begin
   var c := _frame.Content;
-  _app.Config.ObjectType(_Type).Binder.Bind(c, _Type, Data);
+  _app.Config.TypeDescriptor(_Type).Binder.Bind(c, _Type, Data);
   Result := Self;
 end;
 
 function Window.Build: IWindow;
 begin
-  _frame.Content := _app.Config.ObjectType(_Type).Builder.Build(_frame.Owner);
+  _frame.Content := _app.Config.TypeDescriptor(_Type).Builder.Build(_frame.Owner);
   _frame.Content.AsType<TControl>.Align := TAlignLayout.Client;
   Result := Self;
 end;

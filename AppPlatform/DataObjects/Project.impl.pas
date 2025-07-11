@@ -41,6 +41,10 @@ type
   public
     constructor Create;
 
+    function  GetHashCode: Integer; override;
+    function  Equals(const Other: IProject): Boolean; overload; virtual;
+    function  Equals(const other: CObject): Boolean; overload; override;
+
     class property &Type: &Type read get_Type;
     class property TypeDescriptor: ITypeDescriptor read get_TypeDescriptor;
   end;
@@ -54,6 +58,12 @@ type
   protected
     _data: List<IProject>;
 
+//    function  CreateInstance: CObject;
+//    function  CanAdd: Boolean;
+//    function  CanDelete(const Item: CObject) : Boolean;
+//    procedure Add(const Item: CObject);
+//    function  Remove(const Item: CObject) : Boolean;
+
     function Data(const Filter: CObject): CObject;
   end;
 
@@ -65,6 +75,21 @@ uses
 
 
 { TProject }
+function TProject.GetHashCode: Integer;
+begin
+  Result := _ID.GetHashCode;
+end;
+
+function TProject.Equals(const Other: IProject): Boolean;
+begin
+  Result := CObject.Equals(_ID, Other.ID)
+end;
+
+function TProject.Equals(const other: CObject): Boolean;
+begin
+  Result := Equals(Other.AsType<IProject>);
+end;
+
 function TProject.get_TimeInterval: TimeInterval;
 begin
   Result := _TimeInterval;
@@ -139,6 +164,34 @@ end;
 
 { ProjectProvider }
 
+//procedure ProjectProvider.Add(const Item: CObject);
+//begin
+//  _data.Add(Item.AsType<IProject>);
+//end;
+//
+//function ProjectProvider.CanAdd: Boolean;
+//begin
+//  Result := True;
+//end;
+//
+//function ProjectProvider.CanDelete(const Item: CObject): Boolean;
+//begin
+//  Result := True;
+//end;
+//
+//function ProjectProvider.CreateInstance: CObject;
+//begin
+//  var p: IProject := TProject.Create;
+//  p.ID := -1;
+//  p.Name := 'Project (new)';
+//  Result := CObject.From<IProject>(p);
+//end;
+
+//function ProjectProvider.Remove(const Item: CObject): Boolean;
+//begin
+//  Result := _data.Remove(Item.AsType<IProject>);
+//end;
+
 function ProjectProvider.Data(const Filter: CObject): CObject;
 begin
   if _data = nil then
@@ -157,8 +210,6 @@ begin
 
   Result := CObject.From<List<IProject>>(_data);
 end;
-
-{ CustomerType }
 
 function ProjectType.GetType: &Type;
 begin

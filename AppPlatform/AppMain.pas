@@ -76,7 +76,7 @@ uses
   App.TypeDescriptor.intf,
   System.Collections,
   System.Rtti, App.PropertyDescriptor.intf, System.JSON,
-  ADato.ObjectModel.impl;
+  ADato.ObjectModel.impl, ADato.Collections.Specialized;
 
 {$R *.fmx}
 
@@ -103,7 +103,7 @@ procedure TForm1.Button2Click(Sender: TObject);
 begin
   var tp := &Type.From<IProject>;
   var customerType := _app.Config.TypeByName('Customer');
-  var customer_objecttype := _app.Config.ObjectType(customerType);
+  var customer_objecttype := _app.Config.TypeDescriptor(customerType);
 
 //  var descr := customer_objecttype.PropertyDescriptor['Customer'];
 //  _app.Config.AddProperty(tp, 'Customer', 'Customer', customerType, descr);
@@ -114,7 +114,7 @@ begin
 
   var c := data[0]; // Customer
 
-  var project_type := _app.Config.ObjectType(&Type.From<IProject>);
+  var project_type := _app.Config.TypeDescriptor(&Type.From<IProject>);
   var d := project_type.Provider.Data(nil).AsType<IList>;
   var prj := d[0].AsType<IProject>;
 
@@ -131,7 +131,7 @@ begin
 
 
   var prjType := _app.Config.TypeByName('IProject');
-  var prj_objecttype := _app.Config.ObjectType(prjType);
+  var prj_objecttype := _app.Config.TypeDescriptor(prjType);
 
   var data := prj_objecttype.Provider.Data(nil);
 
@@ -153,7 +153,7 @@ begin
   var tp := &Type.From<IProject>;
   var objectProperty := tp.PropertyByName('Customer.Address');
 
-  var ot := _app.Config.ObjectType(tp);
+  var ot := _app.Config.TypeDescriptor(tp);
   var d := ot.Provider.Data(nil);
   var l: IList;
   if Interfaces.Supports<IList>(d, l) then
@@ -220,6 +220,8 @@ begin
       function : Pointer begin
         Result := TXMLHttpRequest.Create;
       end);
+
+    TJSRegister.RegisterObject(_context.ctx, 'IAddNew', TypeInfo(IAddNew), nil);
 
     TJSRegister.RegisterLiveObject(_context.ctx, 'app', TypeInfo(IAppObject), _app);
 

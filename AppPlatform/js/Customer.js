@@ -1,4 +1,4 @@
-import {visible,editor,status} from './lynx_app.js';
+import {visible,editor,status,LynxObject,LynxType,LynxProvider} from './lynx_app.js';
 
 /*
  * Address type
@@ -145,14 +145,15 @@ class AddressProvider {
 /*
  * Customer
 */
-export class Customer {
+export class Customer extends LynxObject {
   constructor(id, n) {
+		super();
 		this._id = id;
     this._Name = n;
 		this._Address = null;
     this._Status = status.None;
   }
-
+		
   get ID() {
    return this._id;
   }
@@ -186,7 +187,7 @@ export class Customer {
 	}
 }
 
-export class CustomerType {
+export class CustomerType extends LynxType {
 	static ct = null;
 	
 	static register() {
@@ -197,6 +198,7 @@ export class CustomerType {
 	}
 
 	constructor() {
+		super();
 		this.Binder = new JSBinder();			// IContentBinder
 		this.Builder = new JSFrameBuilder();	// IContentBuilder
 		this.Provider = new CustomerProvider();	// IContentProvider
@@ -269,8 +271,9 @@ export class CustomerType {
 	} 
 }
 
-class CustomerProvider {
+class CustomerProvider extends LynxProvider {
 	constructor() {
+		super();
 		this._Data = null;
 	}
 
@@ -292,6 +295,10 @@ class CustomerProvider {
 
 	Remove(item) {
 		this._Data.Remove(item);
+	}
+	
+	QueryInterface(interface_type) {
+		return true;
 	}
 	
 	Data(filter) {

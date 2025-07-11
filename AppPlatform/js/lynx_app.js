@@ -25,3 +25,26 @@ export const status = {
 	Released: 3,
 	Closed: 4
 }
+
+class AddNew {
+	AddNew() {
+		return 'test';
+	}
+}
+
+export class IBaseInterface {
+	QueryInterface(interface_type) {
+		console.log('QueryInterface');
+		if(interface_type === IAddNew)
+			return new AddNew();
+	}
+}
+
+export class LynxObject extends IBaseInterface {
+}
+
+export class LynxType extends IBaseInterface {
+}
+
+export class LynxProvider extends IBaseInterface {
+}
