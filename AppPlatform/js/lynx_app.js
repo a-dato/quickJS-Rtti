@@ -28,15 +28,27 @@ export const status = {
 
 class AddNew {
 	AddNew() {
+		console.log('AddNew()');
 		return 'test';
 	}
 }
 
 export class IBaseInterface {
-	QueryInterface(interface_type) {
-		console.log('QueryInterface');
-		if(interface_type === IAddNew)
+	QueryInterface(intf_type) {
+		console.log(`QueryInterface: ${intf_type}`);
+		if(intf_type === IAddNew) {
+			console.log('Is AddNew');
+			return new AddNew();			
+		}
+
+		console.log('Is NOTAddNew');
+		
+/*
+		if(IID === IAddNew)
 			return new AddNew();
+			
+		return new AddNew();			
+*/
 	}
 }
 

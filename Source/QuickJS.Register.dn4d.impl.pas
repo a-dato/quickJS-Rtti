@@ -151,7 +151,7 @@ begin
   JSConverter.Instance := TJSTypedConverter.Create;
   TJSRegister.Instance := TJSRegisterTypedObjects.Create;
 
-  TJSRegister.RegisterObject(Context.ctx, 'JSIEnumerableIterator', TypeInfo(TJSIEnumerableIterator));
+  TJSRegister.RegisterObject(Context, 'JSIEnumerableIterator', TypeInfo(TJSIEnumerableIterator));
 end;
 
 function TJSRegisterTypedObjects.CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject;
@@ -389,7 +389,7 @@ begin
     tp.Kind := TJSRegisterTypedObjects.tkJSType;
     tp.Name := name;
 
-    reg := TJSRegister.RegisterJSObject(ctx, proto, tp);
+    reg := TJSRegister.RegisterJSObject(TJSRuntime.Context[ctx], proto, tp);
 
     JS_FreeCString(ctx, name);
   end;
@@ -611,6 +611,13 @@ begin
     begin
       var u_milis := DateTimeOffset.ToUnixTimeMiliSeconds(CDateTime(Value.GetReferenceToRawData^).Ticks);
       Exit(TJSRegister.JS_NewDate(ctx, u_milis));
+    end;
+
+    if Value.TypeInfo = TypeInfo(&Type) then
+    begin
+      var reg: IRegisteredObject;
+      if TJSRegister.TryGetRegisteredObjectFromTypeInfo(Value.AsType<&Type>.GetTypeInfo, reg) and not JS_IsUndefined(reg.JSConstructor) then
+        Exit(JS_DupValue(ctx, reg.JSConstructor));
     end;
   end;
 

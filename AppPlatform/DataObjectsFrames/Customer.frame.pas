@@ -5,11 +5,11 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
-  FMX.Controls.Presentation, FMX.Layouts, FMX.DataControl.ScrollableControl,
-  FMX.DataControl.ScrollableRowControl, FMX.DataControl.Static,
-  FMX.DataControl.Editable, FMX.DataControl.Impl, FMX.Edit, FMX.TabControl,
-  System.Actions, FMX.ActnList, LynxX.Controls.EditorPanel,
-  App.EditorManager.intf;
+  App.EditorManager.intf, System.Actions, FMX.ActnList, FMX.Edit,
+  FMX.TabControl, FMX.Controls.Presentation, FMX.Layouts,
+  FMX.ScrollControl.Impl, FMX.ScrollControl.WithRows.Impl,
+  FMX.ScrollControl.WithCells.Impl, FMX.ScrollControl.WithEditableCells.Impl,
+  FMX.ScrollControl.DataControl.Impl;
 
 type
   TCustomerFrame = class(TFrame, IEditorManager)

@@ -61,6 +61,17 @@ type
     destructor Destroy; override;
   end;
 
+  TJSVirtualInterface = class(TVirtualInterface)
+  var
+    obj_ref: JSObjectReference;
+
+    procedure Invoke(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue);
+
+  public
+    constructor Create(PIID: PTypeInfo; const JSObject: JSObjectReference); reintroduce;
+    function QueryInterface(const IID: TGUID; out Obj): HResult; override;
+  end;
+
   function JSVariant(const Value: IInterface) : Variant;
   function JSVariantIsNull(const Value: Variant) : Boolean;
   function JSVariantIsUndefined(const Value: Variant) : Boolean;
@@ -69,7 +80,9 @@ type
 implementation
 
 uses
-  QuickJS.Register.impl, System.Variants;
+  QuickJS.Register.intf,
+  QuickJS.Register.impl,
+  System.Variants;
 
 function JSVariant(const Value: IInterface) : Variant;
 begin
@@ -86,18 +99,20 @@ begin
   Result := VarJSVariantIsUndefined(Value);
 end;
 
-function WrapIJSObjectInVirtualInterface(Target: PTypeInfo; obj_ref: JSObjectReference) : TValue;
+{ TJSVirtualInterface }
+constructor TJSVirtualInterface.Create(PIID: PTypeInfo; const JSObject: JSObjectReference);
 begin
-  var virtual_interface := TVirtualInterface.Create(Target,
-    procedure(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue)
-    begin
-      // Args[0] = Self
+  inherited Create(PIID, Invoke);
+  obj_ref := JSObject;
+end;
 
-      var name: AnsiString;
+procedure TJSVirtualInterface.Invoke(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue);
+begin
+  var name: AnsiString;
 
-      if Method.Name.StartsWith('get_') then
-      begin
-        // Getter with indexer called (like Object['ID']) --> Call ID property
+  if Method.Name.StartsWith('get_') then
+  begin
+    // Getter with indexer called (like Object['ID']) --> Call ID property
 //        if (Length(Args) > 1) then
 //        begin
 //          if Args[1].IsType<string> then
@@ -107,17 +122,42 @@ begin
 //          else
 //            raise Exception.Create('Invalid parameter in call to: ' + Method.Name);
 //        end else
-        name := Method.Name.Substring(4);
-      end else
-        name := Method.Name;
+    name := Method.Name.Substring(4);
+  end else
+    name := Method.Name;
 
-      var rt: PTypeInfo := nil;
-      if Method.ReturnType <> nil then
-        rt := Method.ReturnType.Handle;
+  var rt: PTypeInfo := nil;
+  if Method.ReturnType <> nil then
+    rt := Method.ReturnType.Handle;
 
-      Result := obj_ref.Invoke(name, Copy(Args, 1), rt);
-    end);
+  Result := obj_ref.Invoke(name, Copy(Args, 1), rt);
+end;
 
+function TJSVirtualInterface.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  Result := inherited;
+  if Result <> 0 then
+  begin
+    // Call QuickJS, we expect an object to be returned. This object will be wrapped inside
+    // an TJSVirtualInterface object as well and can be cast to the requested type
+    var reg: IRegisteredObject;
+    if TJSRegister.TryGetRegisteredInterface(IID, reg) then
+    begin
+      var tp := TValue.From<&Type>(&Type.Create(reg.GetTypeInfo));
+      var val := obj_ref.Invoke('QueryInterface', [tp], reg.GetTypeInfo);
+      if not val.IsEmpty then
+      begin
+        var ii := val.AsInterface;
+        IInterface(Obj) := ii;
+        Result := S_OK;
+      end;
+    end;
+  end;
+end;
+
+function WrapIJSObjectInVirtualInterface(Target: PTypeInfo; obj_ref: JSObjectReference) : TValue;
+begin
+  var virtual_interface := TJSVirtualInterface.Create(Target, obj_ref);
   var ii: IInterface;
   if Interfaces.Supports(virtual_interface, Target.TypeData.GUID, ii) then
     TValue.Make(@ii, Target, Result);

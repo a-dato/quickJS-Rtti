@@ -14,6 +14,7 @@ object CustomerFrame: TCustomerFrame
     RowHeightDefault = 30.000000000000000000
     HeaderHeight = 24.000000000000000000
     AutoExtraColumnSizeMax = -1.000000000000000000
+    CellTopBottomPadding = 5.000000000000000000
   end
   object Layout1: TLayout
     Align = Top
@@ -57,17 +58,17 @@ object CustomerFrame: TCustomerFrame
     TabPosition = PlatformDefault
     Sizes = (
       483s
-      356s
+      377s
       483s
-      356s)
+      377s)
     object tbGeneral: TTabItem
       CustomIcon = <
         item
         end>
       TextSettings.Trimming = None
       IsSelected = True
-      Size.Width = 61.000000000000000000
-      Size.Height = 26.000000000000000000
+      Size.Width = 1.000000000000000000
+      Size.Height = 5.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = ''
       TabOrder = 0
@@ -126,8 +127,8 @@ object CustomerFrame: TCustomerFrame
         end>
       TextSettings.Trimming = None
       IsSelected = False
-      Size.Width = 93.000000000000000000
-      Size.Height = 26.000000000000000000
+      Size.Width = 1.000000000000000000
+      Size.Height = 5.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = ''
       TabOrder = 0

@@ -11,6 +11,9 @@ uses
   System.Net.HttpClient, System.Net.HttpClientComponent, System_;
 
 type
+  {$M+}
+  ITestObject = interface;
+
   TForm1 = class(TForm)
     Layout1: TLayout;
     mmCode: TMemo;
@@ -45,7 +48,19 @@ type
 
   public
     _context: IJSContext;
+    _test: ITestObject;
     { Public declarations }
+  end;
+
+  ITestObject = interface(IBaseInterface)
+    ['{4A8C6FB1-5CFB-49C5-A0EB-2BEC6E554F01}']
+    function Test(const Value: CObject) : CObject;
+    function Test2(const Value: IInterface) : IInterface;
+  end;
+
+  TTestObject = class(TBaseInterfacedObject, ITestObject)
+    function Test(const Value: CObject) : CObject;
+    function Test2(const Value: IInterface) : IInterface;
   end;
 
 var
@@ -125,20 +140,25 @@ end;
 
 procedure TForm1.Button3Click(Sender: TObject);
 begin
-  var t := &Type.From<&Type>;
+  var t := &Type.From<ITestObject>;
+  for var m in t.GetMethods do
+    ShowMessage(m.Name);
 
-  ShowMessage(t.Name);
 
-
-  var prjType := _app.Config.TypeByName('IProject');
-  var prj_objecttype := _app.Config.TypeDescriptor(prjType);
-
-  var data := prj_objecttype.Provider.Data(nil);
-
-  var vt: TValue := data.AsType<TValue>;
-  var n := vt.TypeInfo.Name;
-
-  ShowMessage(n);
+//  var t := &Type.From<&Type>;
+//
+//  ShowMessage(t.Name);
+//
+//
+//  var prjType := _app.Config.TypeByName('IProject');
+//  var prj_objecttype := _app.Config.TypeDescriptor(prjType);
+//
+//  var data := prj_objecttype.Provider.Data(nil);
+//
+//  var vt: TValue := data.AsType<TValue>;
+//  var n := vt.TypeInfo.Name;
+//
+//  ShowMessage(n);
 end;
 
 procedure TForm1.Button4Click(Sender: TObject);
@@ -190,40 +210,43 @@ begin
 
     TJSRegisterTypedObjects.Initialize(_context);
 
-    TJSRegister.RegisterObject(_context.ctx, 'ObjectList', TypeInfo(List<JSObjectReference>),
-      function : Pointer begin
-        Result := CList<JSObjectReference>.Create;
-      end);
+//    TJSRegister.RegisterObject(_context, 'ObjectList', TypeInfo(List<JSObjectReference>),
+//      function : Pointer begin
+//        Result := CList<JSObjectReference>.Create;
+//      end);
 
-    TJSRegister.RegisterObject(_context.ctx, 'List', TypeInfo(List<CObject>),
+    TJSRegister.RegisterObject(_context, 'List', TypeInfo(List<CObject>),
       function : Pointer begin
         Result := CList<CObject>.Create;
       end);
 
-    TJSRegister.RegisterObject(_context.ctx, 'ObjectModel', TypeInfo(IObjectListModelChangeTracking),
+    TJSRegister.RegisterObject(_context, 'ObjectModel', TypeInfo(IObjectListModelChangeTracking),
       function : Pointer begin
         Result := TObjectListModelWithChangeTracking<JSObjectReference>.Create(nil);
       end);
 
-    TJSRegister.RegisterObject(_context.ctx, 'JSBinder', TypeInfo(IContentBinder),
+    TJSRegister.RegisterObject(_context, 'JSBinder', TypeInfo(IContentBinder),
       function : Pointer begin
         Result := TFrameBinder.Create();
       end);
 
-    TJSRegister.RegisterObject(_context.ctx, 'JSFrameBuilder', TypeInfo(IContentBuilder),
+    TJSRegister.RegisterObject(_context, 'JSFrameBuilder', TypeInfo(IContentBuilder),
       function : Pointer begin
         // Result := TFrameBuilder.Create(TJSGeneralFrame);
         Result := TFrameBuilder.Create(TCustomerFrame);
       end);
 
-    TJSRegister.RegisterObject(_context.ctx, 'XMLHttpRequest', TypeInfo(IXMLHttpRequest),
+    TJSRegister.RegisterObject(_context, 'XMLHttpRequest', TypeInfo(IXMLHttpRequest),
       function : Pointer begin
         Result := TXMLHttpRequest.Create;
       end);
 
-    TJSRegister.RegisterObject(_context.ctx, 'IAddNew', TypeInfo(IAddNew), nil);
+    TJSRegister.RegisterObject(_context, 'IAddNew', TypeInfo(IAddNew), nil);
 
-    TJSRegister.RegisterLiveObject(_context.ctx, 'app', TypeInfo(IAppObject), _app);
+    TJSRegister.RegisterLiveObject(_context, 'app', TypeInfo(IAppObject), _app);
+
+    _test := TTestObject.Create;
+    TJSRegister.RegisterLiveObject(_context, 'tst', TypeInfo(ITestObject), _test);
 
     // Run initialization code from mmInitialize
     var b: AnsiString := AnsiString(mmInitialize.Lines.Text);
@@ -247,6 +270,22 @@ end;
 procedure TForm1.Timer1Timer(Sender: TObject);
 begin
   lblPosition.Text := Format('Position: %d:%d', [mmCode.CaretPosition.Line + 1, mmCode.CaretPosition.Pos]);
+end;
+
+{ TTestObject }
+
+function TTestObject.Test(const Value: CObject): CObject;
+begin
+  var jo: JSObjectReference;
+  if Value.TryGetValue<JSObjectReference>(jo) then
+    jo.Invoke('QueryInterface', nil, nil);
+end;
+
+function TTestObject.Test2(const Value: IInterface): IInterface;
+begin
+  var an: IAddNew;
+  if Interfaces.Supports<IAddNew>(Value, an) then
+    an.AddNew;
 end;
 
 end.

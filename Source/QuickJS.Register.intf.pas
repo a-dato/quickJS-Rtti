@@ -57,6 +57,8 @@ type
 
     function  get_ClassID: JSClassID;
     procedure set_ClassID(const Value: JSClassID);
+    function  get_JSConstructor: JSValue;
+    procedure set_JSConstructor(const Value: JSValue);
     function  get_ObjectSupportsEnumeration: Boolean;
     function  get_ObjectSupportsExtension: TObjectSupportsExtension;
     procedure set_ObjectSupportsExtension(const Value: TObjectSupportsExtension);
@@ -78,6 +80,7 @@ type
     property ClassID: JSClassID read get_ClassID write set_ClassID;
     property IsInterface: Boolean read get_IsInterface;
     property IsIterator: Boolean read get_IsIterator;
+    property JSConstructor: JSValue read get_JSConstructor write set_JSConstructor;
     property ObjectSupportsEnumeration: Boolean read get_ObjectSupportsEnumeration;
     property ObjectSupportsExtension: TObjectSupportsExtension read get_ObjectSupportsExtension write set_ObjectSupportsExtension;
     property ObjectSupportsIndexing: Boolean read get_ObjectSupportsIndexing;

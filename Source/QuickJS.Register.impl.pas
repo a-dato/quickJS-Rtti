@@ -25,6 +25,7 @@ type
     procedure set_LogString(const Value: TProc<string>);
     procedure OutputLog(const Value: string);
 
+    class function  get_Context(const Value: JSContext) : IJSContext; static;
     class procedure RegisterContext(Ctx: JSContext; const Context: IJSContext);
     class procedure UnRegisterContext(Ctx: JSContext);
 
@@ -38,16 +39,14 @@ type
     class function  Check(ctx: JSContext; Value: JSValue) : Boolean; overload;
     class function  Check(ctx: JSContext) : Boolean; overload;
     class procedure Check(FuncResult: Integer); overload;
-    class function WaitForJobs(Ctx: JSContext; APromise: JSValue) : JSValue;
+    class function  WaitForJobs(Ctx: JSContext; APromise: JSValue) : JSValue;
 
     function CreateContext: IJSContext;
+
+    class property Context[const Value: JSContext]: IJSContext read get_Context;
   end;
 
   TJSContext = class(TInterfacedObject, IJSContext)
-  public
-    class var Buf: PAnsiChar;
-    class var buf_len: Integer;
-
   protected
     _ctx: JSContext;
     _runtime: IJSRuntime;
@@ -79,9 +78,11 @@ type
     class var FRegisteredObjectsByClassID: TDictionary<JSClassID, IRegisteredObject>;
     class var FRegisteredObjectsByType: TDictionary<PTypeInfo, IRegisteredObject>;
     class var FRegisteredJSObjects: TDictionary<JSValueConst, IRegisteredObject>;
+    class var FRegisteredInterfaces: TDictionary<TGuid, IRegisteredObject>;
 
     class procedure AddRegisteredObjectWithClassID(const RegisteredObject: IRegisteredObject);
-    class procedure InternalRegisterType(const Reg: IRegisteredObject; ctx: JSContext; ClassName: string); virtual;
+    class procedure InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
+    class procedure InternalRegisterInterface(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
 
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; virtual;
     function CreateRegisteredJSObject(ctx: JSContext; Value: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; virtual;
@@ -133,15 +134,17 @@ type
     class function  GetClassName(Value: PTypeInfo) : string;
     class function  GetObjectFromJSValue(Value: JSValueConst; PointerIsAnObject: Boolean) : Pointer;
 
-    class function  RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject; overload;
-    class function  RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; overload;
-    class function  RegisterJSObject(ctx: JSContext; Proto: JSValueConst; TypeInfo: PTypeInfo) : IRegisteredObject; overload;
+    class function  RegisterObject(const ctx: IJSContext; ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject; overload;
+    class function  RegisterObject(const ctx: IJSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; overload;
+    class function  RegisterJSObject(const ctx: IJSContext; Proto: JSValueConst; TypeInfo: PTypeInfo) : IRegisteredObject; overload;
 
-    class procedure RegisterLiveObject(ctx: JSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean); overload;
-    class procedure RegisterLiveObject(ctx: JSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface); overload;
+    class procedure RegisterLiveObject(const ctx: IJSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean); overload;
+    class procedure RegisterLiveObject(const ctx: IJSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface); overload;
+
     class function  TryGetRegisteredObjectFromClassID(ClassID: JSClassID; out RegisteredObject: IRegisteredObject) : Boolean;
     class function  TryGetRegisteredObjectFromTypeInfo(TypeInfo: PTypeInfo; out RegisteredObject: IRegisteredObject) : Boolean;
     class function  TryGetRegisteredJSObject(Proto: JSValueConst; out RegisteredObject: IRegisteredObject) : Boolean;
+    class function  TryGetRegisteredInterface(const IID: TGuid; out RegisteredObject: IRegisteredObject) : Boolean;
 
     class property AutoRegister: Boolean read FAutoRegister write FAutoRegister;
     class property Instance: TJSRegister read FInstance write set_Instance;
@@ -304,7 +307,8 @@ type
   protected
     FClassID: JSClassID;
     FTypeInfo: PTypeInfo;
-    FConstructor: TObjectConstuctor;
+    FConstructor: TObjectConstuctor;  // Delphi constructor
+    FJSConstructor: JSValue;          // JS constructor, used when a 'type' must be passed to QuickJS
     FRttiDescriptorCache: TDictionary<string, IPropertyDescriptor>;
     FExtensionProperties: TDictionary<string, string>;
     FObjectSupportsExtension: TObjectSupportsExtension;
@@ -312,6 +316,8 @@ type
   protected
     function  get_ClassID: JSClassID;
     procedure set_ClassID(const Value: JSClassID);
+    function  get_JSConstructor: JSValue;
+    procedure set_JSConstructor(const Value: JSValue);
     function  get_IsInterface: Boolean;
     function  get_IsIterator: Boolean;
     function  get_ObjectSupportsEnumeration: Boolean; virtual;
@@ -905,6 +911,7 @@ begin
   FRegisteredObjectsByClassID := TDictionary<JSClassID, IRegisteredObject>.Create;
   FRegisteredObjectsByType := TDictionary<PTypeInfo, IRegisteredObject>.Create;
   FRegisteredJSObjects := TDictionary<JSValueConst, IRegisteredObject>.Create;
+  FRegisteredInterfaces := TDictionary<TGuid, IRegisteredObject>.Create;
 
   FExotics.get_own_property := get_own_property;
   FExotics.get_own_property_names := get_own_property_names;
@@ -958,12 +965,13 @@ begin
   FRegisteredJSObjects.Free;
 end;
 
-class procedure TJSRegister.InternalRegisterType(const Reg: IRegisteredObject; ctx: JSContext; ClassName: string);
+class procedure TJSRegister.InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
 var
   obj,global : JSValue;
   JClass : JSClassDef;
   classID: JSClassID;
   classProto: JSValue;
+  jsctx: JSContext;
 
 begin
   var s: AnsiString := ClassName;
@@ -973,31 +981,52 @@ begin
   JClass.call := nil;
   JClass.exotic := @FExotics;
 
+  jsctx := ctx.ctx;
+
   // Create New Class id.
   classID := 0;
-  JS_NewClassID(JS_GetRuntime(ctx), @classID);
+  JS_NewClassID(JS_GetRuntime(jsctx), @classID);
 
   if First_ClassID = 0 then
     First_ClassID := classID;
 
   // Create the Class Name and other stuff.
-  JS_NewClass(JS_GetRuntime(ctx), classID, @JClass);
+  JS_NewClass(JS_GetRuntime(jsctx), classID, @JClass);
 
   // New Object act as Prototype for the Class.
-  classProto := JS_NewObject(ctx);
+  classProto := JS_NewObject(jsctx);
 
   // Set the Prototype to the Class.
-  JS_SetClassProto(ctx, classID, classProto);
+  JS_SetClassProto(jsctx, classID, classProto);
 
   // Set the Class native constructor.
-  obj := JS_NewCFunction2(ctx, @CConstructor, JClass.class_name, 1, JS_CFUNC_constructor_magic, classID);
+  obj := JS_NewCFunction2(jsctx, @CConstructor, JClass.class_name, 1, JS_CFUNC_constructor_magic, classID);
 
   // Add the Class to Global Object so we can use it.
-  global := JS_GetGlobalObject(ctx);
-  JS_SetPropertyStr(ctx, global, JClass.class_name, obj);
-  JS_FreeValue(ctx,global);
+  global := JS_GetGlobalObject(jsctx);
+  JS_SetPropertyStr(jsctx, global, JClass.class_name, obj);
+  JS_FreeValue(jsctx, global);
 
+  Reg.JSConstructor := JS_DupValue(jsctx, obj);
   Reg.ClassID := classID;
+
+  if Reg.IsInterface then
+    InternalRegisterInterface(ctx, Reg, ClassName);
+end;
+
+class procedure TJSRegister.InternalRegisterInterface(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
+begin
+  var g := Reg.GetTypeInfo.TypeData.GUID;
+  if not g.IsEmpty then
+  begin
+    TMonitor.Enter(FRegisteredInterfaces);
+    try
+      // Object is registered under proto
+      FRegisteredInterfaces.Add(g, Reg);
+    finally
+      TMonitor.Exit(FRegisteredInterfaces);
+    end;
+  end;
 end;
 
 function TJSRegister.CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject;
@@ -1015,12 +1044,12 @@ begin
   FRegisteredObjectsByClassID.Add(RegisteredObject.ClassID, RegisteredObject);
 end;
 
-class function TJSRegister.RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject;
+class function TJSRegister.RegisterObject(const ctx: IJSContext; ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject;
 begin
   var instance := TJSRegister.Instance;
 
   Result := Instance.CreateRegisteredObject(TypeInfo, nil);
-  Instance.InternalRegisterType(Result, ctx, ClassName);
+  Instance.InternalRegisterType(ctx, Result, ClassName);
   Instance.AddRegisteredObjectWithClassID(Result);
 
   TMonitor.Enter(FRegisteredObjectsByType);
@@ -1031,12 +1060,12 @@ begin
   end;
 end;
 
-class function TJSRegister.RegisterObject(ctx: JSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject;
+class function TJSRegister.RegisterObject(const ctx: IJSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject;
 begin
   var instance := TJSRegister.Instance;
 
   Result := instance.CreateRegisteredObject(TypeInfo, AConstructor);
-  instance.InternalRegisterType(Result, ctx, ClassName);
+  instance.InternalRegisterType(ctx, Result, ClassName);
   instance.AddRegisteredObjectWithClassID(Result);
 
   TMonitor.Enter(FRegisteredObjectsByType);
@@ -1047,7 +1076,7 @@ begin
   end;
 end;
 
-class function TJSRegister.RegisterJSObject(ctx: JSContext; Proto: JSValueConst; TypeInfo: PTypeInfo) : IRegisteredObject;
+class function TJSRegister.RegisterJSObject(const ctx: IJSContext; Proto: JSValueConst; TypeInfo: PTypeInfo) : IRegisteredObject;
 begin
   var instance := TJSRegister.Instance;
 
@@ -1062,7 +1091,7 @@ begin
   end;
 end;
 
-class procedure TJSRegister.RegisterLiveObject(ctx: JSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean);
+class procedure TJSRegister.RegisterLiveObject(const ctx: IJSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean);
 begin
   TMonitor.Enter(FRegisteredObjectsByType);
   try
@@ -1092,7 +1121,7 @@ begin
   end;
 end;
 
-class procedure TJSRegister.RegisterLiveObject(ctx: JSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface);
+class procedure TJSRegister.RegisterLiveObject(const ctx: IJSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface);
 begin
   TMonitor.Enter(FRegisteredObjectsByType);
   try
@@ -1100,19 +1129,20 @@ begin
 
     if not FRegisteredObjectsByType.TryGetValue(TypeInfo, reg) then
     begin
-      TJSRegister.RegisterObject(ctx, ClassName, TypeInfo);
+      TJSRegister.RegisterObject(ctx, TypeInfo.Name, TypeInfo);
       reg := FRegisteredObjectsByType[TypeInfo];
     end;
 
-    var global := JS_GetGlobalObject(ctx);
-    var jsval := JS_NewObjectClass(ctx, reg.ClassID);
+    var jsctx := ctx.ctx;
+    var global := JS_GetGlobalObject(jsctx);
+    var jsval := JS_NewObjectClass(jsctx, reg.ClassID);
 
     // Bump ref count required
     AInterface._AddRef;
     JS_SetOpaque(jsval, Pointer(AInterface));
     var s: AnsiString := ObjectName;
-    JS_SetPropertyStr(ctx, global, PAnsiChar(s), jsval);
-    JS_FreeValue(ctx, global);
+    JS_SetPropertyStr(jsctx, global, PAnsiChar(s), jsval);
+    JS_FreeValue(jsctx, global);
   finally
     TMonitor.Exit(FRegisteredObjectsByType);
   end;
@@ -1142,6 +1172,17 @@ begin
     TMonitor.Exit(FRegisteredJSObjects);
   end;
 end;
+
+class function TJSRegister.TryGetRegisteredInterface(const IID: TGuid; out RegisteredObject: IRegisteredObject) : Boolean;
+begin
+  TMonitor.Enter(FRegisteredInterfaces);
+  try
+    Result := FRegisteredInterfaces.TryGetValue(IID, RegisteredObject);
+  finally
+    TMonitor.Exit(FRegisteredInterfaces);
+  end;
+end;
+
 { TRegisteredObject }
 
 function TRegisteredObject.TryGetExtensionProperty(const PropName: string; out PropertyName: string) : Boolean;
@@ -1175,6 +1216,11 @@ end;
 procedure TRegisteredObject.set_ClassID(const Value: JSClassID);
 begin
   FClassID := Value;
+end;
+
+procedure TRegisteredObject.set_JSConstructor(const Value: JSValue);
+begin
+  FJSConstructor := Value;
 end;
 
 constructor TRegisteredObject.Create(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor);
@@ -1405,6 +1451,11 @@ begin
   Result := FTypeInfo.TypeData.ClassType.InheritsFrom(TJSIterator);
 end;
 
+function TRegisteredObject.get_JSConstructor: JSValue;
+begin
+  Result := FJSConstructor;
+end;
+
 function TRegisteredObject.get_ObjectSupportsExtension: TObjectSupportsExtension;
 begin
   Result := FObjectSupportsExtension;
@@ -1598,7 +1649,7 @@ function JSConverter.TValueToJSValue(ctx: JSContext; const Value: TValue): JSVal
       begin
         if not TJSRegister.AutoRegister then Exit(nil); // Result = undefined
 
-        TJSRegister.RegisterObject(ctx, TJSRegister.GetClassName(PInfo), PInfo);
+        TJSRegister.RegisterObject(TJSRuntime.Context[ctx], TJSRegister.GetClassName(PInfo), PInfo);
         TJSRegister.FRegisteredObjectsByType.TryGetValue(PInfo, Result);
       end;
     finally
@@ -2095,6 +2146,16 @@ begin
     OutputLogString(Value);
 end;
 
+class function TJSRuntime.get_Context(const Value: JSContext) : IJSContext;
+begin
+  TMonitor.Enter(_ActiveContexts);
+  try
+    Result := IJSContext(_ActiveContexts[Value]);
+  finally
+    TMonitor.Exit(_ActiveContexts);
+  end;
+end;
+
 class procedure TJSRuntime.RegisterContext(Ctx: JSContext; const Context: IJSContext);
 begin
   TMonitor.Enter(_ActiveContexts);
@@ -2258,7 +2319,8 @@ begin
 
   eval_buf(console_log, Length(console_log), 'initialize', JS_EVAL_TYPE_MODULE);
   eval_buf(add_fetch, Length(add_fetch), 'initialize', JS_EVAL_TYPE_MODULE);
-  TJSRegister.RegisterObject(_ctx, 'JSIterator', TypeInfo(TJSIterator));
+
+  TJSRegister.RegisterObject(Self, 'JSIterator', TypeInfo(TJSIterator));
 
   JS_FreeValue(_ctx, global);
 

@@ -5,13 +5,12 @@ interface
 uses
   System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants,
   FMX.Types, FMX.Controls, FMX.Forms, FMX.Graphics, FMX.Dialogs,
-  FMX.DataControl.ScrollableControl, FMX.DataControl.ScrollableRowControl,
-  FMX.DataControl.Static,
-  FMX.DataControl.Editable,
-  FMX.DataControl.Events,
-  FMX.DataControl.Impl,
-  FMX.Layouts, App.intf, System_, FMX.Controls.Presentation, FMX.StdCtrls,
-  App.PropertyDescriptor.intf;
+  App.intf, System_,
+  App.PropertyDescriptor.intf, FMX.ScrollControl.Impl,
+  FMX.ScrollControl.WithRows.Impl, FMX.ScrollControl.WithCells.Impl,
+  FMX.ScrollControl.WithEditableCells.Impl, FMX.ScrollControl.DataControl.Impl,
+  FMX.Controls.Presentation, FMX.StdCtrls, FMX.Layouts,
+  FMX.ScrollControl.Events;
 
 type
   TObjectDesignerForm = class(TForm)
@@ -22,8 +21,7 @@ type
     Button2: TButton;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
-    procedure ObjectTypesCellChanged(const Sender: TObject; e:
-        DCCellChangedEventArgs);
+    procedure ObjectTypesCellChanged(const Sender: TObject; e: DCCellChangedEventArgs);
     procedure ObjectTypesCellFormatting(const Sender: TObject; e: DCCellFormattingEventArgs);
   private
     _app: IAppObject;

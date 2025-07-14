@@ -14,6 +14,7 @@ object ProjectFrame: TProjectFrame
     RowHeightDefault = 30.000000000000000000
     HeaderHeight = 24.000000000000000000
     AutoExtraColumnSizeMax = -1.000000000000000000
+    CellTopBottomPadding = 5.000000000000000000
     CellFormatting = IProject_ModelCellFormatting
   end
   object Layout1: TLayout
@@ -58,17 +59,17 @@ object ProjectFrame: TProjectFrame
     TabPosition = PlatformDefault
     Sizes = (
       582s
-      356s
+      377s
       582s
-      356s)
+      377s)
     object tbGeneral: TTabItem
       CustomIcon = <
         item
         end>
       TextSettings.Trimming = None
       IsSelected = True
-      Size.Width = 61.000000000000000000
-      Size.Height = 26.000000000000000000
+      Size.Width = 1.000000000000000000
+      Size.Height = 5.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = ''
       TabOrder = 0
@@ -193,8 +194,8 @@ object ProjectFrame: TProjectFrame
         end>
       TextSettings.Trimming = None
       IsSelected = False
-      Size.Width = 93.000000000000000000
-      Size.Height = 26.000000000000000000
+      Size.Width = 1.000000000000000000
+      Size.Height = 5.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = ''
       TabOrder = 0

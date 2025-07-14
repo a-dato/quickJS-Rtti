@@ -50,6 +50,7 @@ object ObjectDesignerForm: TObjectDesignerForm
     AutoFitColumns = True
     HeaderHeight = 24.000000000000000000
     AutoExtraColumnSizeMax = -1.000000000000000000
+    CellTopBottomPadding = 5.000000000000000000
     CellFormatting = ObjectTypesCellFormatting
     CellChanged = ObjectTypesCellChanged
     Columns_ = 
@@ -80,5 +81,6 @@ object ObjectDesignerForm: TObjectDesignerForm
     RowHeightDefault = 30.000000000000000000
     HeaderHeight = 24.000000000000000000
     AutoExtraColumnSizeMax = -1.000000000000000000
+    CellTopBottomPadding = 5.000000000000000000
   end
 end
