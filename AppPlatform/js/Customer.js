@@ -147,17 +147,12 @@ class AddressProvider {
 */
 export class Customer extends LynxObject {
   constructor(id, n) {
-		super();
-		this._id = id;
+		super(id);
     this._Name = n;
 		this._Address = null;
     this._Status = status.None;
   }
 		
-  get ID() {
-   return this._id;
-  }
-
   get Name() {
    return this._Name;
   }
@@ -269,6 +264,10 @@ export class CustomerType extends LynxType {
 			}
 		}
 	} 
+	
+	CreateInstance() {
+		return new Customer();
+	}
 }
 
 class CustomerProvider extends LynxProvider {
@@ -277,30 +276,6 @@ class CustomerProvider extends LynxProvider {
 		this._Data = null;
 	}
 
-	CreateInstance() {
-		return new Customer();
-	}
-
-	CanAdd() {
-		return true;
-	}
-
-	CanDelete(item) {
-		return true;
-	}
-
-	Add(item) {
-		this._Data.Add(item);
-	}
-
-	Remove(item) {
-		this._Data.Remove(item);
-	}
-	
-	QueryInterface(interface_type) {
-		return true;
-	}
-	
 	Data(filter) {
 		if(this._Data == null) {
 			console.log('Items loading');

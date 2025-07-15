@@ -33,30 +33,61 @@ class AddNew {
 	}
 }
 
-export class IBaseInterface {
+export class IBaseInterface_ {
+  GetHashCode() {
+		return this;
+	}
+
+  Equals(other) {
+		return false;
+	}
+	
+	GetType() {
+		return this.constructor;
+	}
+
 	QueryInterface(intf_type) {
 		console.log(`QueryInterface: ${intf_type}`);
+		if(intf_type === IBaseInterface) {
+			console.log('query: IBaseInterface');
+			return this;
+		}
+
 		if(intf_type === IAddNew) {
 			console.log('Is AddNew');
 			return new AddNew();			
 		}
 
 		console.log('Is NOTAddNew');
-		
-/*
-		if(IID === IAddNew)
-			return new AddNew();
-			
-		return new AddNew();			
-*/
 	}
 }
 
-export class LynxObject extends IBaseInterface {
+export class IInterfaceWithID_ extends IBaseInterface_ {
+	
+	constructor(id) {
+		super();
+		this._id = id;
+  }
+
+  get ID() {
+		return this._id;
+  }
+
+  GetHashCode() {
+		return this._id;
+	}
+
+  Equals(other) {
+		return this._id == other.ID;
+	}
+
 }
 
-export class LynxType extends IBaseInterface {
+export class LynxObject extends IInterfaceWithID_ {
 }
 
-export class LynxProvider extends IBaseInterface {
+export class LynxType extends IBaseInterface_ {
+}
+
+export class LynxProvider extends IBaseInterface_ {
 }

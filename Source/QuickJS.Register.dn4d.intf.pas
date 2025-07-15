@@ -69,6 +69,7 @@ type
 
   public
     constructor Create(PIID: PTypeInfo; const JSObject: JSObjectReference); reintroduce;
+    destructor Destroy; override;
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   end;
 
@@ -104,6 +105,11 @@ constructor TJSVirtualInterface.Create(PIID: PTypeInfo; const JSObject: JSObject
 begin
   inherited Create(PIID, Invoke);
   obj_ref := JSObject;
+end;
+
+destructor TJSVirtualInterface.Destroy;
+begin
+  inherited;
 end;
 
 procedure TJSVirtualInterface.Invoke(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue);
@@ -147,8 +153,7 @@ begin
       var val := obj_ref.Invoke('QueryInterface', [tp], reg.GetTypeInfo);
       if not val.IsEmpty then
       begin
-        var ii := val.AsInterface;
-        IInterface(Obj) := ii;
+        IInterface(Obj) := IInterface(val.GetReferenceToRawData^);
         Result := S_OK;
       end;
     end;

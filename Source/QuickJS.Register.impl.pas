@@ -1022,7 +1022,11 @@ begin
     TMonitor.Enter(FRegisteredInterfaces);
     try
       // Object is registered under proto
-      FRegisteredInterfaces.Add(g, Reg);
+      // Generic types all share the same GUID
+      // List<CObject> is the same as List<IProject>
+      // Donno how to handle this...
+      if not FRegisteredInterfaces.ContainsKey(g) then
+        FRegisteredInterfaces.Add(g, Reg);
     finally
       TMonitor.Exit(FRegisteredInterfaces);
     end;

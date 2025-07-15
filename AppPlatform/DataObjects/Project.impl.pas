@@ -51,6 +51,7 @@ type
 
   ProjectType = class(TTypeDescriptor)
   protected
+    function CreateInstance: CObject; override;
     function GetType: &Type; override;
   end;
 
@@ -209,6 +210,13 @@ begin
   end;
 
   Result := CObject.From<List<IProject>>(_data);
+end;
+
+function ProjectType.CreateInstance: CObject;
+begin
+  var p: IProject := TProject.Create;
+  p.ID := -1;
+  Result := p;
 end;
 
 function ProjectType.GetType: &Type;

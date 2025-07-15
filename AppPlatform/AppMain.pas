@@ -8,7 +8,8 @@ uses
   QuickJS.Register.intf, FMX.Memo.Types, FMX.Controls.Presentation,
   FMX.ScrollBox, FMX.Memo,
   App.intf, System.Actions, FMX.ActnList, FMX.StdCtrls, System.Net.URLClient,
-  System.Net.HttpClient, System.Net.HttpClientComponent, System_;
+  System.Net.HttpClient, System.Net.HttpClientComponent, System_,
+  Project.intf;
 
 type
   {$M+}
@@ -55,12 +56,12 @@ type
   ITestObject = interface(IBaseInterface)
     ['{4A8C6FB1-5CFB-49C5-A0EB-2BEC6E554F01}']
     function Test(const Value: CObject) : CObject;
-    function Test2(const Value: IInterface) : IInterface;
+    function Test2(const Value: IProject) : IInterface;
   end;
 
   TTestObject = class(TBaseInterfacedObject, ITestObject)
     function Test(const Value: CObject) : CObject;
-    function Test2(const Value: IInterface) : IInterface;
+    function Test2(const Value: IProject) : IInterface;
   end;
 
 var
@@ -74,7 +75,6 @@ uses
   QuickJS.Register.dn4d.impl,
   App.impl,
   App.Environment.impl,
-  Project.intf,
   Project.impl,
   ObjectWindow,
   Customer.frame,
@@ -241,6 +241,7 @@ begin
         Result := TXMLHttpRequest.Create;
       end);
 
+    TJSRegister.RegisterObject(_context, 'IBaseInterface', TypeInfo(IBaseInterface), nil);
     TJSRegister.RegisterObject(_context, 'IAddNew', TypeInfo(IAddNew), nil);
 
     TJSRegister.RegisterLiveObject(_context, 'app', TypeInfo(IAppObject), _app);
@@ -281,11 +282,21 @@ begin
     jo.Invoke('QueryInterface', nil, nil);
 end;
 
-function TTestObject.Test2(const Value: IInterface): IInterface;
+function TTestObject.Test2(const Value: IProject): IInterface;
 begin
-  var an: IAddNew;
-  if Interfaces.Supports<IAddNew>(Value, an) then
-    an.AddNew;
+  var t := Value.GetType;
+
+  var props := t.GetProperties;
+  for var p in props do
+    ShowMessage(p.Name);
+
+//  var b: IBaseInterface;
+//  if Supports(Value, IBaseInterface, b) then
+//    ShowMessage(b.GetHashCode.ToString);
+
+//  var an: IAddNew;
+//  if Interfaces.Supports<IAddNew>(Value, an) then
+//    an.AddNew;
 end;
 
 end.

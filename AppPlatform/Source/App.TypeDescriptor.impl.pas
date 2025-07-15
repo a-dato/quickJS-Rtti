@@ -28,6 +28,7 @@ type
     _provider: IContentProvider;
     _PropertyDescriptor: Dictionary<CString, IPropertyDescriptor>;
 
+    function  CreateInstance: CObject; virtual;
     function  AddPropertyDescriptor(const Name: CString; const Value: IPropertyDescriptor) : Boolean; virtual;
 
     function  get_PropertyDescriptor(const Name: CString) : IPropertyDescriptor; virtual;
@@ -52,6 +53,11 @@ uses
 constructor TTypeDescriptor.Create;
 begin
   _PropertyDescriptor := CDictionary<CString, IPropertyDescriptor>.Create;
+end;
+
+function TTypeDescriptor.CreateInstance: CObject;
+begin
+  Result := nil;
 end;
 
 function TTypeDescriptor.AddPropertyDescriptor(const Name: CString; const Value: IPropertyDescriptor): Boolean;
