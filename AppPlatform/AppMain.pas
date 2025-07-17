@@ -33,8 +33,10 @@ type
     Button4: TButton;
     mmInitialize: TMemo;
     Button5: TButton;
+    btnExecResult: TButton;
     procedure acExecuteExecute(Sender: TObject);
     procedure btnCustomerClick(Sender: TObject);
+    procedure btnExecResultClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
@@ -101,8 +103,20 @@ begin
   var st := TStopWatch.StartNew;
 
   var b: AnsiString := AnsiString(mmCode.Lines.Text);
-  _context.eval_buf(PAnsiChar(b), Length(b), '<eval>', JS_EVAL_TYPE_MODULE);
+  _context.eval(mmCode.Lines.Text, '<eval>');
 
+  mmLog.Lines.Add('done: ' + st.ElapsedMilliseconds.ToString + 'ms');
+end;
+
+procedure TForm1.btnExecResultClick(Sender: TObject);
+begin
+  mmLog.Lines.Clear;
+  var st := TStopWatch.StartNew;
+
+  var b: AnsiString := AnsiString(mmCode.Lines.Text);
+  var r := _context.eval_with_result(mmCode.Lines.Text, '<eval>');
+
+  mmLog.Lines.Add('result: ' + r.ToString);
   mmLog.Lines.Add('done: ' + st.ElapsedMilliseconds.ToString + 'ms');
 end;
 
@@ -250,8 +264,7 @@ begin
     TJSRegister.RegisterLiveObject(_context, 'tst', TypeInfo(ITestObject), _test);
 
     // Run initialization code from mmInitialize
-    var b: AnsiString := AnsiString(mmInitialize.Lines.Text);
-    _context.eval_buf(PAnsiChar(b), Length(b), '<initialize>', JS_EVAL_TYPE_MODULE);
+    _context.eval(mmInitialize.Lines.Text, '<initialize>');
   end;
 end;
 

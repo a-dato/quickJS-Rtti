@@ -341,56 +341,36 @@ end;
 { TJSTypedConverter }
 class function TJSTypedConverter.GetTypeFromJSObject(ctx: JSContext; Value: JSValueConst): &Type;
 begin
-  var proto := JS_GetProtoType(ctx, Value);
-  var reg: IRegisteredObject;
-  var shouldRegister := not TJSRegister.TryGetRegisteredJSObject(proto, reg);
+  var shouldRegister := False;
   var name: PAnsiChar := nil;
+  var proto: JSValue;
 
-  // Try to find registration under the prototype.
+  // Did we get a constructor?
+  if JS_IsFunction(ctx, Value) then
+    // Call function.prototype to get the actual type
+    proto := JS_GetPropertyStr(ctx, Value, 'prototype')
+//  // Did we get a live object?
+//  else if JS_IsObject(Value) then
+//    proto := JS_GetProtoType(ctx, Value)
+  else
+    raise CException.Create('Could not get type');
+
+  var reg: IRegisteredObject;
+  shouldRegister := not TJSRegister.TryGetRegisteredJSObject(proto, reg);
   if shouldRegister then
   begin
     var c := JS_GetPropertyStr(ctx, proto, 'constructor');
     var n := JS_GetPropertyStr(ctx, c, 'name');
+    name := JS_ToCString(ctx, n);
 
-    if JS_IsString(n) then
-    begin
-      name := JS_ToCString(ctx, n);
-
-      // 'Function' means we are dealing with a type (not instance) => app.Test(Customer)
-      // Otherwise we dealing with an instance => app.Test(new Customer())
-      if name = 'Function' then
-      begin
-        JS_FreeCString(ctx, name);
-        JS_FreeValue(ctx, n);
-        JS_FreeValue(ctx, c);
-        JS_FreeValue(ctx, proto);
-
-        // Call function.prototype to get the actual type
-        proto := JS_GetPropertyStr(ctx, Value, 'prototype');
-        shouldRegister := not TJSRegister.TryGetRegisteredJSObject(proto, reg);
-        if shouldRegister then
-        begin
-          c := JS_GetPropertyStr(ctx, proto, 'constructor');
-          n := JS_GetPropertyStr(ctx, c, 'name');
-          name := JS_ToCString(ctx, n);
-        end;
-      end;
-
-    end else
-      raise CException.Create('Could not get type from object');
-
-    JS_FreeValue(ctx, n);
-    JS_FreeValue(ctx, c);
-  end;
-
-  if shouldRegister then
-  begin
     var tp: PTypeInfo := New(PTypeInfo);
     tp.Kind := TJSRegisterTypedObjects.tkJSType;
     tp.Name := name;
 
     reg := TJSRegister.RegisterJSObject(TJSRuntime.Context[ctx], proto, tp);
 
+    JS_FreeValue(ctx, n);
+    JS_FreeValue(ctx, c);
     JS_FreeCString(ctx, name);
   end;
 
@@ -398,8 +378,6 @@ begin
   if Interfaces.Supports<IJSRegisteredObject>(reg, js_reg) then
     Result := js_reg.GetType else
     Result := &Type.Unknown;
-
-  // JS_FreeValue(ctx, proto);
 end;
 
 function TJSTypedConverter.JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
@@ -732,19 +710,22 @@ begin
   if p_len > 0 then
   begin
     var ownerType := &Type.Create(FTypeInfo);
-    SetLength(Result, p_len);
+
     for var i := 0 to p_len -1 do
     begin
-      var name := AtomToString(_ctx, PJSPropertyEnumArr(p_enum)[i].atom);
-      Result[i] := TJSPropertyInfo.Create(_ctx, ownerType, name);
+      // Filter out 'real' properties ==> prototype.PropertyName returns 'undefined'
+      var jv := JS_AtomToString(_ctx, PJSPropertyEnumArr(p_enum)[i].atom);
+      var ansistr := JS_ToCString(_ctx, jv);
+      var jsPropType := JS_GetPropertyStr(_ctx, _proto, ansistr);
+      if JS_IsUndefined(jsPropType) then
+      begin
+        SetLength(Result, Length(Result) + 1);
+        Result[High(Result)] := TJSPropertyInfo.Create(_ctx, ownerType, ansistr);
+      end;
 
-//      var atom := PJSPropertyEnumArr(p_enum)[i].atom;
-//      var name := JS_AtomToCString(_ctx, atom);
-//
-//      Result[i] := TJSPropertyInfo.Create(_ctx, ownerType, name);
-//
-//      JS_FreeCString(_ctx, name);
-//      JS_FreeAtom(_ctx, atom);
+      JS_FreeValue(_ctx, jsPropType);
+      JS_FreeCString(_ctx, ansistr);
+      JS_FreeValue(_ctx, jv);
     end;
   end;
 
@@ -824,7 +805,7 @@ end;
 
 function TJSPropertyInfo.ToString: CString;
 begin
-  Result := _name;
+  Result := string(_name);
 end;
 
 

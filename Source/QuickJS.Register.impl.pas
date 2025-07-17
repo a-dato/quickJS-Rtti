@@ -54,7 +54,11 @@ type
     function  get_ctx: JSContext;
     function  get_Runtime: IJSRuntime;
 
-    function  eval_buf(Buf: PAnsiChar; buf_len: Integer; Filename: PAnsiChar; eval_flags: Integer): Integer;
+    function  eval_internal(Buf: PAnsiChar; buf_len: Integer; FileName: PAnsiChar; eval_flags: Integer): Integer;
+
+    procedure eval(const Code: string; const CodeContext: string);
+    function  eval_with_result(const Code: string; const CodeContext: string): TValue;
+
 
     class function logme(ctx : JSContext; {%H-}this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue; cdecl; static;
     // class function fetch(ctx : JSContext; {%H-}this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue; cdecl; static;
@@ -1084,7 +1088,7 @@ class function TJSRegister.RegisterJSObject(const ctx: IJSContext; Proto: JSValu
 begin
   var instance := TJSRegister.Instance;
 
-  Result := instance.CreateRegisteredJSObject(ctx, Proto, TypeInfo);
+  Result := instance.CreateRegisteredJSObject(ctx.ctx, Proto, TypeInfo);
 
   TMonitor.Enter(FRegisteredJSObjects);
   try
@@ -2187,27 +2191,20 @@ end;
 
 class function TJSRuntime.WaitForJobs(Ctx: JSContext; APromise: JSValue) : JSValue;
 begin
-  var ptr: Pointer;
-
-  if TJSRuntime._ActiveContexts.TryGetValue(Ctx, ptr) then
+  while JS_IsJobPending(JS_GetRuntime(Ctx)) do
   begin
-    var runtime := IJSContext(ptr).Runtime;
-    while JS_IsJobPending(runtime.rt) do
-    begin
-      var unused: JSContext;
-      var r := JS_ExecutePendingJob(runtime.rt, @unused);
-      if r < 0 then
-        raise Exception.Create('Job error');
-    end;
+    var unused: JSContext;
+    var r := JS_ExecutePendingJob(JS_GetRuntime(Ctx), @unused);
+    if r < 0 then
+      raise Exception.Create('Job error');
+  end;
 
-    if JS_IsPromise(APromise) then
-    begin
-      var resolve := JS_PromiseResult(Ctx, APromise);
-      TJSRuntime.Check(Ctx, resolve);
-      JS_FreeValue(Ctx, APromise);
-      Result := resolve;
-    end else
-      Result := APromise;
+  if JS_IsPromise(APromise) then
+  begin
+    var resolve := JS_PromiseResult(Ctx, APromise);
+    TJSRuntime.Check(Ctx, resolve);
+    JS_FreeValue(Ctx, APromise);
+    Result := resolve;
   end else
     Result := APromise;
 end;
@@ -2231,12 +2228,41 @@ begin
   TJSRuntime.RegisterContext(_ctx, IJSContext(Self));
 end;
 
-function TJSContext.eval_buf(Buf: PAnsiChar; buf_len: Integer; FileName: PAnsiChar; eval_flags: Integer): Integer;
+function TJSContext.eval_internal(Buf: PAnsiChar; buf_len: Integer; FileName: PAnsiChar; eval_flags: Integer): Integer;
 begin
   var res := JS_Eval(_ctx, buf, buf_len, Filename, eval_flags);
   if not TJSRuntime.Check(_ctx, res) then Exit;
   res := TJSRuntime.WaitForJobs(_ctx, res);
   TJSRuntime.Check(_ctx, res);
+  JS_FreeValue(_ctx, res);
+end;
+
+procedure TJSContext.eval(const Code: string; const CodeContext: string);
+begin
+  var buf: AnsiString := AnsiString(Code);
+  eval_internal(PAnsiChar(buf), Length(buf), PAnsiChar(CodeContext), JS_EVAL_TYPE_MODULE);
+end;
+
+function TJSContext.eval_with_result(const Code: string; const CodeContext: string): TValue;
+begin
+  var buf: AnsiString := 'export function __run__() {return ' + AnsiString(Code) + ';}';
+
+  var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(CodeContext), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
+  if not TJSRuntime.Check(_ctx, bytecode) then Exit;
+  JS_EvalFunction(_ctx, bytecode);
+
+  var moduledef := JS_VALUE_GET_PTR(bytecode);
+  var namespace := JS_GetModuleNamespace(_ctx, moduledef);
+
+  var func := JS_GetPropertyStr(_ctx, namespace, '__run__');
+  var res  := JS_Call(_ctx, func, JS_UNDEFINED, 0, nil);
+
+  if not TJSRuntime.Check(_ctx, res) then Exit;
+  res := TJSRuntime.WaitForJobs(_ctx, res);
+  TJSRuntime.Check(_ctx, res);
+
+  Result := JSConverter.Instance.JSValueToTValue(_ctx, res, nil);
+
   JS_FreeValue(_ctx, res);
 end;
 
@@ -2313,7 +2339,7 @@ begin
   js_init_module_os(_ctx, 'qjs:os');
   js_init_module_bjson(_ctx, 'qjs:bjson');
 
-  eval_buf(std_helper, Length(std_helper), 'initialize', JS_EVAL_TYPE_MODULE);
+  eval_internal(std_helper, Length(std_helper), 'initialize', JS_EVAL_TYPE_MODULE);
 
   global := JS_GetGlobalObject(_ctx);
 
@@ -2321,8 +2347,8 @@ begin
   JS_SetPropertyStr(_ctx, global, 'log', JS_NewCFunction(_ctx, @logme, 'log', 1));
   JS_SetPropertyStr(_ctx, global, 'alert', JS_NewCFunction(_ctx, @logme, 'alert', 1));
 
-  eval_buf(console_log, Length(console_log), 'initialize', JS_EVAL_TYPE_MODULE);
-  eval_buf(add_fetch, Length(add_fetch), 'initialize', JS_EVAL_TYPE_MODULE);
+  eval_internal(console_log, Length(console_log), 'initialize', JS_EVAL_TYPE_MODULE);
+  eval_internal(add_fetch, Length(add_fetch), 'initialize', JS_EVAL_TYPE_MODULE);
 
   TJSRegister.RegisterObject(Self, 'JSIterator', TypeInfo(TJSIterator));
 

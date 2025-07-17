@@ -101,7 +101,8 @@ type
     function get_ctx: JSContext;
     function get_Runtime: IJSRuntime;
 
-    function eval_buf(Buf: PAnsiChar; buf_len: Integer; Filename: PAnsiChar; eval_flags: Integer): Integer;
+    procedure eval(const Code: string; const CodeContext: string);
+    function  eval_with_result(const Code: string; const CodeContext: string): TValue;
 
     property ctx: JSContext read get_ctx;
     property runtime: IJSRuntime read get_Runtime;

@@ -24,9 +24,9 @@ object Form1: TForm1
       TextSettings.Trimming = None
     end
     object btnCustomer: TButton
-      Position.X = 361.000000000000000000
+      Position.X = 440.000000000000000000
       Position.Y = 8.000000000000000000
-      Size.Width = 113.000000000000000000
+      Size.Width = 90.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 1
@@ -54,7 +54,7 @@ object Form1: TForm1
       OnClick = Button3Click
     end
     object Button4: TButton
-      Position.X = 482.000000000000000000
+      Position.X = 538.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 4
       Text = 'Designer'
@@ -71,6 +71,14 @@ object Form1: TForm1
       Text = 'Customer.Address'
       TextSettings.Trimming = None
       OnClick = Button5Click
+    end
+    object btnExecResult: TButton
+      Position.X = 355.000000000000000000
+      Position.Y = 8.000000000000000000
+      TabOrder = 6
+      Text = 'Exec+result'
+      TextSettings.Trimming = None
+      OnClick = btnExecResultClick
     end
   end
   object mmCode: TMemo
