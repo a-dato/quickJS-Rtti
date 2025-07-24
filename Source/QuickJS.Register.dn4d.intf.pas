@@ -7,7 +7,7 @@ uses
   System.TypInfo,
   System.SysUtils,
   quickjs_ng,
-  QuickJS.Variant, System.Rtti;
+  QuickJS.Variant, System.Rtti, System.Collections.Generic;
 
 type
   IJSRegisteredObject = interface
@@ -48,6 +48,11 @@ type
     // property Items[const Index: Integer]: CObject read get_Items;
   end;
 
+  IJSObjectReference = interface
+    ['{CC0707E9-9EFB-456E-AE5C-63E13863C489}']
+    function GetReference: JSObjectReference;
+  end;
+
   TCaptureJSObject = class(TInterfacedObject, IJSCapturedObject)
   protected
     _ctx: JSContext;
@@ -61,16 +66,24 @@ type
     destructor Destroy; override;
   end;
 
-  TJSVirtualInterface = class(TVirtualInterface)
-  var
-    obj_ref: JSObjectReference;
+  TJSVirtualInterface = class(TVirtualInterface, IJSObjectReference)
+  type
+    TInterfaceRef = record
+      IID: TGuid;
+      ii: IInterface;
+    end;
 
+  var
+    FObjectRef: JSObjectReference;
+    FImplementingInterfaces: List<TInterfaceRef>;
+
+    function  GetReference: JSObjectReference;
     procedure Invoke(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue);
 
   public
     constructor Create(PIID: PTypeInfo; const JSObject: JSObjectReference); reintroduce;
     destructor Destroy; override;
-    function QueryInterface(const IID: TGUID; out Obj): HResult; override;
+    function   QueryInterface(const IID: TGUID; out Obj): HResult; override;
   end;
 
   function JSVariant(const Value: IInterface) : Variant;
@@ -104,12 +117,18 @@ end;
 constructor TJSVirtualInterface.Create(PIID: PTypeInfo; const JSObject: JSObjectReference);
 begin
   inherited Create(PIID, Invoke);
-  obj_ref := JSObject;
+  FImplementingInterfaces := CList<TInterfaceRef>.Create(0);
+  FObjectRef := JSObject;
 end;
 
 destructor TJSVirtualInterface.Destroy;
 begin
   inherited;
+end;
+
+function TJSVirtualInterface.GetReference: JSObjectReference;
+begin
+  Result := FObjectRef;
 end;
 
 procedure TJSVirtualInterface.Invoke(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue);
@@ -136,27 +155,48 @@ begin
   if Method.ReturnType <> nil then
     rt := Method.ReturnType.Handle;
 
-  Result := obj_ref.Invoke(name, Copy(Args, 1), rt);
+  Result := FObjectRef.Invoke(name, Copy(Args, 1), rt);
 end;
 
 function TJSVirtualInterface.QueryInterface(const IID: TGUID; out Obj): HResult;
 begin
   Result := inherited;
+
   if Result <> 0 then
   begin
+    var ii_ref := FImplementingInterfaces.Find(function(const item: TInterfaceRef) : Boolean begin
+                    Result := IsEqualGUID(IID, item.IID);
+                  end);
+
+    if not ii_ref.IID.IsEmpty then
+    begin
+      // ii can still be nil!
+      if ii_ref.ii <> nil then
+      begin
+        IInterface(Obj) := ii_ref.ii;
+        Result := S_OK;
+      end;
+
+      Exit;
+    end;
+
     // Call QuickJS, we expect an object to be returned. This object will be wrapped inside
     // an TJSVirtualInterface object as well and can be cast to the requested type
     var reg: IRegisteredObject;
     if TJSRegister.TryGetRegisteredInterface(IID, reg) then
     begin
       var tp := TValue.From<&Type>(&Type.Create(reg.GetTypeInfo));
-      var val := obj_ref.Invoke('QueryInterface', [tp], reg.GetTypeInfo);
+      var val := FObjectRef.Invoke('QueryInterface', [tp], reg.GetTypeInfo);
       if not val.IsEmpty then
       begin
-        IInterface(Obj) := IInterface(val.GetReferenceToRawData^);
+        ii_ref.ii := IInterface(val.GetReferenceToRawData^);
+        IInterface(Obj) := ii_ref.ii;
         Result := S_OK;
       end;
     end;
+
+    ii_ref.IID := IID;
+    FImplementingInterfaces.Add(ii_ref);
   end;
 end;
 

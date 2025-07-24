@@ -491,14 +491,7 @@ begin
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
   var ptr := TJSRegister.GetObjectFromJSValue(this_val, not descr.IsInterface {Ptr is an IInterface} );
 
-  {$IFDEF DEBUG}
-  var arr: TArray<TValue> := nil;
-  for var i := 0 to argc - 1 do
-    arr[i] := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[i], nil);
-  var vt := descr.GetValue(ptr, arr);
-  {$ELSE}
   var vt := descr.GetValue(ptr, []);
-  {$ENDIF}
   JS_FreeValue(ctx, func_data^);
   Result := JSConverter.Instance.TValueToJSValue(ctx, vt);
 end;
@@ -1596,7 +1589,19 @@ begin
           TValue.Make(@ptr, Target, Result);
       end;
     end;
-//    tkRecord:
+
+    tkRecord:
+    begin
+      // Assume record is actually an enumeration
+      if Target.TypeData.RecSize in [1, 2, 4] then
+      begin
+        var v: Integer;
+        TJSRuntime.Check(JS_ToInt32(ctx, @v, Value));
+        Assert(Target.TypeData.ManagedFldCount = 0);
+        TValue.Make(@v, Target, Result);
+      end;
+    end;
+
     tkInterface:
     begin
       if JS_IsFunction(ctx, Value) and string(Target.Name).StartsWith('TProc') then

@@ -554,7 +554,9 @@ begin
       end;
     end
     else if Target = TypeInfo(&Type) then
-      Result := TValue.From<&Type>(GetTypeFromJSObject(ctx, Value));
+      Result := TValue.From<&Type>(GetTypeFromJSObject(ctx, Value))
+    else
+      Result := inherited;
   end else
     Result := inherited;
 end;
@@ -597,6 +599,12 @@ begin
       if TJSRegister.TryGetRegisteredObjectFromTypeInfo(Value.AsType<&Type>.GetTypeInfo, reg) and not JS_IsUndefined(reg.JSConstructor) then
         Exit(JS_DupValue(ctx, reg.JSConstructor));
     end;
+  end
+  else if Value.Kind = tkInterface then
+  begin
+    var ref: IJSObjectReference;
+    if Interfaces.Supports<IJSObjectReference>(Value.AsInterface, ref) then
+      Exit(JS_DupValue(ref.GetReference.Ctx, ref.GetReference.Value));
   end;
 
   Result := inherited;

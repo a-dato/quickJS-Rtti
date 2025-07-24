@@ -58,13 +58,6 @@ type
   ProjectProvider = class(TBaseInterfacedObject, IContentProvider)
   protected
     _data: List<IProject>;
-
-//    function  CreateInstance: CObject;
-//    function  CanAdd: Boolean;
-//    function  CanDelete(const Item: CObject) : Boolean;
-//    procedure Add(const Item: CObject);
-//    function  Remove(const Item: CObject) : Boolean;
-
     function Data(const Filter: CObject): CObject;
   end;
 

@@ -21,9 +21,36 @@ export const editor = {
 
 export const status = {
 	None: 0,
-	Started: 1,
-	Released: 3,
-	Closed: 4
+	Scheduling: 1,
+	Released: 2,
+	Started: 4,
+	Completed: 8,
+	Paused: 16,
+	Aborted: 32
+}
+
+export const access_right = {
+	NoAccess: 0,
+  SpaceReader: 1,
+	NormalRead: 2,
+	ReadWrite: 4,
+  CanDelete: 8,
+  CanAddSpaces: 16,
+  CanAddCalendars: 32,
+  CanAddResources: 64,
+  CanAddResourceClasses: 128,
+  CanAddProjects: 256,
+  CanAddTasks: 512,
+  CanAddCards: 1024,
+  CanAddNotes: 2048,
+  CanAddDocuments: 4096,
+  CanAddUnitsOfMeasure: 8192,
+  CanAddResourceRequirement: 16384,
+  CanAddTemplates: 32768,
+  CanAddUsers: 65536,
+  CanAddStages: 131072,
+  CanUpdateProgress: 262144,
+  CanAddTaskDependencies: 524288
 }
 
 class AddNew {
@@ -39,7 +66,6 @@ export class IBaseInterface_ {
 	}
 
   Equals(other) {
-		console.log('Eq-0');
 		return this == other;
 	}
 	
@@ -47,18 +73,22 @@ export class IBaseInterface_ {
 		return this.constructor;
 	}
 
+	toString() {
+		return ToString();
+	}
+	
 	ToString() {
 		return this.constructor.name;
 	}
 	
-	QueryInterface(intf_type) {
-		if(intf_type === IBaseInterface) {
+	QueryInterface(type) {
+		if(type === IBaseInterface) {
 			return this;
 		}
-		if(intf_type === IInterfaceWithID) {
+		if(type === IInterfaceWithID) {
 			return this;
 		}		
-		if(intf_type === IAddNew) {
+		if(type === IAddNew) {
 			return new AddNew();			
 		}
 	}
@@ -82,7 +112,10 @@ export class IInterfaceWithID_ extends IBaseInterface_ {
   Equals(other) {
 		return this._id == other.ID;
 	}
-
+	
+	get Rights() {
+		return access_right.NormalRead;
+	}
 }
 
 export class LynxObject extends IInterfaceWithID_ {
