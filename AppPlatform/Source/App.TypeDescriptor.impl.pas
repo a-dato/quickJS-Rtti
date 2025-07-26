@@ -26,12 +26,12 @@ type
     _binder: IContentBinder;
     _builder: IContentBuilder;
     _provider: IContentProvider;
-    _PropertyDescriptor: Dictionary<CString, IPropertyDescriptor>;
+    _PropertyDescriptor: Dictionary<string, IPropertyDescriptor>;
 
     function  CreateInstance: CObject; virtual;
-    function  AddPropertyDescriptor(const Name: CString; const Value: IPropertyDescriptor) : Boolean; virtual;
+    function  AddPropertyDescriptor(const Name: string; const Value: IPropertyDescriptor) : Boolean; virtual;
 
-    function  get_PropertyDescriptor(const Name: CString) : IPropertyDescriptor; virtual;
+    function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor; virtual;
     function  get_Name: CString; virtual;
     function  get_Binder: IContentBinder; virtual;
     procedure set_Binder(const Value: IContentBinder); virtual;
@@ -52,7 +52,7 @@ uses
 { ObjectType }
 constructor TTypeDescriptor.Create;
 begin
-  _PropertyDescriptor := CDictionary<CString, IPropertyDescriptor>.Create;
+  _PropertyDescriptor := CDictionary<string, IPropertyDescriptor>.Create;
 end;
 
 function TTypeDescriptor.CreateInstance: CObject;
@@ -60,7 +60,7 @@ begin
   Result := nil;
 end;
 
-function TTypeDescriptor.AddPropertyDescriptor(const Name: CString; const Value: IPropertyDescriptor): Boolean;
+function TTypeDescriptor.AddPropertyDescriptor(const Name: string; const Value: IPropertyDescriptor): Boolean;
 begin
   _PropertyDescriptor[Name] := Value;
   Result := True;
@@ -76,7 +76,7 @@ begin
   Result := _builder;
 end;
 
-function TTypeDescriptor.get_PropertyDescriptor(const Name: CString): IPropertyDescriptor;
+function TTypeDescriptor.get_PropertyDescriptor(const Name: string): IPropertyDescriptor;
 begin
   _PropertyDescriptor.TryGetValue(Name, Result);
 end;

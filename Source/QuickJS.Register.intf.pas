@@ -23,7 +23,7 @@ type
     property Value: Variant read FValue;
   end;
 
-  TMemberType = (None, Methods, &Property, Iterator, IteratorNext, ArrayIndexer, ExtensionProperty);
+  TMemberType = (None, Methods, &Property, Iterator, IteratorNext, ArrayIndexer, ExtensionProperty, IndexedProperty);
   TMemberTypes = set of TMemberType;
   TObjectSupportsExtension = (Unknown, Supported, NotSupported);
 
@@ -54,6 +54,7 @@ type
   IRegisteredObject = interface
     function  get_IsInterface: Boolean;
     function  get_IsIterator: Boolean;
+    function  get_IsIndexedPropertyAccessor: Boolean;
 
     function  get_ClassID: JSClassID;
     procedure set_ClassID(const Value: JSClassID);
@@ -80,6 +81,7 @@ type
     property ClassID: JSClassID read get_ClassID write set_ClassID;
     property IsInterface: Boolean read get_IsInterface;
     property IsIterator: Boolean read get_IsIterator;
+    property IsIndexedPropertyAccessor: Boolean read get_IsIndexedPropertyAccessor;
     property JSConstructor: JSValue read get_JSConstructor write set_JSConstructor;
     property ObjectSupportsEnumeration: Boolean read get_ObjectSupportsEnumeration;
     property ObjectSupportsExtension: TObjectSupportsExtension read get_ObjectSupportsExtension write set_ObjectSupportsExtension;

@@ -36,7 +36,7 @@ type
     function  get_Binder: IContentBinder; override;
     function  get_Builder: IContentBuilder; override;
     function  get_Provider: IContentProvider; override;
-    function  get_PropertyDescriptor(const Name: CString) : IPropertyDescriptor; override;
+    function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor; override;
 
     //function  get_PropertyDescriptor: IPropertyDescriptors; override;
 
@@ -149,7 +149,7 @@ begin
   Result := _JSProto.Invoke<IContentBuilder>('Builder');
 end;
 
-function TJSObjectType.get_PropertyDescriptor(const Name: CString) : IPropertyDescriptor;
+function TJSObjectType.get_PropertyDescriptor(const Name: string) : IPropertyDescriptor;
 begin
   Result := _JSProto.Invoke<IPropertyDescriptor>('PropertyDescriptor', Name);
 end;

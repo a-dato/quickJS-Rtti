@@ -57,13 +57,19 @@ type
 
   ITestObject = interface(IBaseInterface)
     ['{4A8C6FB1-5CFB-49C5-A0EB-2BEC6E554F01}']
+    function get_Names(const Value: string): string;
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
+
+    property Names[const Value: string]: string read get_Names;
   end;
 
   TTestObject = class(TBaseInterfacedObject, ITestObject)
+    function get_Names(const Value: string): string;
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
+  public
+    property Names[const Value: string]: string read get_Names;
   end;
 
 var
@@ -155,24 +161,18 @@ end;
 procedure TForm1.Button3Click(Sender: TObject);
 begin
   var t := &Type.From<ITestObject>;
+
+  for var p in t.GetProperties do
+    ShowMessage(p.Name);
+
   for var m in t.GetMethods do
     ShowMessage(m.Name);
 
-
-//  var t := &Type.From<&Type>;
+//  var ctx := TRttiContext.Create;
+//  var tp := ctx.GetType(TTestObject);
 //
-//  ShowMessage(t.Name);
-//
-//
-//  var prjType := _app.Config.TypeByName('IProject');
-//  var prj_objecttype := _app.Config.TypeDescriptor(prjType);
-//
-//  var data := prj_objecttype.Provider.Data(nil);
-//
-//  var vt: TValue := data.AsType<TValue>;
-//  var n := vt.TypeInfo.Name;
-//
-//  ShowMessage(n);
+//  for var p in tp.GetProperties do
+//    ShowMessage(p.Name);
 end;
 
 procedure TForm1.Button4Click(Sender: TObject);
@@ -287,6 +287,11 @@ begin
 end;
 
 { TTestObject }
+
+function TTestObject.get_Names(const Value: string): string;
+begin
+  Result := Value;
+end;
 
 function TTestObject.Test(const Value: CObject): CObject;
 begin

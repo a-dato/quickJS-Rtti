@@ -108,6 +108,10 @@ type
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
     class function GenericPropertySetter(ctx: JSContext; this_val: JSValueConst;
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
+    class function GenericIndexedPropertyGetter(ctx: JSContext; this_val: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
+    class function GenericIndexedPropertySetter(ctx: JSContext; this_val: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
     class function ExtendablePropertyGetter(ctx: JSContext; obj: JSValueConst;
       argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; cdecl; static;
     class function ExtendablePropertySetter(ctx: JSContext; obj: JSValueConst;
@@ -169,6 +173,17 @@ type
     class function TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue) : Boolean;
 
     class property Instance: JSConverter read FInstance write set_Instance;
+  end;
+
+  TJSIndexedPropertyAccessor = class
+  protected
+    _ctx: JSContext;
+    _this_obj: JSValue;
+    _prop: IPropertyDescriptor;
+
+  public
+    constructor Create(ctx: JSContext; this_obj: JSValue; prop: IPropertyDescriptor);
+    destructor Destroy; override;
   end;
 
   TJSIterator = class abstract
@@ -324,6 +339,7 @@ type
     procedure set_JSConstructor(const Value: JSValue);
     function  get_IsInterface: Boolean;
     function  get_IsIterator: Boolean;
+    function  get_IsIndexedPropertyAccessor: Boolean;
     function  get_ObjectSupportsEnumeration: Boolean; virtual;
     function  get_ObjectSupportsExtension: TObjectSupportsExtension; virtual;
     procedure set_ObjectSupportsExtension(const Value: TObjectSupportsExtension); virtual;
@@ -489,6 +505,19 @@ begin
   var prtti: Int64;
   TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
+
+  {$IFDEF DEBUG}
+  var s := descr.PropertyType.Name;
+  if s = 'IPropertyDescriptor' then
+  begin
+    var reg_iter := FRegisteredObjectsByType[TypeInfo(TJSIndexedPropertyAccessor)];
+    Result := JS_NewObjectClass(ctx, reg_iter.ClassID);
+    var idx_access := TJSIndexedPropertyAccessor.Create(ctx, JS_DupValue(ctx, this_val), descr);
+    JS_SetOpaque(Result, TAutoReference.Create(idx_access));
+    Exit;
+  end;
+  {$ENDIF}
+
   var ptr := TJSRegister.GetObjectFromJSValue(this_val, not descr.IsInterface {Ptr is an IInterface} );
 
   var vt := descr.GetValue(ptr, []);
@@ -501,6 +530,40 @@ class function TJSRegister.GenericPropertySetter(ctx : JSContext; this_val : JSV
   func_data : PJSValue ): JSValue;
 
 begin
+  var prtti: Int64;
+  TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
+  var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
+  var ptr := TJSRegister.GetObjectFromJSValue(this_val, not descr.IsInterface {Ptr is an IInterface} );
+
+  if argc <> 1 then
+    raise Exception.Create('Invalid number of arguments');
+  var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[0], descr.PropertyType);
+
+  descr.SetValue(ptr, [], v);
+  JS_FreeValue(ctx, func_data^);
+  Result := JS_UNDEFINED;
+end;
+
+class function TJSRegister.GenericIndexedPropertyGetter(ctx : JSContext; this_val : JSValueConst;
+  argc : Integer; argv : PJSValueConst; magic : Integer;
+  func_data : PJSValue ): JSValue;
+
+begin
+  var propertyIndex := JS_ToCString(ctx, func_data^);
+  var prop_access := TJSIndexedPropertyAccessor(TJSRegister.GetObjectFromJSValue(this_val, True));
+  var ptr := TJSRegister.GetObjectFromJSValue(prop_access._this_obj, not prop_access._prop.IsInterface {Ptr is an IInterface} );
+  var vt := prop_access._prop.GetValue(ptr, [string(propertyIndex)]);
+  JS_FreeValue(ctx, func_data^);
+  Result := JSConverter.Instance.TValueToJSValue(ctx, vt);
+end;
+
+class function TJSRegister.GenericIndexedPropertySetter(ctx : JSContext; this_val : JSValueConst;
+  argc : Integer; argv : PJSValueConst; magic : Integer;
+  func_data : PJSValue ): JSValue;
+
+begin
+  Assert(False);
+
   var prtti: Int64;
   TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
@@ -594,6 +657,17 @@ var
     desc^.setter := JS_NewCFunctionData(ctx, @GenericPropertySetter, 0 {length}, 999 {magic}, 1 {data_len}, @data {PJSValueConst});
   end;
 
+  procedure SetIndexedPropertyCallBack(const Index: string);
+  begin
+    var s := AnsiString(Index);
+    var data: JSValue := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
+
+    desc^.flags := JS_PROP_GETSET or JS_PROP_HAS_GET or JS_PROP_HAS_SET or JS_PROP_ENUMERABLE;
+    desc^.value := JS_UNDEFINED;
+    desc^.getter := JS_NewCFunctionData(ctx, @GenericIndexedPropertyGetter, 0 {length}, 999 {magic}, 1 {data_len}, @data {PJSValueConst});
+    desc^.setter := JS_NewCFunctionData(ctx, @GenericIndexedPropertySetter, 0 {length}, 999 {magic}, 1 {data_len}, @data {PJSValueConst});
+  end;
+
   procedure SetRttiMethodCallBack;
   begin
     var data: array of JSValueConst;
@@ -682,10 +756,6 @@ begin
 
   var member_name := AtomToString(ctx, prop);
 
-//  var ansistr := JS_AtomToCString(ctx, prop);
-//  var member_name: string := ansistr;
-//  JS_FreeCString(ctx, ansistr);
-
   {$IFDEF DEBUG}
   var obj_type: string;
   var r: IRegisteredObject;
@@ -698,6 +768,12 @@ begin
 
   if FRegisteredObjectsByClassID.TryGetValue(GetClassID(obj), reg) then
   begin
+    if reg.IsIndexedPropertyAccessor then
+    begin
+      SetIndexedPropertyCallBack(member_name);
+      Exit(1);
+    end;
+
     var item_index: Integer;
     if (member_name[1] in ['0'..'9']) then
     begin
@@ -1450,6 +1526,11 @@ end;
 function TRegisteredObject.get_IsIterator : Boolean;
 begin
   Result := FTypeInfo.TypeData.ClassType.InheritsFrom(TJSIterator);
+end;
+
+function TRegisteredObject.get_IsIndexedPropertyAccessor: Boolean;
+begin
+  Result := FTypeInfo = TypeInfo(TJSIndexedPropertyAccessor);
 end;
 
 function TRegisteredObject.get_JSConstructor: JSValue;
@@ -2356,10 +2437,25 @@ begin
   eval_internal(add_fetch, Length(add_fetch), 'initialize', JS_EVAL_TYPE_MODULE);
 
   TJSRegister.RegisterObject(Self, 'JSIterator', TypeInfo(TJSIterator));
+  TJSRegister.RegisterObject(Self, 'JSIndexedPropertyAccessor', TypeInfo(TJSIndexedPropertyAccessor));
 
   JS_FreeValue(_ctx, global);
 
   js_std_loop(_ctx);
+end;
+
+{ TJSIndexedPropertyAccessor }
+constructor TJSIndexedPropertyAccessor.Create(ctx: JSContext; this_obj: JSValue; prop: IPropertyDescriptor);
+begin
+  _ctx := ctx;
+  _this_obj := this_obj;
+  _prop := prop;
+end;
+
+destructor TJSIndexedPropertyAccessor.Destroy;
+begin
+  inherited;
+  JS_FreeValue(_ctx, _this_obj);
 end;
 
 { JSIterator }

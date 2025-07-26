@@ -624,7 +624,7 @@ type
   function JS_ToInt64Ext(ctx: JSContext; pres:PInt64; val:JSValueConst):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
 
   function JS_NewStringLen(ctx:JSContext; str1:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; len1: size_t):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewString(ctx:JSContext; str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
+  // function JS_NewString(ctx:JSContext; str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
   function JS_NewAtomString(ctx:JSContext; str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
   function JS_ToString(ctx:JSContext; val:JSValueConst):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
   function JS_ToPropertyKey(ctx:JSContext; val:JSValueConst):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};

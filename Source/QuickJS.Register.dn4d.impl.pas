@@ -296,7 +296,15 @@ begin
     vt := TValue.From<IInterface>(IInterface(Ptr)) else
     vt := TValue.From<TObject>(TObject(Ptr));
 
-  Result := FProp.GetValue(CObject.From<TValue>(vt), []).GetValue<TValue>;
+  var prop_index: array of CObject;
+  if Length(Index) > 0 then
+  begin
+    SetLength(prop_index, Length(Index));
+    for var n := 0 to High(Index) do
+      prop_index[n] := CObject.From<TValue>(Index[n]);
+  end;
+
+  Result := FProp.GetValue(CObject.From<TValue>(vt), prop_index).GetValue<TValue>;
 end;
 
 function TTypedStandardPropertyDescriptor.get_MemberType: TMemberType;

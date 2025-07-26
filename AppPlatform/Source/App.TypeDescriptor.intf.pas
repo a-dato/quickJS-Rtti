@@ -29,17 +29,17 @@ type
     procedure set_Builder(const Value: IContentBuilder);
     function  get_Provider: IContentProvider;
     procedure set_Provider(const Value: IContentProvider);
-    function  get_PropertyDescriptor(const Name: CString) : IPropertyDescriptor;
+    function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor;
 
     function  CreateInstance: CObject;
 
-    function  AddPropertyDescriptor(const Name: CString; const Value: IPropertyDescriptor) : Boolean;
+    function  AddPropertyDescriptor(const Name: string; const Value: IPropertyDescriptor) : Boolean;
 
     property Name: CString read get_Name;
     property Binder: IContentBinder read get_Binder write set_Binder;
     property Builder: IContentBuilder read get_Builder write set_Builder;
     property Provider: IContentProvider read get_Provider write set_Provider;
-    property PropertyDescriptor[const Name: CString]: IPropertyDescriptor read get_PropertyDescriptor;
+    property PropertyDescriptor[const Name: string]: IPropertyDescriptor read get_PropertyDescriptor;
   end;
 
 implementation
