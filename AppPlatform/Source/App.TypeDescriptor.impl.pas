@@ -23,6 +23,7 @@ type
 
   TTypeDescriptor = class(TBaseInterfacedObject, ITypeDescriptor)
   protected
+    _name: CString;
     _binder: IContentBinder;
     _builder: IContentBuilder;
     _provider: IContentProvider;
@@ -33,7 +34,6 @@ type
 
     function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor; virtual;
     function  get_Name: CString; virtual;
-    function  get_StorageName: CString; virtual;
     function  get_Binder: IContentBinder; virtual;
     procedure set_Binder(const Value: IContentBinder); virtual;
     function  get_Builder: IContentBuilder; virtual;
@@ -42,7 +42,7 @@ type
     procedure set_Provider(const Value: IContentProvider); virtual;
 
   public
-    constructor Create;
+    constructor Create(const Name: CString);
   end;
 
 implementation
@@ -51,8 +51,9 @@ uses
   System.ClassHelpers;
 
 { ObjectType }
-constructor TTypeDescriptor.Create;
+constructor TTypeDescriptor.Create(const Name: CString);
 begin
+  _name := Name;
   _PropertyDescriptor := CDictionary<string, IPropertyDescriptor>.Create;
 end;
 
@@ -84,12 +85,7 @@ end;
 
 function TTypeDescriptor.get_Name: CString;
 begin
-  Result := GetType().Name;
-end;
-
-function TTypeDescriptor.get_StorageName: CString;
-begin
-  Result := 'Project';
+  Result := _name;
 end;
 
 function TTypeDescriptor.get_Provider: IContentProvider;
