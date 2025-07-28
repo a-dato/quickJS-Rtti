@@ -8,7 +8,8 @@ uses
   App.Intf,
   App.Windows.intf,
   ADato.ObjectModel.List.intf,
-  App.TypeDescriptor.intf;
+  App.TypeDescriptor.intf,
+  App.Storage.intf;
 
 type
   Window = class(TBaseInterfacedObject, IWindow)
@@ -21,7 +22,7 @@ type
     function get_Name: CString;
 
     function  Build: IWindow;
-    function  Bind(const Data: CObject) : IWindow;
+    function  Bind(const Storage: IAppStorage) : IWindow;
     function  Show : IWindow;
 
   public
@@ -51,10 +52,10 @@ end;
 
 { Window }
 
-function Window.Bind(const Data: CObject): IWindow;
+function Window.Bind(const Storage: IAppStorage): IWindow;
 begin
   var c := _frame.Content;
-  _app.Config.TypeDescriptor(_Type).Binder.Bind(c, _Type, Data);
+  _app.Config.TypeDescriptor(_Type).Binder.Bind(c, _Type, Storage);
   Result := Self;
 end;
 

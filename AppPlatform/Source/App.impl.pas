@@ -10,6 +10,7 @@ uses
   QuickJS.Register.intf,
   App.intf,
   App.Config.intf,
+  App.Storage.intf,
   App.Windows.intf,
   App.Environment.intf,
   ADato.ObjectModel.List.intf,
@@ -21,16 +22,25 @@ type
     _Config: IAppConfig;
     _Environment: IEnvironment;
     _Windows: IWindows;
+    _storage: Dictionary<string, IAppStorage>;
     _extendabePropertyValues: Dictionary<string, JSValue>;
+
+    // IAppObject
+    function get_Config: IAppConfig;
+    function get_Environment: IEnvironment;
+    function get_Storage(const Name: string): IAppStorage;
+    function get_Windows: IWindows;
+
+    function  AddStorage(const DataType: &Type; const Name: string) : IAppStorage;
+    function  HasStorage(const Name: string): Boolean;
+    function  TryGetStorage(const Name: string; out Value: IAppStorage) : Boolean;
+    function  RemoveStorage(const Name: string) : Boolean;
 
     // IJSExtendableObject
     function  define_own_property(Ctx: JSContext; const Name: string) : Boolean;
     function  GetValue(Ctx: JSContext; const Name: string): JSValue;
     procedure SetValue(Ctx: JSContext; const Name: string; Value: JSValue);
 
-    function get_Config: IAppConfig;
-    function get_Environment: IEnvironment;
-    function get_Windows: IWindows;
   public
     constructor Create(const Environment: IEnvironment);
   end;
@@ -43,7 +53,7 @@ implementation
 uses
   App.TypeDescriptor.intf,
   App.Config.impl,
-  App.Windows.impl;
+  App.Windows.impl, App.Storage.impl;
 
 { TAppObject }
 
@@ -52,7 +62,15 @@ begin
   _Environment := Environment;
   _Config := TAppConfig.Create;
   _Windows := Windows.Create;
+  _storage := CDictionary<string, IAppStorage>.Create;
   _extendabePropertyValues := CDictionary<string, JSValue>.Create;
+end;
+
+function TAppObject.AddStorage(const DataType: &Type; const Name: string) : IAppStorage;
+begin
+  var storage: IAppStorage := TAppStorage.Create(DataType, Name);
+  _storage[Name] := storage;
+  Result := storage;
 end;
 
 function TAppObject.define_own_property(Ctx: JSContext; const Name: string): Boolean;
@@ -78,9 +96,25 @@ begin
   Result := _Environment;
 end;
 
+function TAppObject.get_Storage(const Name: string): IAppStorage;
+begin
+  if not _storage.TryGetValue(Name, Result) then
+    raise ArgumentException.Create(CString.Format('Storage ''{0}'' does not exist', Name));
+end;
+
 function TAppObject.get_Windows: IWindows;
 begin
   Result := _Windows;
+end;
+
+function TAppObject.HasStorage(const Name: string): Boolean;
+begin
+  Result := _storage.ContainsKey(Name);
+end;
+
+function TAppObject.RemoveStorage(const Name: string): Boolean;
+begin
+  Result := _storage.Remove(Name);
 end;
 
 procedure TAppObject.SetValue(Ctx: JSContext; const Name: string; Value: JSValue);
@@ -92,6 +126,11 @@ begin
   if JS_IsUndefined(Value) then
     _extendabePropertyValues.Remove(Name) else
     _extendabePropertyValues[Name] := JS_DupValue(Ctx, Value);
+end;
+
+function TAppObject.TryGetStorage(const Name: string; out Value: IAppStorage): Boolean;
+begin
+  Result := _storage.TryGetValue(Name, Value);
 end;
 
 end.

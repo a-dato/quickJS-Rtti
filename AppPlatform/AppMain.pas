@@ -130,7 +130,7 @@ procedure TForm1.btnCustomerClick(Sender: TObject);
 begin
   _app.Windows.CreateWindow(Self, TProject.Type).
     Build.
-      Bind(TProject.TypeDescriptor.Provider.Data(nil)).
+      Bind(_app.Storage[TProject.TypeDescriptor.StorageName]).
         Show;
 end;
 
@@ -148,6 +148,9 @@ begin
   var data := customer_objecttype.Provider.Data(nil).AsType<IList>;
 
   var c := data[0]; // Customer
+  var s := c.ToString;
+  if s = '' then
+    s := 'Test';
 
   var project_type := _app.Config.TypeDescriptor(&Type.From<IProject>);
   var d := project_type.Provider.Data(nil).AsType<IList>;
@@ -212,6 +215,9 @@ begin
   TProject.TypeDescriptor.Provider := ProjectProvider.Create;
 
   _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
+
+  var storage := _app.AddStorage(TProject.Type, TProject.TypeDescriptor.StorageName);
+  storage.Fill(TProject.TypeDescriptor.Provider.Data(nil));
 end;
 
 procedure TForm1.Initialize;
@@ -236,7 +242,7 @@ begin
 
     TJSRegister.RegisterObject(_context, 'ObjectModel', TypeInfo(IObjectListModelChangeTracking),
       function : Pointer begin
-        Result := TObjectListModelWithChangeTracking<JSObjectReference>.Create(nil);
+        Result := TObjectListModelWithChangeTracking<IJSObject>.Create(nil);
       end);
 
     TJSRegister.RegisterObject(_context, 'JSBinder', TypeInfo(IContentBinder),
@@ -295,9 +301,9 @@ end;
 
 function TTestObject.Test(const Value: CObject): CObject;
 begin
-  var jo: JSObjectReference;
-  if Value.TryGetValue<JSObjectReference>(jo) then
-    jo.Invoke('QueryInterface', nil, nil);
+//  var jo: JSObjectReference;
+//  if Value.TryGetValue<JSObjectReference>(jo) then
+//    jo.Invoke('QueryInterface', nil, nil);
 end;
 
 function TTestObject.Test2(const Value: IProject): IInterface;

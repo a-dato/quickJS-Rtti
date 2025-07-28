@@ -11,7 +11,7 @@ uses
   FMX.Types,
   ADato.ObjectModel.List.intf,
   App.intf,
-  App.Content.intf;
+  App.Content.intf, App.Storage.intf;
 
 type
   Environment = class(TBaseInterfacedObject, IEnvironment)
@@ -52,7 +52,7 @@ type
     procedure BindChildren(const Children: TFmxChildrenList;
       const AModel: IObjectListModel;
       const AType: &Type; const TypeDescriptor: ITypeDescriptor);
-    procedure Bind(const AContent: CObject; const AType: &Type; const Data: CObject);
+    procedure Bind(const AContent: CObject; const AType: &Type; const Storage: IAppStorage);
 
     function WrapProperty(const AProp: _PropertyInfo) : _PropertyInfo; virtual;
   public
@@ -174,25 +174,25 @@ begin
     Result := AProp;
 end;
 
-procedure TFrameBinder.Bind(const AContent: CObject; const AType: &Type; const Data: CObject);
+procedure TFrameBinder.Bind(const AContent: CObject; const AType: &Type; const Storage: IAppStorage);
 begin
   var ctrl: TControl;
   if AContent.TryAsType<TControl>(ctrl) then
   begin
     var objectType := _app.Config.TypeDescriptor(AType);
-//    var dataType := objectType.GetType;
 
-    var model: IObjectListModel := nil;
-    if not Data.TryAsType<IObjectListModel>(model) then
-    begin
-      var list: IList;
-      if Data.TryAsType<IList>(list) then
-      begin
-//        model := TObjectListModelWithChangeTracking<IBaseInterface>.Create(dataType);
-        model := TObjectListModelWithChangeTracking<IBaseInterface>.Create(AType);
-        model.Context := list;
-      end;
-    end;
+    var model := Storage.Model;
+
+//    var model: IObjectListModel := nil;
+//    if not Data.TryAsType<IObjectListModel>(model) then
+//    begin
+//      var list: IList;
+//      if Data.TryAsType<IList>(list) then
+//      begin
+//        model := TObjectListModelWithChangeTracking<IBaseInterface>.Create(AType);
+//        model.Context := list;
+//      end;
+//    end;
 
     if model <> nil then
     begin

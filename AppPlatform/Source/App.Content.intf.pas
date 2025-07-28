@@ -3,7 +3,7 @@
 interface
 
 uses
-  System_;
+  System_, App.Storage.intf;
 
 type
   {$M+}
@@ -13,7 +13,7 @@ type
 
   {$M+}
   IContentBinder = interface(IBaseInterface)
-    procedure Bind(const AContent: CObject; const AType: &Type; const Data: CObject);
+    procedure Bind(const AContent: CObject; const AType: &Type; const Storage: IAppStorage);
   end;
 
   {$M+}

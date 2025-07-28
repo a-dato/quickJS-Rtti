@@ -44,7 +44,7 @@ type
     function  get_OwnerType: &Type;
     function  get_PropInfo: IPropInfo;
 
-    function  GetType: &Type;
+    function  GetType: &Type; override;
     function  GetAttributes: TArray<TCustomAttribute>;
     function  GetValue(const obj: CObject; const index: array of CObject): CObject;
     procedure SetValue(const obj: CObject; const value: CObject; const index: array of CObject; ExecuteTriggers: Boolean = false);
@@ -137,6 +137,27 @@ type
     constructor Create(AInfo: PTypeInfo; IsInterface: Boolean);
   end;
 
+  TJSObject = class(TBaseInterfacedObject, IJSObject)
+  protected
+    _type: &Type;
+    _ctx: JSContext;
+    _value: JSValueConst;
+
+    function get_Ctx: JSContext;
+    function get_Value: JSValueConst;
+
+    function InternalInvoke(const Func: AnsiString; argc: Integer; argv: PJSValueConstArr): JSValue;
+    function Invoke(const Func: AnsiString; const Args: TArray<TValue>; ReturnType: PTypeInfo) : TValue;
+
+    function  GetType: &Type; override;
+    function  ToString: CString; override;
+
+  public
+    constructor Create(const Ctx: JSContext; const Value: JSValueConst);
+    destructor  Destroy; override;
+  end;
+
+
 implementation
 
 uses
@@ -146,8 +167,6 @@ uses
 
 class procedure TJSRegisterTypedObjects.Initialize(const Context: IJSContext);
 begin
-  JSObjectReference.GetTypeFromJSObjectFunc := TJSTypedConverter.GetTypeFromJSObject;
-
   JSConverter.Instance := TJSTypedConverter.Create;
   TJSRegister.Instance := TJSRegisterTypedObjects.Create;
 
@@ -435,7 +454,8 @@ begin
 
       if ptr <> nil {Object points to a Delphi object} then
         TValue.Make(@ptr, Target, Result) else
-        Result := TValue.From<JSObjectReference>(JSObjectReference.Create(ctx, Value));
+        // Result := TValue.From<JSObjectReference>(JSObjectReference.Create(ctx, Value));
+        Result := TValue.From<IJSObject>(TJSObject.Create(ctx, Value));
     end;
 
     Exit;
@@ -444,7 +464,8 @@ begin
   if Target.Kind = tkInterface then
   begin
     if JS_IsNull(Value) then
-      Exit(TValue.From<JSObjectReference>(JSObjectReference.Empty));
+      // Exit(TValue.From<JSObjectReference>(JSObjectReference.Empty));
+      Exit(TValue.From<IJSObject>(nil));
 
     if JS_IsFunction(ctx, Value) then
       Exit(inherited);
@@ -458,11 +479,17 @@ begin
 
       else
       begin
-        var obj_ref := JSObjectReference.Create(ctx, Value);
+        var obj_ref: IJSObject := TJSObject.Create(ctx, Value);
 
-        if Target = TypeInfo(JSObjectReference) then
-          Result := TValue.From<JSObjectReference>(obj_ref) else
+        if Target = TypeInfo(IJSObject) then
+          Result := TValue.From<IJSObject>(obj_ref) else
           Result := WrapIJSObjectInVirtualInterface(Target, obj_ref);
+
+//        var obj_ref := JSObjectReference.Create(ctx, Value);
+//
+//        if Target = TypeInfo(JSObjectReference) then
+//          Result := TValue.From<JSObjectReference>(obj_ref) else
+//          Result := WrapIJSObjectInVirtualInterface(Target, obj_ref);
       end;
 
       Exit;
@@ -472,30 +499,30 @@ begin
   end
   else if Target.Kind = tkRecord then
   begin
-    if Target = TypeInfo(JSObjectReference) then
-    begin
-      if JS_IsNull(Value) then
-        Exit(TValue.From<JSObjectReference>(JSObjectReference.Empty));
+//    if Target = TypeInfo(JSObjectReference) then
+//    begin
+//      if JS_IsNull(Value) then
+//        Exit(TValue.From<JSObjectReference>(JSObjectReference.Empty));
+//
+//      if JS_IsObject(Value) then
+//      begin
+//        var ptr := TJSRegister.GetObjectFromJSValue(Value, False {Is NOT object type?});
+//
+//        if ptr <> nil {Object points to a Delphi object} then
+//          TValue.Make(@ptr, Target, Result)
+//
+//        else
+//        begin
+//          var obj_ref := JSObjectReference.Create(ctx, Value);
+//
+//          if Target = TypeInfo(JSObjectReference) then
+//            Result := TValue.From<JSObjectReference>(obj_ref) else
+//            Result := WrapIJSObjectInVirtualInterface(Target, obj_ref);
+//        end;
+//      end;
+//    end
 
-      if JS_IsObject(Value) then
-      begin
-        var ptr := TJSRegister.GetObjectFromJSValue(Value, False {Is NOT object type?});
-
-        if ptr <> nil {Object points to a Delphi object} then
-          TValue.Make(@ptr, Target, Result)
-
-        else
-        begin
-          var obj_ref := JSObjectReference.Create(ctx, Value);
-
-          if Target = TypeInfo(JSObjectReference) then
-            Result := TValue.From<JSObjectReference>(obj_ref) else
-            Result := WrapIJSObjectInVirtualInterface(Target, obj_ref);
-        end;
-      end;
-    end
-
-    else if Target = TypeInfo(CString) then
+    if Target = TypeInfo(CString) then
     begin
       if JS_IsNull(Value) then
         Result := TValue.From<CString>(nil)
@@ -558,7 +585,8 @@ begin
             Result := TValue.From<CObject>(TObject(ptr)) else
             Result := TValue.From<CObject>(IInterface(ptr));
         end else
-          Result := TValue.From<CObject>(CObject.From<JSObjectReference>(JSObjectReference.Create(ctx, Value)));
+          Result := TValue.From<CObject>(CObject.From<IJSObject>(TJSObject.Create(ctx, Value)));
+          // Result := TValue.From<CObject>(CObject.From<JSObjectReference>(JSObjectReference.Create(ctx, Value)));
       end;
     end
     else if Target = TypeInfo(&Type) then
@@ -579,8 +607,8 @@ begin
 //  end else
   if Value.Kind = tkRecord then
   begin
-    if Value.TypeInfo = TypeInfo(JSObjectReference) then
-      Exit(JS_DupValue(ctx, JSObjectReference(Value.GetReferenceToRawData^).Value));
+//    if Value.TypeInfo = TypeInfo(JSObjectReference) then
+//      Exit(JS_DupValue(ctx, JSObjectReference(Value.GetReferenceToRawData^).Value));
 
     if Value.TypeInfo = TypeInfo(CObject) then
       Exit(TValueToJSValue(ctx, CObject(Value.GetReferenceToRawData^).AsType<TValue>));
@@ -610,9 +638,13 @@ begin
   end
   else if Value.Kind = tkInterface then
   begin
-    var ref: IJSObjectReference;
-    if Interfaces.Supports<IJSObjectReference>(Value.AsInterface, ref) then
-      Exit(JS_DupValue(ref.GetReference.Ctx, ref.GetReference.Value));
+    var ref: IJSObject;
+    if Interfaces.Supports<IJSObject>(Value.AsInterface, ref) then
+      Exit(JS_DupValue(ref.Ctx, ref.Value));
+
+//    var ref: IJSObjectReference;
+//    if Interfaces.Supports<IJSObjectReference>(Value.AsInterface, ref) then
+//      Exit(JS_DupValue(ref.GetReference.Ctx, ref.GetReference.Value));
   end;
 
   Result := inherited;
@@ -775,13 +807,21 @@ end;
 
 function TJSPropertyInfo.GetValue(const obj: CObject; const index: array of CObject): CObject;
 begin
-  var js_obj: JSObjectReference;
-  if obj.TryAsType<JSObjectReference>(js_obj) then
+  var js_obj: IJSObject;
+  if obj.TryAsType<IJSObject>(js_obj) then
   begin
     var val := JS_GetPropertyStr(_ctx, js_obj.Value, PAnsiChar(_name));
     if not TJSRuntime.Check(_ctx) then Exit;
     Result := JSConverter.Instance.JSValueToTValue(_ctx, val, nil);
   end;
+
+//  var js_obj: JSObjectReference;
+//  if obj.TryAsType<JSObjectReference>(js_obj) then
+//  begin
+//    var val := JS_GetPropertyStr(_ctx, js_obj.Value, PAnsiChar(_name));
+//    if not TJSRuntime.Check(_ctx) then Exit;
+//    Result := JSConverter.Instance.JSValueToTValue(_ctx, val, nil);
+//  end;
 end;
 
 function TJSPropertyInfo.get_CanRead: Boolean;
@@ -811,12 +851,19 @@ end;
 
 procedure TJSPropertyInfo.SetValue(const obj, value: CObject; const index: array of CObject; ExecuteTriggers: Boolean);
 begin
-  var js_obj: JSObjectReference;
-  if obj.TryAsType<JSObjectReference>(js_obj) then
+  var js_obj: IJSObject;
+  if obj.TryAsType<IJSObject>(js_obj) then
   begin
     JS_SetPropertyStr(_ctx, js_obj.Value, PAnsiChar(_name), JSConverter.Instance.TValueToJSValue(_ctx, value.AsType<TValue>));
     TJSRuntime.Check(_ctx);
   end;
+
+//  var js_obj: JSObjectReference;
+//  if obj.TryAsType<JSObjectReference>(js_obj) then
+//  begin
+//    JS_SetPropertyStr(_ctx, js_obj.Value, PAnsiChar(_name), JSConverter.Instance.TValueToJSValue(_ctx, value.AsType<TValue>));
+//    TJSRuntime.Check(_ctx);
+//  end;
 end;
 
 function TJSPropertyInfo.ToString: CString;
@@ -824,6 +871,94 @@ begin
   Result := string(_name);
 end;
 
+
+{ TJSObject }
+
+constructor TJSObject.Create(const Ctx: JSContext; const Value: JSValueConst);
+begin
+  _ctx := Ctx;
+  _value := JS_DupValue(Ctx, Value);
+end;
+
+destructor TJSObject.Destroy;
+begin
+  inherited;
+  JS_FreeValue(_ctx, _value);
+end;
+
+function TJSObject.get_Ctx: JSContext;
+begin
+  Result := _ctx;
+end;
+
+function TJSObject.get_Value: JSValueConst;
+begin
+  Result := _value;
+end;
+
+function TJSObject.InternalInvoke(const Func: AnsiString; argc: Integer; argv: PJSValueConstArr): JSValue;
+begin
+  Result := JS_GetPropertyStr(_ctx, _value, PAnsiChar(Func));
+  TJSRuntime.Check(_ctx, Result);
+  Result := TJSRuntime.WaitForJobs(_ctx, Result);
+  TJSRuntime.Check(_ctx, Result);
+
+  // Property returns a function, call function to get actual value
+  if JS_IsFunction(_ctx, Result) then
+  begin
+    var tmp := Result;
+    Result := JS_Call(_ctx, tmp, _value, argc, argv);
+    TJSRuntime.Check(_ctx, Result);
+    Result := TJSRuntime.WaitForJobs(_ctx, Result);
+    TJSRuntime.Check(_ctx, Result);
+    JS_FreeValue(_ctx, tmp);
+    if not TJSRuntime.Check(_ctx) then Exit;
+  end
+  // Call on property with sub-properties
+  // obj.ObjectWithProps['SUB-PROPERTY']
+  else if (argc = 1) and JS_IsObject(Result) then
+  begin
+    // Result := JS_GetPropertyStr(_jsValue.ctx, Result, PAnsiChar('Customer'));
+    var js_obj := Result;
+    var prop_name := JSConverter.Instance.JSValueToTValue(_ctx, argv[0], TypeInfo(string));
+    if not prop_name.IsEmpty then
+    begin
+      var s: AnsiString := prop_name.ToString;
+      Result := JS_GetPropertyStr(_ctx, js_obj, PAnsiChar(s));
+      TJSRuntime.Check(_ctx, Result);
+      Result := TJSRuntime.WaitForJobs(_ctx, Result);
+      TJSRuntime.Check(_ctx, Result);
+    end;
+    JS_FreeValue(_ctx, js_obj);
+  end;
+end;
+
+function TJSObject.Invoke(const Func: AnsiString; const Args: TArray<TValue>; ReturnType: PTypeInfo): TValue;
+begin
+  var argv: array of JSValueConst;
+  SetLength(argv, Length(Args));
+  for var i := 0 to High(Args) do
+    argv[i] := JSConverter.Instance.TValueToJSValue(_ctx, Args[i]);
+
+  var js_val := InternalInvoke(Func, Length(argv), PJSValueConstArr(argv));
+  Result := JSConverter.Instance.JSValueToTValue(_ctx, js_val, ReturnType);
+  JS_FreeValue(_ctx, js_val);
+
+  for var i := 0 to High(Args) do
+    JS_FreeValue(_ctx, argv[i]);
+end;
+
+function TJSObject.GetType: &Type;
+begin
+  if _type = nil then
+    _type := TJSTypedConverter.GetTypeFromJSObject(_ctx, _value);
+  Result := _type;
+end;
+
+function TJSObject.ToString: CString;
+begin
+  Result := Invoke('ToString', nil, TypeInfo(string)).ToString;
+end;
 
 end.
 

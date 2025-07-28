@@ -31,7 +31,7 @@ type
 
   TJSObjectType = class(TTypeDescriptor)
   protected
-    _JSProto: JSObjectReference;
+    _JSProto: IJSObject;
 
     function  get_Binder: IContentBinder; override;
     function  get_Builder: IContentBuilder; override;
@@ -41,7 +41,7 @@ type
     //function  get_PropertyDescriptor: IPropertyDescriptors; override;
 
   public
-    constructor Create(const JSProto: JSObjectReference);
+    constructor Create(const JSProto: IJSObject);
 
     function  GetType: &Type; override;
   end;
@@ -129,34 +129,38 @@ end;
 
 { TJSObjectType }
 
-constructor TJSObjectType.Create(const JSProto: JSObjectReference);
+constructor TJSObjectType.Create(const JSProto: IJSObject);
 begin
   _JSProto := JSProto;
 end;
 
 function TJSObjectType.GetType: &Type;
 begin
- Result := _JSProto.Invoke<&Type>('GetType');
+ Result := _JSProto.GetType;
 end;
 
 function TJSObjectType.get_Binder: IContentBinder;
 begin
-  Result := _JSProto.Invoke<IContentBinder>('Binder');
+  var v := _JSProto.Invoke('Binder', nil, TypeInfo(IContentBinder));
+  Interfaces.Supports<IContentBinder>(v.AsInterface, Result);
 end;
 
 function TJSObjectType.get_Builder: IContentBuilder;
 begin
-  Result := _JSProto.Invoke<IContentBuilder>('Builder');
+  var v := _JSProto.Invoke('Builder', nil, TypeInfo(IContentBuilder));
+  Interfaces.Supports<IContentBuilder>(v.AsInterface, Result);
 end;
 
 function TJSObjectType.get_PropertyDescriptor(const Name: string) : IPropertyDescriptor;
 begin
-  Result := _JSProto.Invoke<IPropertyDescriptor>('PropertyDescriptor', Name);
+  var v := _JSProto.Invoke('PropertyDescriptor', [Name], TypeInfo(IPropertyDescriptor));
+  Interfaces.Supports<IPropertyDescriptor>(v.AsInterface, Result);
 end;
 
 function TJSObjectType.get_Provider: IContentProvider;
 begin
-  Result := _JSProto.Invoke<IContentProvider>('Provider');
+  var v := _JSProto.Invoke('Provider', nil, TypeInfo(IContentProvider));
+  Interfaces.Supports<IContentProvider>(v.AsInterface, Result);
 end;
 
 end.

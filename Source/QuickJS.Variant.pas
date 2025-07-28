@@ -161,9 +161,9 @@ begin
       vi.OnInvoke(TRttiMethod(Pointer(m)), args, r);
 
       // QuickJS returns an object, wrap it inside interface and return a callable object
-      if r.TypeInfo = TypeInfo(JSObjectReference) then
+      if r.TypeInfo = TypeInfo(IJSObject) then
       begin
-        var wrapped := WrapIJSObjectInVirtualInterface(TypeInfo(IInterface), r.AsType<JSObjectReference>);
+        var wrapped := WrapIJSObjectInVirtualInterface(TypeInfo(IInterface), r.AsType<IJSObject>);
         TJSVariantVarData(Dest).Instance := wrapped.AsInterface;
       end
       // QuickJS returns undefined or nil

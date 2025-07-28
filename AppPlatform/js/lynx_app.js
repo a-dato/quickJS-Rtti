@@ -73,12 +73,12 @@ export class IBaseInterface_ {
 		return this.constructor;
 	}
 
-	toString() {
-		return ToString();
-	}
-	
 	ToString() {
 		return this.constructor.name;
+	}
+
+	toString() {
+		return ToString();
 	}
 	
 	QueryInterface(type) {

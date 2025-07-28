@@ -33,6 +33,7 @@ type
 
     function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor; virtual;
     function  get_Name: CString; virtual;
+    function  get_StorageName: CString; virtual;
     function  get_Binder: IContentBinder; virtual;
     procedure set_Binder(const Value: IContentBinder); virtual;
     function  get_Builder: IContentBuilder; virtual;
@@ -84,6 +85,11 @@ end;
 function TTypeDescriptor.get_Name: CString;
 begin
   Result := GetType().Name;
+end;
+
+function TTypeDescriptor.get_StorageName: CString;
+begin
+  Result := 'Project';
 end;
 
 function TTypeDescriptor.get_Provider: IContentProvider;

@@ -5,7 +5,7 @@ interface
 uses
   System_,
   System.Collections.Generic,
-  ADato.ObjectModel.List.intf;
+  ADato.ObjectModel.List.intf, App.Storage.intf;
 
 type
   {$M+}
@@ -35,7 +35,7 @@ type
     function get_Name: CString;
 
     function  Build: IWindow;
-    function  Bind(const Data: CObject): IWindow;
+    function  Bind(const Storage: IAppStorage): IWindow;
     function  Show: IWindow;
 
     property Frame: IWindowFrame read get_Frame;

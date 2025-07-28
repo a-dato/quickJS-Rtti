@@ -177,7 +177,7 @@ export class Customer extends LynxObject {
 		this._Status = status;
 	}
   
-	toString() {
+	ToString() {
 		return this._Name;
 	}
 }
@@ -268,27 +268,30 @@ export class CustomerType extends LynxType {
 	CreateInstance() {
 		return new Customer();
 	}
+	
+	StorageName() {
+		return 'Customer';
+	}
 }
 
 class CustomerProvider extends LynxProvider {
 	constructor() {
 		super();
-		this._Data = null;
 	}
 
 	Data(filter) {
-		if(this._Data == null) {
-			console.log('Items loading');
-			
-			this._Data = new List();
-			for(let i=0; i<100;i++) {
-				var c = new Customer(i, `Customer ${i}`);
-				c.Address = new Address(i, `Parkway ${i}`, `2645BG-${i}`);
- 				c.Age = i;
-				this._Data.Add(c);
-			}
+		let l = new List();
+		for(let i=0; i<100;i++) {
+			var c = new Customer(i, `Customer ${i}`);
+			c.Address = new Address(i, `Parkway ${i}`, `2645BG-${i}`);
+			c.Age = i;
+			l.Add(c);
 		}
 		
+		return l;
+	}
+
+/*		
 		let result = null;
 		if(typeof filter === 'string' && filter.trim() !== '') {
 			result = new List();
@@ -300,7 +303,9 @@ class CustomerProvider extends LynxProvider {
 		
 		return result;
 	}
+*/
 	
+/*	
 	Lookup(item) {
 		let id = null;
 		if(typeof item === 'number')
@@ -314,4 +319,5 @@ class CustomerProvider extends LynxProvider {
 					return c;
 		}		
 	}
+*/
 }

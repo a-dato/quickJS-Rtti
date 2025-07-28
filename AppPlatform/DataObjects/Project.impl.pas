@@ -57,7 +57,7 @@ type
 
   ProjectProvider = class(TBaseInterfacedObject, IContentProvider)
   protected
-    _data: List<IProject>;
+    // _data: List<IProject>;
     function Data(const Filter: CObject): CObject;
   end;
 
@@ -188,21 +188,34 @@ end;
 
 function ProjectProvider.Data(const Filter: CObject): CObject;
 begin
-  if _data = nil then
+  var l: List<IProject> := CList<IProject>.Create;
+
+  for var i := 0 to 9 do
   begin
-    _data := CList<IProject>.Create;
+    var p: IProject := TProject.Create;
+    p.ID := i;
+    p.Name := 'Project ' + i.ToString;
 
-    for var i := 0 to 9 do
-    begin
-      var p: IProject := TProject.Create;
-      p.ID := i;
-      p.Name := 'Project ' + i.ToString;
-
-      _data.Add(p);
-    end;
+    l.Add(p);
   end;
 
-  Result := CObject.From<List<IProject>>(_data);
+  Result := CObject.From<List<IProject>>(l);
+
+//  if _data = nil then
+//  begin
+//    _data := CList<IProject>.Create;
+//
+//    for var i := 0 to 9 do
+//    begin
+//      var p: IProject := TProject.Create;
+//      p.ID := i;
+//      p.Name := 'Project ' + i.ToString;
+//
+//      _data.Add(p);
+//    end;
+//  end;
+//
+//  Result := CObject.From<List<IProject>>(_data);
 end;
 
 function ProjectType.CreateInstance: CObject;
