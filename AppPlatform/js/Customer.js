@@ -32,13 +32,13 @@ export class Address {
 }
 
 export class AddressType {
-	static ct = null;
+	static Instance = null;
 	
 	static register() {
-		AddressType.ct = new AddressType();
+		AddressType.Instance = new AddressType();
 		globalThis.Address = Address;
 		globalThis.AddressType = AddressType;
-		app.Config.RegisterType(Address, AddressType.ct);
+		app.Config.RegisterType(Address, AddressType.Instance);
 	}
 
 	constructor() {
@@ -183,13 +183,13 @@ export class Customer extends LynxObject {
 }
 
 export class CustomerType extends LynxType {
-	static ct = null;
+	static Instance = null;
 	
 	static register() {
-		CustomerType.ct = new CustomerType();
+		CustomerType.Instance = new CustomerType();
 		globalThis.Customer = Customer;
 		globalThis.CustomerType = CustomerType;
-		app.Config.RegisterType(Customer, CustomerType.ct);
+		app.Config.RegisterType(Customer, CustomerType.Instance);
 	}
 
 	constructor() {
@@ -237,7 +237,10 @@ export class CustomerType extends LynxType {
 					}
 				},
 				Picklist: {
-					Items: (filter) => { return this.Provider.Data(filter) }
+					Items: (filter) => { 
+						// return this.Provider.Data(filter) 
+						return app.Storage[CustomerType.StorageName];
+					}
 				}
 			},
 			ID: {
@@ -269,7 +272,7 @@ export class CustomerType extends LynxType {
 		return new Customer();
 	}
 	
-	StorageName() {
+	static StorageName() {
 		return 'Customer';
 	}
 }

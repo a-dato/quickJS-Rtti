@@ -53,9 +53,9 @@ export const access_right = {
   CanAddTaskDependencies: 524288
 }
 
-class AddNew {
-	AddNew() {
-		console.log('AddNew()');
+class AddingNew {
+	CreateInstance() {
+		console.log('CreateInstance()');
 		return 'test';
 	}
 }
@@ -82,14 +82,8 @@ export class IBaseInterface_ {
 	}
 	
 	QueryInterface(type) {
-		if(type === IBaseInterface) {
+		if(type === IBaseInterface || type === IInterfaceWithID || type === ICloneable) {
 			return this;
-		}
-		if(type === IInterfaceWithID) {
-			return this;
-		}		
-		if(type === IAddNew) {
-			return new AddNew();			
 		}
 	}
 }
@@ -118,12 +112,14 @@ export class IInterfaceWithID_ extends IBaseInterface_ {
 	}
 }
 
-export class LynxObject extends IInterfaceWithID_ {
-
+export class ICloneable_ extends IInterfaceWithID_ {
   Clone() {
 		return Object.assign(Object.create(Object.getPrototypeOf(this)), this);
 	}
-	
+}
+
+export class LynxObject extends ICloneable_ {
+
 }
 
 export class LynxType extends IBaseInterface_ {
