@@ -99,7 +99,9 @@ uses
   App.TypeDescriptor.intf,
   System.Collections,
   System.Rtti, App.PropertyDescriptor.intf, System.JSON,
-  ADato.ObjectModel.impl, ADato.Collections.Specialized;
+  ADato.ObjectModel.impl,
+  System.ComponentModel,
+  ADato.ObjectModel.TrackInterfaces;
 
 {$R *.fmx}
 
@@ -217,7 +219,7 @@ begin
   _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
 
   var storage := _app.AddStorage(TProject.Type, TProject.TypeDescriptor.StorageName);
-  storage.Fill(TProject.TypeDescriptor.Provider.Data(nil));
+  storage.Attach(TProject.TypeDescriptor.Provider.Data(nil));
 end;
 
 procedure TForm1.Initialize;
@@ -262,7 +264,13 @@ begin
       end);
 
     TJSRegister.RegisterObject(_context, 'IBaseInterface', TypeInfo(IBaseInterface), nil);
-    TJSRegister.RegisterObject(_context, 'IAddNew', TypeInfo(IAddNew), nil);
+    TJSRegister.RegisterObject(_context, 'IAddingNew', TypeInfo(IAddingNew), nil);
+    TJSRegister.RegisterObject(_context, 'IAddRange', TypeInfo(IAddRange), nil);
+    TJSRegister.RegisterObject(_context, 'ICloneable', TypeInfo(ICloneable), nil);
+    TJSRegister.RegisterObject(_context, 'IEditState', TypeInfo(IEditState), nil);
+    TJSRegister.RegisterObject(_context, 'IEditableModel', TypeInfo(IEditableModel), nil);
+    TJSRegister.RegisterObject(_context, 'IOnItemChangedSupport', TypeInfo(IOnItemChangedSupport), nil);
+    TJSRegister.RegisterObject(_context, 'IUpdatableObject', TypeInfo(IUpdatableObject), nil);
 
     TJSRegister.RegisterLiveObject(_context, 'app', TypeInfo(IAppObject), _app);
 

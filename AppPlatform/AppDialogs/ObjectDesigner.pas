@@ -19,6 +19,13 @@ type
     ObjectProperties: TDataControl;
     Button1: TButton;
     Button2: TButton;
+    lyTypes: TLayout;
+    Label1: TLabel;
+    Splitter1: TSplitter;
+    lyProperties: TLayout;
+    Label2: TLabel;
+    Layout2: TLayout;
+    Label3: TLabel;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure ObjectTypesCellChanged(const Sender: TObject; e: DCCellChangedEventArgs);

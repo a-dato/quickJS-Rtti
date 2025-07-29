@@ -86,10 +86,10 @@ object Form1: TForm1
     DataDetectorTypes = []
     Lines.Strings = (
       
-        'let storage = app.AddStorage(CustomerType, CustomerType.ct.Stora' +
-        'geName);'
-      'let data = CustomerType.ct.Provider.Data();'
-      'storage.Fill(data);'
+        'let storage = app.AddStorage(CustomerType, CustomerType.StorageN' +
+        'ame);'
+      'let data = CustomerType.Instance.Provider.Data();'
+      'storage.Attach(data);'
       ''
       'const w = app.Windows.CreateWindow(null, Customer);'
       'w.Build();'

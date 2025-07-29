@@ -285,6 +285,11 @@ type
     constructor Create(AInfo: PTypeInfo; const RttiGetter: TRttiMethod; const RttiSetter: TRttiMethod);
   end;
 
+  TRttiIndexedInterfacePropertyDescriptor = class(TRttiInterfacePropertyDescriptor)
+  protected
+    function  get_MemberType: TMemberType; override;
+  end;
+
   TRttiArrayIndexDescriptor = class(TPropertyDescriptor)
   protected
     function  get_MemberType: TMemberType; override;
@@ -506,23 +511,21 @@ begin
   TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
 
-  {$IFDEF DEBUG}
-  var s := descr.PropertyType.Name;
-  if s = 'IPropertyDescriptor' then
+  // Return TJSIndexedPropertyAccessor object to access property value
+  if descr.MemberType = TMemberType.IndexedProperty then
   begin
     var reg_iter := FRegisteredObjectsByType[TypeInfo(TJSIndexedPropertyAccessor)];
     Result := JS_NewObjectClass(ctx, reg_iter.ClassID);
     var idx_access := TJSIndexedPropertyAccessor.Create(ctx, JS_DupValue(ctx, this_val), descr);
     JS_SetOpaque(Result, TAutoReference.Create(idx_access));
-    Exit;
+  end
+  else
+  begin
+    var ptr := TJSRegister.GetObjectFromJSValue(this_val, not descr.IsInterface {Ptr is an IInterface} );
+    var vt := descr.GetValue(ptr, []);
+    JS_FreeValue(ctx, func_data^);
+    Result := JSConverter.Instance.TValueToJSValue(ctx, vt);
   end;
-  {$ENDIF}
-
-  var ptr := TJSRegister.GetObjectFromJSValue(this_val, not descr.IsInterface {Ptr is an IInterface} );
-
-  var vt := descr.GetValue(ptr, []);
-  JS_FreeValue(ctx, func_data^);
-  Result := JSConverter.Instance.TValueToJSValue(ctx, vt);
 end;
 
 class function TJSRegister.GenericPropertySetter(ctx : JSContext; this_val : JSValueConst;
@@ -795,18 +798,23 @@ begin
       reg.AddRttiDescriptor(member_name, rtti_descriptor);
     end;
 
-    if rtti_descriptor.MemberType = TMemberType.Iterator then
+    // The first call on a indexed property should return the property itself.
+    // The getter/setter for this property will return a TJSIndexedPropertyAccessor
+    // which handles the get/set on the property
+    if rtti_descriptor.MemberType in [TMemberType.Property, TMemberType.IndexedProperty] then
+      SetRttiPropertyDescriptorCallBack
+    else if rtti_descriptor.MemberType = TMemberType.Methods then
+      SetRttiMethodCallBack
+    else if rtti_descriptor.MemberType = TMemberType.Iterator then
       SetIteratorProperty
     else if rtti_descriptor.MemberType = TMemberType.IteratorNext then
       SetIteratorNextProperty
-    else if rtti_descriptor.MemberType = TMemberType.Methods then
-      SetRttiMethodCallBack
     else if rtti_descriptor.MemberType = TMemberType.ArrayIndexer then
       SetRttiArrayIndexProperty(item_index)
     else if rtti_descriptor.MemberType = TMemberType.ExtensionProperty then
       SetExtendableObjectGetterSetter(member_name)
     else
-      SetRttiPropertyDescriptorCallBack;
+      Exit(0);
 
     Exit(1);
   end;
@@ -1466,7 +1474,9 @@ begin
       var getter := rttiType.GetMethod('get_' + AName);
       var setter := rttiType.GetMethod('set_' + AName);
 
-      if (getter <> nil) or (setter <> nil) then
+      if ((getter <> nil) and (Length(getter.GetParameters) > 0)) or ((setter <> nil) and (Length(setter.GetParameters) > 0)) then
+        Result := TRttiIndexedInterfacePropertyDescriptor.Create(FTypeInfo, getter, setter)
+      else if (getter <> nil) or (setter <> nil) then
         Result := TRttiInterfacePropertyDescriptor.Create(FTypeInfo, getter, setter);
     end
     else
@@ -2563,6 +2573,13 @@ end;
 procedure TRttiArrayIndexDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
 begin
   inherited;
+end;
+
+{ TRttiIndexedInterfacePropertyDescriptor }
+
+function TRttiIndexedInterfacePropertyDescriptor.get_MemberType: TMemberType;
+begin
+  Result := TMemberType.IndexedProperty;
 end;
 
 initialization
