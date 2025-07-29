@@ -9,7 +9,7 @@ uses
   App.Storage.intf,
   App.Windows.intf,
   App.Environment.intf,
-  ADato.ObjectModel.List.intf;
+  ADato.ObjectModel.List.intf, ADato.AI.SpaceAccessor.intf;
 
 type
   {$M+}
@@ -25,6 +25,7 @@ type
     function get_Environment: IEnvironment;
     function get_Storage(const Name: string): IAppStorage;
     function get_Windows: IWindows;
+    function get_SpaceAccessor: ISpaceAccessor;
 
     function  AddStorage(const DataType: &Type; const Name: string) : IAppStorage;
     function  HasStorage(const Name: string): Boolean;
@@ -35,6 +36,7 @@ type
     property Environment: IEnvironment read get_Environment;
     property Storage[const Value: string]: IAppStorage read get_Storage;
     property Windows: IWindows read get_Windows;
+    property SpaceAccessor: ISpaceAccessor read get_SpaceAccessor;
   end;
 
 var

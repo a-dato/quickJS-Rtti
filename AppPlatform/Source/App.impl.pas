@@ -14,7 +14,8 @@ uses
   App.Windows.intf,
   App.Environment.intf,
   ADato.ObjectModel.List.intf,
-  App.PropertyDescriptor.intf;
+  App.PropertyDescriptor.intf,
+  ADato.AI.SpaceAccessor.intf;
 
 type
   TAppObject = class(TBaseInterfacedObject, IAppObject, IJSExtendableObject)
@@ -23,6 +24,7 @@ type
     _Environment: IEnvironment;
     _Windows: IWindows;
     _storage: Dictionary<string, IAppStorage>;
+    _SpaceAccessor: ISpaceAccessor;
     _extendabePropertyValues: Dictionary<string, JSValue>;
 
     // IAppObject
@@ -41,6 +43,7 @@ type
     function  GetValue(Ctx: JSContext; const Name: string): JSValue;
     procedure SetValue(Ctx: JSContext; const Name: string; Value: JSValue);
 
+    function get_SpaceAccessor: ISpaceAccessor;
   public
     constructor Create(const Environment: IEnvironment);
   end;
@@ -53,8 +56,9 @@ implementation
 uses
   App.TypeDescriptor.intf,
   App.Config.impl,
-  App.Windows.impl, App.Storage.impl;
-
+  App.Windows.impl, App.Storage.impl,
+  App.Windows.impl,
+  ADato.AI.SpaceAccessor.impl;
 { TAppObject }
 
 constructor TAppObject.Create(const Environment: IEnvironment);
@@ -63,6 +67,7 @@ begin
   _Config := TAppConfig.Create;
   _Windows := Windows.Create;
   _storage := CDictionary<string, IAppStorage>.Create;
+//  _SpaceAccessor := TSpaceAccessor.Create;
   _extendabePropertyValues := CDictionary<string, JSValue>.Create;
 end;
 
@@ -115,6 +120,11 @@ end;
 function TAppObject.RemoveStorage(const Name: string): Boolean;
 begin
   Result := _storage.Remove(Name);
+end;
+
+function TAppObject.get_SpaceAccessor: ISpaceAccessor;
+begin
+  Result := _SpaceAccessor;
 end;
 
 procedure TAppObject.SetValue(Ctx: JSContext; const Name: string; Value: JSValue);
