@@ -9,7 +9,7 @@ uses
   FMX.ScrollBox, FMX.Memo,
   App.intf, System.Actions, FMX.ActnList, FMX.StdCtrls, System.Net.URLClient,
   System.Net.HttpClient, System.Net.HttpClientComponent, System_,
-  Project.intf;
+  Project.intf, System.Collections, System.Collections.Generic;
 
 type
   {$M+}
@@ -57,18 +57,28 @@ type
 
   ITestObject = interface(IBaseInterface)
     ['{4A8C6FB1-5CFB-49C5-A0EB-2BEC6E554F01}']
+    function get_Data: IList;
     function get_Names(const Value: string): string;
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
 
     property Names[const Value: string]: string read get_Names;
+
+    property Data: IList read get_Data;
   end;
 
   TTestObject = class(TBaseInterfacedObject, ITestObject)
+  protected
+    _data: List<ITestObject>;
+
+    function get_Data: IList;
+
     function get_Names(const Value: string): string;
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
   public
+    constructor Create;
+
     property Names[const Value: string]: string read get_Names;
   end;
 
@@ -87,7 +97,7 @@ uses
   ObjectWindow,
   Customer.frame,
   QuickJS.Register.dn4d.intf,
-  System.Collections.Generic, ADato.ObjectModel.List.Tracking.intf,
+  ADato.ObjectModel.List.Tracking.intf,
   ADato.ObjectModel.List.Tracking.impl,
   App.Content.intf,
   JSGeneral.frame, Winapi.Windows, App.Content.impl, System.Diagnostics,
@@ -97,7 +107,6 @@ uses
   ObjectDesigner,
   Project.frame,
   App.TypeDescriptor.intf,
-  System.Collections,
   System.Rtti, App.PropertyDescriptor.intf, System.JSON,
   ADato.ObjectModel.impl,
   System.ComponentModel,
@@ -274,6 +283,11 @@ begin
 
     TJSRegister.RegisterLiveObject(_context, 'app', TypeInfo(IAppObject), _app);
 
+    TJSRegister.RegisterObject(_context, 'ITestObject', TypeInfo(ITestObject),
+      function : Pointer begin
+        Result := TTestObject.Create;
+      end);
+
     _test := TTestObject.Create;
     TJSRegister.RegisterLiveObject(_context, 'tst', TypeInfo(ITestObject), _test);
 
@@ -301,6 +315,16 @@ begin
 end;
 
 { TTestObject }
+
+constructor TTestObject.Create;
+begin
+  _data := CList<ITestObject>.Create;
+end;
+
+function TTestObject.get_Data: IList;
+begin
+  Result := _data as IList;
+end;
 
 function TTestObject.get_Names(const Value: string): string;
 begin

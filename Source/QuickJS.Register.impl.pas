@@ -170,7 +170,7 @@ type
     class function GetDefaultValue(const Param: TRttiParameter) : TValue;
     function JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo) : TValue; virtual;
     function TValueToJSValue(ctx: JSContext; const Value: TValue) : JSValue; virtual;
-    class function TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue) : Boolean;
+    function TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue; out ParamIsGenericValue: Boolean) : Boolean; virtual;
 
     class property Instance: JSConverter read FInstance write set_Instance;
   end;
@@ -538,13 +538,24 @@ begin
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
   var ptr := TJSRegister.GetObjectFromJSValue(this_val, not descr.IsInterface {Ptr is an IInterface} );
 
-  if argc <> 1 then
-    raise Exception.Create('Invalid number of arguments');
-  var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[0], descr.PropertyType);
+  // Return TJSIndexedPropertyAccessor object to access property value
+  if descr.MemberType = TMemberType.IndexedProperty then
+  begin
+    var reg_iter := FRegisteredObjectsByType[TypeInfo(TJSIndexedPropertyAccessor)];
+    Result := JS_NewObjectClass(ctx, reg_iter.ClassID);
+    var idx_access := TJSIndexedPropertyAccessor.Create(ctx, JS_DupValue(ctx, this_val), descr);
+    JS_SetOpaque(Result, TAutoReference.Create(idx_access));
+  end
+  else
+  begin
+    if argc <> 1 then
+      raise Exception.Create('Invalid number of arguments');
+    var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[0], descr.PropertyType);
 
-  descr.SetValue(ptr, [], v);
-  JS_FreeValue(ctx, func_data^);
-  Result := JS_UNDEFINED;
+    descr.SetValue(ptr, [], v);
+    JS_FreeValue(ctx, func_data^);
+    Result := JS_UNDEFINED;
+  end;
 end;
 
 class function TJSRegister.GenericIndexedPropertyGetter(ctx : JSContext; this_val : JSValueConst;
@@ -1474,7 +1485,7 @@ begin
       var getter := rttiType.GetMethod('get_' + AName);
       var setter := rttiType.GetMethod('set_' + AName);
 
-      if ((getter <> nil) and (Length(getter.GetParameters) > 0)) or ((setter <> nil) and (Length(setter.GetParameters) > 0)) then
+      if ((getter <> nil) and (Length(getter.GetParameters) > 0)) or ((setter <> nil) and (Length(setter.GetParameters) > 1)) then
         Result := TRttiIndexedInterfacePropertyDescriptor.Create(FTypeInfo, getter, setter)
       else if (getter <> nil) or (setter <> nil) then
         Result := TRttiInterfacePropertyDescriptor.Create(FTypeInfo, getter, setter);
@@ -1845,9 +1856,10 @@ begin
   end;
 end;
 
-class function JSConverter.TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue) : Boolean;
+function JSConverter.TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue; out ParamIsGenericValue: Boolean) : Boolean;
 begin
   Result := False;
+  ParamIsGenericValue := False;
 
   case Param.ParamType.TypeKind of
     // tkUnknown:
@@ -1880,10 +1892,16 @@ begin
       Result := ptr <> nil;
     end;
 
-//    tkRecord:
+    tkRecord:
+      if Param.Handle = TypeInfo(TValue) then
+      begin
+        ParamIsGenericValue := True;
+        Result := True;
+      end;
+
     tkInterface:
       // test for method
-      Result := JS_IsFunction(ctx, Value);
+      Result := JS_IsFunction(ctx, Value) or JS_IsObject(Value);
 
     tkInt64:
       Result := JS_IsNumber(Value) or JS_IsBigInt(Value);
@@ -2047,27 +2065,34 @@ begin
   if Length(Methods) = 1 then Exit(FMethods[0]);
 
   var firstmatch: TRttiMethod := nil;
+  var firstmatchParamCount := 0;
 
   for var m in FMethods do
   begin
     var params := m.GetParameters;
+
+    // Skip method when there are more arguments passed from JS than method accepts
+    if argc > Length(params) then
+      continue;
+
     var match := True;
+    var genericParamCount := 0; // Counts number of TValue/CObject params
     for var i := 0 to argc - 1 do
     begin
-      // Skip method when there are more arguments passed from JS than method accepts
-      if (i = Length(params)) or not JSConverter.TestParamsAreCompatible(ctx, params[i], PJSValueConstArr(argv)[i]) then
-      begin
-        match := False;
+      var param := params[i];
+      var paramIsGenericValue: Boolean;
+      match := JSConverter.Instance.TestParamsAreCompatible(ctx, param, PJSValueConstArr(argv)[i], paramIsGenericValue);
+      if match and paramIsGenericValue then
+        inc(genericParamCount);
+      if not match then
         break;
-      end;
     end;
 
-    // Excact match?
-    if match and (Length(params) = argc) then
-      Exit(m);
-
-    if firstmatch = nil then
+    if match and ((firstmatch = nil) or (genericParamCount <= firstmatchParamCount)) then
+    begin
       firstmatch := m;
+      firstmatchParamCount := genericParamCount;
+    end;
   end;
 
   Exit(firstmatch);

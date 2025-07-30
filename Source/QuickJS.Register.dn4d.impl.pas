@@ -10,7 +10,7 @@ uses
   QuickJS.Register.intf,
   QuickJS.Register.impl,
   QuickJS.Register.dn4d.intf,
-  System.Generics.Collections, System.Collections;
+  System.Generics.Collections, System.Collections, System.Collections.Generic;
 
 type
   TJSRegisterTypedObjects = class(TJSRegister)
@@ -30,6 +30,7 @@ type
 
     function JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue; override;
     function TValueToJSValue(ctx: JSContext; const Value: TValue) : JSValue; override;
+    function TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue; out ParamIsGenericValue: Boolean) : Boolean; override;
   end;
 
   TJSPropertyInfo = class(TBaseInterfacedObject, _PropertyInfo)
@@ -45,6 +46,7 @@ type
     function  get_PropInfo: IPropInfo;
 
     function  GetType: &Type; override;
+    function  IsIndexedProperty: Boolean;
     function  GetAttributes: TArray<TCustomAttribute>;
     function  GetValue(const obj: CObject; const index: array of CObject): CObject;
     procedure SetValue(const obj: CObject; const value: CObject; const index: array of CObject; ExecuteTriggers: Boolean = false);
@@ -142,10 +144,12 @@ type
     _type: &Type;
     _ctx: JSContext;
     _value: JSValueConst;
+    _ImplementingInterfaces: List<TInterfaceRef>;
 
     function get_Ctx: JSContext;
     function get_Value: JSValueConst;
 
+    function QueryInterface(const IID: TGUID; out Obj): HResult; reintroduce; stdcall;
     function InternalInvoke(const Func: AnsiString; argc: Integer; argv: PJSValueConstArr): JSValue;
     function Invoke(const Func: AnsiString; const Args: TArray<TValue>; ReturnType: PTypeInfo) : TValue;
 
@@ -328,7 +332,9 @@ end;
 
 function TTypedStandardPropertyDescriptor.get_MemberType: TMemberType;
 begin
-  Result := TMemberType.Property;
+  if FProp.IsIndexedProperty then
+    Result := TMemberType.IndexedProperty else
+    Result := TMemberType.Property;
 end;
 
 function TTypedStandardPropertyDescriptor.get_PropertyType: PTypeInfo;
@@ -650,6 +656,16 @@ begin
   Result := inherited;
 end;
 
+function TJSTypedConverter.TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue; out ParamIsGenericValue: Boolean) : Boolean;
+begin
+  if (Param.ParamType.TypeKind = tkRecord) and (Param.Handle = TypeInfo(CObject)) then
+  begin
+    ParamIsGenericValue := True;
+    Result := True;
+  end else
+    Result := inherited;
+end;
+
 { TTypedArrayIndexerDescriptor }
 
 constructor TTypedArrayIndexerDescriptor.Create(AInfo: PTypeInfo);
@@ -849,6 +865,11 @@ begin
   Result := nil;
 end;
 
+function TJSPropertyInfo.IsIndexedProperty: Boolean;
+begin
+  Result := False;
+end;
+
 procedure TJSPropertyInfo.SetValue(const obj, value: CObject; const index: array of CObject; ExecuteTriggers: Boolean);
 begin
   var js_obj: IJSObject;
@@ -946,6 +967,55 @@ begin
 
   for var i := 0 to High(Args) do
     JS_FreeValue(_ctx, argv[i]);
+end;
+
+function TJSObject.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  Result := inherited;
+
+  if Result <> S_OK then
+  begin
+    var ii_ref: TInterfaceRef;
+
+    if _ImplementingInterfaces <> nil then
+    begin
+      ii_ref := _ImplementingInterfaces.Find(function(const item: TInterfaceRef) : Boolean begin
+                      Result := IsEqualGUID(IID, item.IID);
+                    end);
+
+      if not ii_ref.IID.IsEmpty then
+      begin
+        // ii can still be nil!
+        if ii_ref.ii <> nil then
+        begin
+          IInterface(Obj) := ii_ref.ii;
+          Result := S_OK;
+        end;
+
+        Exit;
+      end;
+    end;
+
+    // Call QuickJS, we expect an object to be returned. This object will be wrapped inside
+    // an TJSVirtualInterface object as well and can be cast to the requested type
+    var reg: IRegisteredObject;
+    if TJSRegister.TryGetRegisteredInterface(IID, reg) then
+    begin
+      var tp := TValue.From<&Type>(&Type.Create(reg.GetTypeInfo));
+      var val := Invoke('QueryInterface', [tp], reg.GetTypeInfo);
+      if not val.IsEmpty then
+      begin
+        ii_ref.ii := IInterface(val.GetReferenceToRawData^);
+        IInterface(Obj) := ii_ref.ii;
+        Result := S_OK;
+      end;
+    end;
+
+    ii_ref.IID := IID;
+    if _ImplementingInterfaces = nil then
+      _ImplementingInterfaces := CList<TInterfaceRef>.Create;
+    _ImplementingInterfaces.Add(ii_ref);
+  end;
 end;
 
 function TJSObject.GetType: &Type;

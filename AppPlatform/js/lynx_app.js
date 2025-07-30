@@ -108,7 +108,7 @@ export class IInterfaceWithID_ extends IBaseInterface_ {
 	}
 	
 	get Rights() {
-		return access_right.NormalRead;
+		return access_right.ReadWrite;
 	}
 }
 
@@ -121,6 +121,16 @@ export class ICloneable_ extends IInterfaceWithID_ {
 export class LynxObject extends ICloneable_ {
 
 }
+
+export class LynxProject extends LynxObject {
+	QueryInterface(type) {
+		if(type === IProject) {
+			return this;
+		}
+		return super.QueryInterface(type);
+	}
+}
+
 
 export class LynxType extends IBaseInterface_ {
 }
