@@ -4,7 +4,7 @@ interface
 
 uses
   System_,
-  ADato.ObjectModel.List.intf;
+  ADato.ObjectModel.List.intf, System.Collections;
 
 type
   {$M+}
@@ -14,8 +14,8 @@ type
     function get_Model: IObjectListModel;
     function get_Name: string;
 
-    function Attach(const Value: CObject) : Boolean;
-    function Replace(const Value: CObject) : Boolean;
+    function Attach(const Value: IList) : Boolean;
+    function Replace(const Value: IList) : Boolean;
 
     property Model: IObjectListModel read get_Model;
     property Name: string read get_Name;

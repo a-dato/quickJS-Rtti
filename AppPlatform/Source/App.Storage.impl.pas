@@ -5,7 +5,7 @@ interface
 uses
   System_,
   App.Storage.intf,
-  ADato.ObjectModel.List.intf;
+  ADato.ObjectModel.List.intf, System.Collections;
 
 type
   TAppStorage = class(TBaseInterfacedObject, IAppStorage)
@@ -18,8 +18,8 @@ type
     function get_Model: IObjectListModel;
     function get_Name: string;
 
-    function Attach(const Value: CObject) : Boolean;
-    function Replace(const Value: CObject) : Boolean;
+    function Attach(const Value: IList) : Boolean;
+    function Replace(const Value: IList) : Boolean;
 
   public
     constructor Create(const DataType: &Type; const Name: string);
@@ -28,7 +28,6 @@ type
 implementation
 
 uses
-  System.Collections,
   ADato.ObjectModel.List.Tracking.impl;
 
 { TAppStorage }
@@ -39,23 +38,19 @@ begin
   _name := Name;
 end;
 
-function TAppStorage.Attach(const Value: CObject) : Boolean;
+function TAppStorage.Attach(const Value: IList) : Boolean;
 begin
   if _model = nil  then
   begin
-    var list: IList;
-    if not Value.TryAsType<IList>(list) then
-      raise ArgumentException.Create('Data must implement IList interface');
-
     _model := TObjectListModelWithChangeTracking<IUnknown>.Create(_dataType);
-    _model.Context := list;
+    _model.Context := Value;
 
     Result := True;
   end else
     Result := False
 end;
 
-function TAppStorage.Replace(const Value: CObject) : Boolean;
+function TAppStorage.Replace(const Value: IList) : Boolean;
 begin
 
 end;

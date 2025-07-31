@@ -478,11 +478,23 @@ begin
 
     if JS_IsObject(Value) then
     begin
-      var ptr := TJSRegister.GetObjectFromJSValue(Value, False {Is NOT object type?});
+      var obj: TRegisteredObjectWithPtr;
+      if TJSRegister.TryGetRegisteredObjectFromJSValue(Value, {out}obj) then
+      begin
+        if (Target <> obj.Reg.GetTypeInfo) and not Interfaces.Supports(IInterface(obj.Ptr), Target.TypeData.GUID, obj.Ptr) then
+          raise ArgumentException.Create('Interface not supported: ' + Target.Name);
 
-      if ptr <> nil {Object points to a Delphi object} then
-        TValue.Make(@ptr, Target, Result)
+        TValue.Make(@obj.Ptr, Target, Result);
 
+        {$IFDEF DEBUG}
+        if Target = TypeInfo(IList) then
+        begin
+          var l := Result.AsType<IList>;
+          var c := l.Count;
+          if c = 0 then;
+        end;
+        {$ENDIF}
+      end
       else
       begin
         var obj_ref: IJSObject := TJSObject.Create(ctx, Value);
@@ -490,12 +502,6 @@ begin
         if Target = TypeInfo(IJSObject) then
           Result := TValue.From<IJSObject>(obj_ref) else
           Result := WrapIJSObjectInVirtualInterface(Target, obj_ref);
-
-//        var obj_ref := JSObjectReference.Create(ctx, Value);
-//
-//        if Target = TypeInfo(JSObjectReference) then
-//          Result := TValue.From<JSObjectReference>(obj_ref) else
-//          Result := WrapIJSObjectInVirtualInterface(Target, obj_ref);
       end;
 
       Exit;
@@ -505,29 +511,6 @@ begin
   end
   else if Target.Kind = tkRecord then
   begin
-//    if Target = TypeInfo(JSObjectReference) then
-//    begin
-//      if JS_IsNull(Value) then
-//        Exit(TValue.From<JSObjectReference>(JSObjectReference.Empty));
-//
-//      if JS_IsObject(Value) then
-//      begin
-//        var ptr := TJSRegister.GetObjectFromJSValue(Value, False {Is NOT object type?});
-//
-//        if ptr <> nil {Object points to a Delphi object} then
-//          TValue.Make(@ptr, Target, Result)
-//
-//        else
-//        begin
-//          var obj_ref := JSObjectReference.Create(ctx, Value);
-//
-//          if Target = TypeInfo(JSObjectReference) then
-//            Result := TValue.From<JSObjectReference>(obj_ref) else
-//            Result := WrapIJSObjectInVirtualInterface(Target, obj_ref);
-//        end;
-//      end;
-//    end
-
     if Target = TypeInfo(CString) then
     begin
       if JS_IsNull(Value) then
@@ -579,17 +562,12 @@ begin
 
       else if JS_IsObject(Value) then
       begin
-        var cid := TJSRegister.GetClassID(Value);
-        var reg: IRegisteredObject;
-        var isObjectType := True;
-        if TJSRegister.TryGetRegisteredObjectFromClassID(cid, reg) then
-          isObjectType := not reg.IsInterface;
-        var ptr := TJSRegister.GetObjectFromJSValue(Value, isObjectType);
-        if ptr <> nil then
+        var obj: TRegisteredObjectWithPtr;
+        if TJSRegister.TryGetRegisteredObjectFromJSValue(Value, {out}obj) then
         begin
-          if isObjectType then
-            Result := TValue.From<CObject>(TObject(ptr)) else
-            Result := TValue.From<CObject>(IInterface(ptr));
+          var v: TValue;
+          TValue.Make(obj.Ptr, obj.Reg.GetTypeInfo, v);
+          Result := v;
         end else
           Result := TValue.From<CObject>(CObject.From<IJSObject>(TJSObject.Create(ctx, Value)));
           // Result := TValue.From<CObject>(CObject.From<JSObjectReference>(JSObjectReference.Create(ctx, Value)));

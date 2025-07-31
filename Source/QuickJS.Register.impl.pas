@@ -149,6 +149,7 @@ type
     class procedure RegisterLiveObject(const ctx: IJSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean); overload;
     class procedure RegisterLiveObject(const ctx: IJSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface); overload;
 
+    class function  TryGetRegisteredObjectFromJSValue(Value: JSValue; out AObject: TRegisteredObjectWithPtr) : Boolean;
     class function  TryGetRegisteredObjectFromClassID(ClassID: JSClassID; out RegisteredObject: IRegisteredObject) : Boolean;
     class function  TryGetRegisteredObjectFromTypeInfo(TypeInfo: PTypeInfo; out RegisteredObject: IRegisteredObject) : Boolean;
     class function  TryGetRegisteredJSObject(Proto: JSValueConst; out RegisteredObject: IRegisteredObject) : Boolean;
@@ -342,6 +343,7 @@ type
     procedure set_ClassID(const Value: JSClassID);
     function  get_JSConstructor: JSValue;
     procedure set_JSConstructor(const Value: JSValue);
+    function  get_IsObject: Boolean;
     function  get_IsInterface: Boolean;
     function  get_IsIterator: Boolean;
     function  get_IsIndexedPropertyAccessor: Boolean;
@@ -370,8 +372,6 @@ type
   public
     constructor Create(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor);
     destructor  Destroy; override;
-
-    property IsInterface: Boolean read get_IsInterface;
 
     class property OnGetMemberByName: TOnGetMemberByName read FOnGetMemberByName write FOnGetMemberByName;
     class property OnGetMemberNames: TOnGetMemberNames read FOnGetMemberNames write FOnGetMemberNames;
@@ -916,6 +916,31 @@ begin
     Result := nil;
 end;
 
+class function TJSRegister.TryGetRegisteredObjectFromJSValue(Value: JSValue; out AObject: TRegisteredObjectWithPtr) : Boolean;
+begin
+  AObject.Reg := nil;
+  AObject.Ptr := nil;
+
+  var classID := GetClassID(Value);
+  if classID >= First_ClassID then
+  begin
+    if not TryGetRegisteredObjectFromClassID(classID, AObject.Reg) then
+      raise EArgumentException.Create('Class not registered');
+
+    AObject.Ptr := JS_GetOpaque(Value, classID);
+    if AObject.Reg.IsObject then
+    begin
+      if (TObject(AObject.Ptr) is TObjectReference) then
+        AObject.Ptr := (TObject(AObject.Ptr) as TObjectReference).ObjectRef
+      else if (TObject(AObject.Ptr) is TRecordReference) then
+        AObject.Ptr := (TObject(AObject.Ptr) as TRecordReference).Value.GetReferenceToRawData;
+    end;
+
+    Exit(True);
+  end;
+  Exit(False);
+end;
+
 class function TJSRegister.define_own_property(ctx: JSContext; obj:JSValueConst; prop:JSAtom;
   val:JSValueConst; getter:JSValueConst;
   setter:JSValueConst; flags:Integer): Integer;
@@ -1246,7 +1271,12 @@ end;
 
 class function TJSRegister.TryGetRegisteredObjectFromClassID(ClassID: JSClassID; out RegisteredObject: IRegisteredObject) : Boolean;
 begin
-  Result := FRegisteredObjectsByClassID.TryGetValue(ClassID, RegisteredObject);
+  TMonitor.Enter(FRegisteredObjectsByClassID);
+  try
+    Result := FRegisteredObjectsByClassID.TryGetValue(ClassID, RegisteredObject);
+  finally
+    TMonitor.Exit(FRegisteredObjectsByClassID);
+  end;
 end;
 
 class function TJSRegister.TryGetRegisteredObjectFromTypeInfo(TypeInfo: PTypeInfo; out RegisteredObject: IRegisteredObject) : Boolean;
@@ -1298,7 +1328,7 @@ end;
 
 procedure TRegisteredObject.Finalize(Ptr: Pointer);
 begin
-  if IsInterface then
+  if get_IsInterface then
     IInterface(Ptr)._Release else
     TObject(Ptr).Free;  // Frees TObjectReference when object is passed in through get_property
                         // Frees actual object when object is created in CConstructor
@@ -1343,7 +1373,7 @@ begin
     if Result = nil then
       raise Exception.Create('Constructor returned nil');
 
-    if IsInterface then
+    if get_IsInterface then
     try
       // NO need to call _AddRef, Supports will bump reference count
       Supports(TObject(Result), FTypeInfo^.TypeData.Guid, Result)
@@ -1363,7 +1393,7 @@ begin
 
   if Result <> nil then
   begin
-    if not IsInterface then
+    if not get_IsInterface then
     begin
       var ii: IInterface;
       if Supports(TObject(Result), IInterface, ii) then
@@ -1536,6 +1566,11 @@ end;
 function TRegisteredObject.get_IsInterface: Boolean;
 begin
   Result := FTypeInfo.Kind = tkInterface;
+end;
+
+function TRegisteredObject.get_IsObject: Boolean;
+begin
+  Result := FTypeInfo.Kind = tkClass;
 end;
 
 function TRegisteredObject.get_ObjectSupportsEnumeration: Boolean;

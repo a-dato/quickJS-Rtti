@@ -58,7 +58,7 @@ type
   ProjectProvider = class(TBaseInterfacedObject, IContentProvider)
   protected
     // _data: List<IProject>;
-    function Data(const Filter: CObject): CObject;
+    function Data(const Filter: CObject): IList;
   end;
 
 implementation
@@ -186,7 +186,7 @@ end;
 //  Result := _data.Remove(Item.AsType<IProject>);
 //end;
 
-function ProjectProvider.Data(const Filter: CObject): CObject;
+function ProjectProvider.Data(const Filter: CObject): IList;
 begin
   var l: List<IProject> := CList<IProject>.Create;
 
@@ -199,7 +199,7 @@ begin
     l.Add(p);
   end;
 
-  Result := CObject.From<List<IProject>>(l);
+  Result := l as IList;
 
 //  if _data = nil then
 //  begin

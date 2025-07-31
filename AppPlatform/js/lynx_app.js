@@ -78,7 +78,7 @@ export class IBaseInterface_ {
 	}
 
 	toString() {
-		return ToString();
+		return this.ToString();
 	}
 	
 	QueryInterface(type) {

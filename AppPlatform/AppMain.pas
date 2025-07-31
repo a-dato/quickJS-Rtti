@@ -61,7 +61,7 @@ type
     function get_Names(const Value: string): string;
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
-
+    procedure Attach(const Data: IList);
     property Names[const Value: string]: string read get_Names;
 
     property Data: IList read get_Data;
@@ -71,6 +71,7 @@ type
   protected
     _data: List<ITestObject>;
 
+    procedure Attach(const Data: IList);
     function get_Data: IList;
 
     function get_Names(const Value: string): string;
@@ -156,7 +157,7 @@ begin
 
   var cust_prop := tp.PropertyByName('Customer');
 
-  var data := customer_objecttype.Provider.Data(nil).AsType<IList>;
+  var data := customer_objecttype.Provider.Data(nil);
 
   var c := data[0]; // Customer
   var s := c.ToString;
@@ -164,7 +165,7 @@ begin
     s := 'Test';
 
   var project_type := _app.Config.TypeDescriptor(&Type.From<IProject>);
-  var d := project_type.Provider.Data(nil).AsType<IList>;
+  var d := project_type.Provider.Data(nil);
   var prj := d[0].AsType<IProject>;
 
   cust_prop.SetValue(prj, c, []);
@@ -219,14 +220,15 @@ procedure TForm1.InitializeAppEnvironment;
 begin
   App.Environment.impl.Environment.FormClass := TfrmObjectWindow;
 
+  {$IFDEF FRAMEWORK_FMX}
   _app := TAppObject.Create(App.Environment.impl.Environment.Create);
+  {$ENDIF}
 
   TProject.TypeDescriptor.Builder := TFrameBuilder.Create(TProjectFrame);
   TProject.TypeDescriptor.Binder := TFrameBinder.Create();
   TProject.TypeDescriptor.Provider := ProjectProvider.Create;
 
   _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
-
   var storage := _app.AddStorage(TProject.Type, TProject.TypeDescriptor.StorageName);
   storage.Attach(TProject.TypeDescriptor.Provider.Data(nil));
 end;
@@ -280,6 +282,7 @@ begin
     TJSRegister.RegisterObject(_context, 'IEditableModel', TypeInfo(IEditableModel), nil);
     TJSRegister.RegisterObject(_context, 'IOnItemChangedSupport', TypeInfo(IOnItemChangedSupport), nil);
     TJSRegister.RegisterObject(_context, 'IUpdatableObject', TypeInfo(IUpdatableObject), nil);
+    TJSRegister.RegisterObject(_context, 'IProject', TypeInfo(IProject), nil);
 
     TJSRegister.RegisterLiveObject(_context, 'app', TypeInfo(IAppObject), _app);
 
@@ -315,6 +318,16 @@ begin
 end;
 
 { TTestObject }
+
+procedure TTestObject.Attach(const Data: IList);
+begin
+  var i := 0;
+  if Data <> nil then
+    for var o in Data do
+      inc(i);
+
+  ShowMessage(i.ToString);
+end;
 
 constructor TTestObject.Create;
 begin
