@@ -52,6 +52,7 @@ type
   end;
 
   IRegisteredObject = interface
+    function  get_IsObject: Boolean;
     function  get_IsInterface: Boolean;
     function  get_IsIterator: Boolean;
     function  get_IsIndexedPropertyAccessor: Boolean;
@@ -82,10 +83,16 @@ type
     property IsInterface: Boolean read get_IsInterface;
     property IsIterator: Boolean read get_IsIterator;
     property IsIndexedPropertyAccessor: Boolean read get_IsIndexedPropertyAccessor;
+    property IsObject: Boolean read get_IsObject;
     property JSConstructor: JSValue read get_JSConstructor write set_JSConstructor;
     property ObjectSupportsEnumeration: Boolean read get_ObjectSupportsEnumeration;
     property ObjectSupportsExtension: TObjectSupportsExtension read get_ObjectSupportsExtension write set_ObjectSupportsExtension;
     property ObjectSupportsIndexing: Boolean read get_ObjectSupportsIndexing;
+  end;
+
+  TRegisteredObjectWithPtr = record
+    Reg: IRegisteredObject;
+    Ptr: Pointer;
   end;
 
   IJSRuntime = interface

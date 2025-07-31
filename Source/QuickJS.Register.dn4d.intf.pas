@@ -30,13 +30,12 @@ type
     property Value: JSValueConst read get_Value;
   end;
 
-  TJSVirtualInterface = class(TVirtualInterface, IJSObject)
-  type
-    TInterfaceRef = record
-      IID: TGuid;
-      ii: IInterface;
-    end;
+  TInterfaceRef = record
+    IID: TGuid;
+    ii: IInterface;
+  end;
 
+  TJSVirtualInterface = class(TVirtualInterface, IJSObject)
   var
     FObj: IJSObject;
     FImplementingInterfaces: List<TInterfaceRef>;

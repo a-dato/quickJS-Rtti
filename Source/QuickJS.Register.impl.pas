@@ -149,6 +149,7 @@ type
     class procedure RegisterLiveObject(const ctx: IJSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean); overload;
     class procedure RegisterLiveObject(const ctx: IJSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface); overload;
 
+    class function  TryGetRegisteredObjectFromJSValue(Value: JSValue; out AObject: TRegisteredObjectWithPtr) : Boolean;
     class function  TryGetRegisteredObjectFromClassID(ClassID: JSClassID; out RegisteredObject: IRegisteredObject) : Boolean;
     class function  TryGetRegisteredObjectFromTypeInfo(TypeInfo: PTypeInfo; out RegisteredObject: IRegisteredObject) : Boolean;
     class function  TryGetRegisteredJSObject(Proto: JSValueConst; out RegisteredObject: IRegisteredObject) : Boolean;
@@ -170,7 +171,7 @@ type
     class function GetDefaultValue(const Param: TRttiParameter) : TValue;
     function JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo) : TValue; virtual;
     function TValueToJSValue(ctx: JSContext; const Value: TValue) : JSValue; virtual;
-    class function TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue) : Boolean;
+    function TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue; out ParamIsGenericValue: Boolean) : Boolean; virtual;
 
     class property Instance: JSConverter read FInstance write set_Instance;
   end;
@@ -342,6 +343,7 @@ type
     procedure set_ClassID(const Value: JSClassID);
     function  get_JSConstructor: JSValue;
     procedure set_JSConstructor(const Value: JSValue);
+    function  get_IsObject: Boolean;
     function  get_IsInterface: Boolean;
     function  get_IsIterator: Boolean;
     function  get_IsIndexedPropertyAccessor: Boolean;
@@ -370,8 +372,6 @@ type
   public
     constructor Create(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor);
     destructor  Destroy; override;
-
-    property IsInterface: Boolean read get_IsInterface;
 
     class property OnGetMemberByName: TOnGetMemberByName read FOnGetMemberByName write FOnGetMemberByName;
     class property OnGetMemberNames: TOnGetMemberNames read FOnGetMemberNames write FOnGetMemberNames;
@@ -538,13 +538,24 @@ begin
   var descr: IPropertyDescriptor := IPropertyDescriptor(Pointer(prtti));
   var ptr := TJSRegister.GetObjectFromJSValue(this_val, not descr.IsInterface {Ptr is an IInterface} );
 
-  if argc <> 1 then
-    raise Exception.Create('Invalid number of arguments');
-  var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[0], descr.PropertyType);
+  // Return TJSIndexedPropertyAccessor object to access property value
+  if descr.MemberType = TMemberType.IndexedProperty then
+  begin
+    var reg_iter := FRegisteredObjectsByType[TypeInfo(TJSIndexedPropertyAccessor)];
+    Result := JS_NewObjectClass(ctx, reg_iter.ClassID);
+    var idx_access := TJSIndexedPropertyAccessor.Create(ctx, JS_DupValue(ctx, this_val), descr);
+    JS_SetOpaque(Result, TAutoReference.Create(idx_access));
+  end
+  else
+  begin
+    if argc <> 1 then
+      raise Exception.Create('Invalid number of arguments');
+    var v := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[0], descr.PropertyType);
 
-  descr.SetValue(ptr, [], v);
-  JS_FreeValue(ctx, func_data^);
-  Result := JS_UNDEFINED;
+    descr.SetValue(ptr, [], v);
+    JS_FreeValue(ctx, func_data^);
+    Result := JS_UNDEFINED;
+  end;
 end;
 
 class function TJSRegister.GenericIndexedPropertyGetter(ctx : JSContext; this_val : JSValueConst;
@@ -905,6 +916,31 @@ begin
     Result := nil;
 end;
 
+class function TJSRegister.TryGetRegisteredObjectFromJSValue(Value: JSValue; out AObject: TRegisteredObjectWithPtr) : Boolean;
+begin
+  AObject.Reg := nil;
+  AObject.Ptr := nil;
+
+  var classID := GetClassID(Value);
+  if classID >= First_ClassID then
+  begin
+    if not TryGetRegisteredObjectFromClassID(classID, AObject.Reg) then
+      raise EArgumentException.Create('Class not registered');
+
+    AObject.Ptr := JS_GetOpaque(Value, classID);
+    if AObject.Reg.IsObject then
+    begin
+      if (TObject(AObject.Ptr) is TObjectReference) then
+        AObject.Ptr := (TObject(AObject.Ptr) as TObjectReference).ObjectRef
+      else if (TObject(AObject.Ptr) is TRecordReference) then
+        AObject.Ptr := (TObject(AObject.Ptr) as TRecordReference).Value.GetReferenceToRawData;
+    end;
+
+    Exit(True);
+  end;
+  Exit(False);
+end;
+
 class function TJSRegister.define_own_property(ctx: JSContext; obj:JSValueConst; prop:JSAtom;
   val:JSValueConst; getter:JSValueConst;
   setter:JSValueConst; flags:Integer): Integer;
@@ -1235,7 +1271,12 @@ end;
 
 class function TJSRegister.TryGetRegisteredObjectFromClassID(ClassID: JSClassID; out RegisteredObject: IRegisteredObject) : Boolean;
 begin
-  Result := FRegisteredObjectsByClassID.TryGetValue(ClassID, RegisteredObject);
+  TMonitor.Enter(FRegisteredObjectsByClassID);
+  try
+    Result := FRegisteredObjectsByClassID.TryGetValue(ClassID, RegisteredObject);
+  finally
+    TMonitor.Exit(FRegisteredObjectsByClassID);
+  end;
 end;
 
 class function TJSRegister.TryGetRegisteredObjectFromTypeInfo(TypeInfo: PTypeInfo; out RegisteredObject: IRegisteredObject) : Boolean;
@@ -1287,7 +1328,7 @@ end;
 
 procedure TRegisteredObject.Finalize(Ptr: Pointer);
 begin
-  if IsInterface then
+  if get_IsInterface then
     IInterface(Ptr)._Release else
     TObject(Ptr).Free;  // Frees TObjectReference when object is passed in through get_property
                         // Frees actual object when object is created in CConstructor
@@ -1332,7 +1373,7 @@ begin
     if Result = nil then
       raise Exception.Create('Constructor returned nil');
 
-    if IsInterface then
+    if get_IsInterface then
     try
       // NO need to call _AddRef, Supports will bump reference count
       Supports(TObject(Result), FTypeInfo^.TypeData.Guid, Result)
@@ -1352,7 +1393,7 @@ begin
 
   if Result <> nil then
   begin
-    if not IsInterface then
+    if not get_IsInterface then
     begin
       var ii: IInterface;
       if Supports(TObject(Result), IInterface, ii) then
@@ -1474,7 +1515,7 @@ begin
       var getter := rttiType.GetMethod('get_' + AName);
       var setter := rttiType.GetMethod('set_' + AName);
 
-      if ((getter <> nil) and (Length(getter.GetParameters) > 0)) or ((setter <> nil) and (Length(setter.GetParameters) > 0)) then
+      if ((getter <> nil) and (Length(getter.GetParameters) > 0)) or ((setter <> nil) and (Length(setter.GetParameters) > 1)) then
         Result := TRttiIndexedInterfacePropertyDescriptor.Create(FTypeInfo, getter, setter)
       else if (getter <> nil) or (setter <> nil) then
         Result := TRttiInterfacePropertyDescriptor.Create(FTypeInfo, getter, setter);
@@ -1525,6 +1566,11 @@ end;
 function TRegisteredObject.get_IsInterface: Boolean;
 begin
   Result := FTypeInfo.Kind = tkInterface;
+end;
+
+function TRegisteredObject.get_IsObject: Boolean;
+begin
+  Result := FTypeInfo.Kind = tkClass;
 end;
 
 function TRegisteredObject.get_ObjectSupportsEnumeration: Boolean;
@@ -1845,9 +1891,10 @@ begin
   end;
 end;
 
-class function JSConverter.TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue) : Boolean;
+function JSConverter.TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue; out ParamIsGenericValue: Boolean) : Boolean;
 begin
   Result := False;
+  ParamIsGenericValue := False;
 
   case Param.ParamType.TypeKind of
     // tkUnknown:
@@ -1880,10 +1927,16 @@ begin
       Result := ptr <> nil;
     end;
 
-//    tkRecord:
+    tkRecord:
+      if Param.Handle = TypeInfo(TValue) then
+      begin
+        ParamIsGenericValue := True;
+        Result := True;
+      end;
+
     tkInterface:
       // test for method
-      Result := JS_IsFunction(ctx, Value);
+      Result := JS_IsFunction(ctx, Value) or JS_IsObject(Value);
 
     tkInt64:
       Result := JS_IsNumber(Value) or JS_IsBigInt(Value);
@@ -2047,27 +2100,34 @@ begin
   if Length(Methods) = 1 then Exit(FMethods[0]);
 
   var firstmatch: TRttiMethod := nil;
+  var firstmatchParamCount := 0;
 
   for var m in FMethods do
   begin
     var params := m.GetParameters;
+
+    // Skip method when there are more arguments passed from JS than method accepts
+    if argc > Length(params) then
+      continue;
+
     var match := True;
+    var genericParamCount := 0; // Counts number of TValue/CObject params
     for var i := 0 to argc - 1 do
     begin
-      // Skip method when there are more arguments passed from JS than method accepts
-      if (i = Length(params)) or not JSConverter.TestParamsAreCompatible(ctx, params[i], PJSValueConstArr(argv)[i]) then
-      begin
-        match := False;
+      var param := params[i];
+      var paramIsGenericValue: Boolean;
+      match := JSConverter.Instance.TestParamsAreCompatible(ctx, param, PJSValueConstArr(argv)[i], paramIsGenericValue);
+      if match and paramIsGenericValue then
+        inc(genericParamCount);
+      if not match then
         break;
-      end;
     end;
 
-    // Excact match?
-    if match and (Length(params) = argc) then
-      Exit(m);
-
-    if firstmatch = nil then
+    if match and ((firstmatch = nil) or (genericParamCount <= firstmatchParamCount)) then
+    begin
       firstmatch := m;
+      firstmatchParamCount := genericParamCount;
+    end;
   end;
 
   Exit(firstmatch);

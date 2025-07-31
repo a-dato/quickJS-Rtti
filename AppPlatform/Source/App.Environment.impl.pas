@@ -64,15 +64,16 @@ uses
   System.Classes,
   System.SysUtils,
   System.ClassHelpers,
-  App.Windows.FMX.impl,
-  FMX.Controls,
-  FMX.ScrollControl.DataControl.Impl,
   ADato.ObjectModel.Binders,
   System.Collections,
   ADato.ObjectModel.List.Tracking.impl,
   ADato.ObjectModel.impl,
   ADato.ObjectModel.intf,
-  App.PropertyDescriptor.intf;
+  App.PropertyDescriptor.intf
+  ,App.Windows.FMX.impl
+  ,FMX.Controls
+  ,FMX.ScrollControl.DataControl.Impl
+  ;
 
 { Environment }
 

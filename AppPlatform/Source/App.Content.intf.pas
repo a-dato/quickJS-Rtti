@@ -3,7 +3,7 @@
 interface
 
 uses
-  System_, App.Storage.intf;
+  System_, App.Storage.intf, System.Collections;
 
 type
   {$M+}
@@ -18,7 +18,7 @@ type
 
   {$M+}
   IContentProvider = interface(IBaseInterface)
-    function  Data(const Filter: CObject): CObject;
+    function Data(const Filter: CObject): IList;
   end;
 
 implementation
