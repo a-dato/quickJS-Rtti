@@ -4,31 +4,26 @@ interface
 
 uses
   System_,
-  App.Storage.intf,
-  ADato.ObjectModel.List.intf, System.Collections;
+  App.Storage.intf;
 
 type
   TAppStorage = class(TBaseInterfacedObject, IAppStorage)
   protected
+    _data: CObject;
     _dataType: &Type;
-    _model: IObjectListModel;
     _name: string;
 
+    function get_Data: CObject;
     function get_DataType: &Type;
-    function get_Model: IObjectListModel;
     function get_Name: string;
 
-    function Attach(const Value: IList) : Boolean;
-    function Replace(const Value: IList) : Boolean;
+    function Attach(const Value: CObject) : Boolean;
 
   public
     constructor Create(const DataType: &Type; const Name: string);
   end;
 
 implementation
-
-uses
-  ADato.ObjectModel.List.Tracking.impl;
 
 { TAppStorage }
 
@@ -38,21 +33,9 @@ begin
   _name := Name;
 end;
 
-function TAppStorage.Attach(const Value: IList) : Boolean;
+function TAppStorage.Attach(const Value: CObject) : Boolean;
 begin
-  if _model = nil  then
-  begin
-    _model := TObjectListModelWithChangeTracking<IUnknown>.Create(_dataType);
-    _model.Context := Value;
-
-    Result := True;
-  end else
-    Result := False
-end;
-
-function TAppStorage.Replace(const Value: IList) : Boolean;
-begin
-
+  _data := Value;
 end;
 
 function TAppStorage.get_DataType: &Type;
@@ -60,9 +43,9 @@ begin
   Result := _dataType;
 end;
 
-function TAppStorage.get_Model: IObjectListModel;
+function TAppStorage.get_Data: CObject;
 begin
-  Result := _model;
+  Result := _data;
 end;
 
 function TAppStorage.get_Name: string;

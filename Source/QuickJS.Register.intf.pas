@@ -61,6 +61,7 @@ type
     procedure set_ClassID(const Value: JSClassID);
     function  get_JSConstructor: JSValue;
     procedure set_JSConstructor(const Value: JSValue);
+    function  get_Kind: TTypeKind;
     function  get_ObjectSupportsEnumeration: Boolean;
     function  get_ObjectSupportsExtension: TObjectSupportsExtension;
     procedure set_ObjectSupportsExtension(const Value: TObjectSupportsExtension);
@@ -85,6 +86,7 @@ type
     property IsIndexedPropertyAccessor: Boolean read get_IsIndexedPropertyAccessor;
     property IsObject: Boolean read get_IsObject;
     property JSConstructor: JSValue read get_JSConstructor write set_JSConstructor;
+    property Kind: TTypeKind read get_Kind;
     property ObjectSupportsEnumeration: Boolean read get_ObjectSupportsEnumeration;
     property ObjectSupportsExtension: TObjectSupportsExtension read get_ObjectSupportsExtension write set_ObjectSupportsExtension;
     property ObjectSupportsIndexing: Boolean read get_ObjectSupportsIndexing;

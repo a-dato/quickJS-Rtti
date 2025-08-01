@@ -566,8 +566,11 @@ begin
         if TJSRegister.TryGetRegisteredObjectFromJSValue(Value, {out}obj) then
         begin
           var v: TValue;
-          TValue.Make(obj.Ptr, obj.Reg.GetTypeInfo, v);
-          Result := v;
+          if obj.Reg.Kind in [tkInterface, tkClass] then
+            TValue.Make(@obj.Ptr, obj.Reg.GetTypeInfo, v) else
+            // Value types (aka Records)
+            TValue.Make(obj.Ptr, obj.Reg.GetTypeInfo, v);
+          Result := TValue.From<CObject>(CObject.From<TValue>(v));
         end else
           Result := TValue.From<CObject>(CObject.From<IJSObject>(TJSObject.Create(ctx, Value)));
           // Result := TValue.From<CObject>(CObject.From<JSObjectReference>(JSObjectReference.Create(ctx, Value)));

@@ -182,18 +182,16 @@ begin
   begin
     var objectType := _app.Config.TypeDescriptor(AType);
 
-    var model := Storage.Model;
-
-//    var model: IObjectListModel := nil;
-//    if not Data.TryAsType<IObjectListModel>(model) then
-//    begin
-//      var list: IList;
-//      if Data.TryAsType<IList>(list) then
-//      begin
-//        model := TObjectListModelWithChangeTracking<IBaseInterface>.Create(AType);
-//        model.Context := list;
-//      end;
-//    end;
+    var model: IObjectListModel := nil;
+    if not Storage.Data.TryAsType<IObjectListModel>(model) then
+    begin
+      var list: IList;
+      if Storage.Data.TryAsType<IList>(list) then
+      begin
+        model := TObjectListModelWithChangeTracking<IBaseInterface>.Create(AType);
+        model.Context := list;
+      end;
+    end;
 
     if model <> nil then
     begin

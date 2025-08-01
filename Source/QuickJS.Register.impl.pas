@@ -347,6 +347,7 @@ type
     function  get_IsInterface: Boolean;
     function  get_IsIterator: Boolean;
     function  get_IsIndexedPropertyAccessor: Boolean;
+    function  get_Kind: TTypeKind;
     function  get_ObjectSupportsEnumeration: Boolean; virtual;
     function  get_ObjectSupportsExtension: TObjectSupportsExtension; virtual;
     procedure set_ObjectSupportsExtension(const Value: TObjectSupportsExtension); virtual;
@@ -1587,6 +1588,11 @@ end;
 function TRegisteredObject.get_IsIndexedPropertyAccessor: Boolean;
 begin
   Result := FTypeInfo = TypeInfo(TJSIndexedPropertyAccessor);
+end;
+
+function TRegisteredObject.get_Kind: TTypeKind;
+begin
+  Result := FTypeInfo.Kind;
 end;
 
 function TRegisteredObject.get_JSConstructor: JSValue;
