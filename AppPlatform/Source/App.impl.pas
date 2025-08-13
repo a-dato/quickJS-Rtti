@@ -57,7 +57,6 @@ uses
   App.TypeDescriptor.intf,
   App.Config.impl,
   App.Windows.impl, App.Storage.impl,
-  App.Windows.impl,
   ADato.AI.SpaceAccessor.impl;
 { TAppObject }
 
@@ -67,7 +66,6 @@ begin
   _Config := TAppConfig.Create;
   _Windows := Windows.Create;
   _storage := CDictionary<string, IAppStorage>.Create;
-//  _SpaceAccessor := TSpaceAccessor.Create;
   _extendabePropertyValues := CDictionary<string, JSValue>.Create;
 end;
 
@@ -124,6 +122,11 @@ end;
 
 function TAppObject.get_SpaceAccessor: ISpaceAccessor;
 begin
+  if (_SpaceAccessor = nil) then
+  begin
+    _SpaceAccessor := TSpaceAccessor.Create();
+  end;
+
   Result := _SpaceAccessor;
 end;
 

@@ -56,7 +56,6 @@ type
 
     function  eval_internal(Buf: PAnsiChar; buf_len: Integer; FileName: PAnsiChar; eval_flags: Integer): Integer;
 
-    procedure eval(const Code: string; const CodeContext: string);
     function  eval_with_result(const Code: string; const CodeContext: string): TValue;
 
 
@@ -66,6 +65,7 @@ type
 
   public
     constructor Create(const Runtime: IJSRuntime);
+    procedure eval(const Code: string; const CodeContext: string);
     procedure  BeforeDestruction; override;
   end;
 
@@ -1167,6 +1167,15 @@ end;
 
 class function TJSRegister.RegisterObject(const ctx: IJSContext; ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject;
 begin
+  TMonitor.Enter(FRegisteredObjectsByType);
+  try
+    // Check if type is already registered
+    if FRegisteredObjectsByType.TryGetValue(TypeInfo, Result) then
+      Exit; // Already registered, return existing registration
+  finally
+    TMonitor.Exit(FRegisteredObjectsByType);
+  end;
+
   var instance := TJSRegister.Instance;
 
   Result := Instance.CreateRegisteredObject(TypeInfo, nil);
@@ -1183,6 +1192,15 @@ end;
 
 class function TJSRegister.RegisterObject(const ctx: IJSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject;
 begin
+  TMonitor.Enter(FRegisteredObjectsByType);
+  try
+    // Check if type is already registered
+    if FRegisteredObjectsByType.TryGetValue(TypeInfo, Result) then
+      Exit; // Already registered, return existing registration
+  finally
+    TMonitor.Exit(FRegisteredObjectsByType);
+  end;
+
   var instance := TJSRegister.Instance;
 
   Result := instance.CreateRegisteredObject(TypeInfo, AConstructor);
