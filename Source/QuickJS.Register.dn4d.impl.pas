@@ -256,9 +256,9 @@ begin
     end;
   end;
 
-  var tp := &Type.Create(FTypeInfo);
-  if TMemberType.Property in MemberTypes then
+  if (FTypeInfo.Kind in [tkClass, tkInterface]) and (TMemberType.Property in MemberTypes) then
   begin
+    var tp := &Type.Create(FTypeInfo);
     var prop := tp.PropertyByName(AName);
     if prop <> nil then
     begin
@@ -267,7 +267,7 @@ begin
     end;
   end;
 
-  Result := inherited GetMemberByName(AName, [TMemberType.Methods]);
+  Result := inherited GetMemberByName(AName, MemberTypes);
 end;
 
 function TRegisteredTypedObject.GetMemberNames(MemberTypes: TMemberTypes): TArray<string>;

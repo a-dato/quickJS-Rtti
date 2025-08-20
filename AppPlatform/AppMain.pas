@@ -55,12 +55,18 @@ type
     { Public declarations }
   end;
 
+  {$M+}
+  TScheduledInterval = record
+    TaskID: Int64;
+  end;
+
   ITestObject = interface(IBaseInterface)
     ['{4A8C6FB1-5CFB-49C5-A0EB-2BEC6E554F01}']
     function get_Data: IList;
     function get_Names(const Value: string): string;
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
+    function Test3 : TScheduledInterval;
     procedure Attach(const Data: IList);
     property Names[const Value: string]: string read get_Names;
 
@@ -77,6 +83,7 @@ type
     function get_Names(const Value: string): string;
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
+    function Test3 : TScheduledInterval;
   public
     constructor Create;
 
@@ -366,6 +373,11 @@ begin
 //  var an: IAddNew;
 //  if Interfaces.Supports<IAddNew>(Value, an) then
 //    an.AddNew;
+end;
+
+function TTestObject.Test3: TScheduledInterval;
+begin
+  Result.TaskID := 100;
 end;
 
 end.
