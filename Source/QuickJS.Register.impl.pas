@@ -734,27 +734,31 @@ var
   begin
     if reg.ObjectSupportsExtension = TObjectSupportsExtension.Unknown then
     begin
-      var isObject := reg.GetTypeInfo.Kind = tkClass;
-      var ptr := GetObjectFromJSValue(obj, isObject);
-      if ptr <> nil then
-      begin
-        var ext: IJSExtendableObject;
-        if isObject then
-        begin
-          if not Supports(TObject(ptr), IJSExtendableObject, ext) then
-            Exit;
-        end
-        else // Interface
-        begin
-          var v: TValue;
-          TValue.Make(@ptr, reg.GetTypeInfo, v);
-          if not Supports(v.AsInterface, IJSExtendableObject, ext) then
-            Exit;
-        end;
+      reg.ObjectSupportsExtension := TObjectSupportsExtension.NotSupported;
 
-        if ext.define_own_property(Ctx, PropertyName) then
-          reg.ObjectSupportsExtension := TObjectSupportsExtension.Supported else
-          reg.ObjectSupportsExtension := TObjectSupportsExtension.NotSupported;
+      if reg.GetTypeInfo.Kind in [tkInterface, tkClass] then
+      begin
+        var isObject := reg.GetTypeInfo.Kind = tkClass;
+        var ptr := GetObjectFromJSValue(obj, isObject);
+        if ptr <> nil then
+        begin
+          var ext: IJSExtendableObject;
+          if isObject then
+          begin
+            if not Supports(TObject(ptr), IJSExtendableObject, ext) then
+              Exit;
+          end
+          else // Interface
+          begin
+            var v: TValue;
+            TValue.Make(@ptr, reg.GetTypeInfo, v);
+            if not Supports(v.AsInterface, IJSExtendableObject, ext) then
+              Exit;
+          end;
+
+          if ext.define_own_property(Ctx, PropertyName) then
+            reg.ObjectSupportsExtension := TObjectSupportsExtension.Supported;
+        end;
       end;
     end;
 
@@ -1539,6 +1543,12 @@ begin
       else if (getter <> nil) or (setter <> nil) then
         Result := TRttiInterfacePropertyDescriptor.Create(FTypeInfo, getter, setter);
     end
+    else if FTypeInfo.Kind = tkRecord then
+    begin
+      var field := rttiType.GetField(AName);
+      if field <> nil then
+        Result := TRttiStandardPropertyDescriptor.Create(FTypeInfo, field);
+    end
     else
     begin
       var prop := rttiType.GetProperty(AName);
@@ -2052,8 +2062,11 @@ end;
 function TRttiStandardPropertyDescriptor.GetValue(const Ptr: Pointer; const Index: array of TValue): TValue;
 begin
   if FProp is TRttiIndexedProperty then
-    Result := (FProp as TRttiIndexedProperty).GetValue(Ptr, Index) else
-    Result := (FProp as TRttiProperty).GetValue(Ptr);
+    Result := (FProp as TRttiIndexedProperty).GetValue(Ptr, Index)
+  else if FProp is TRttiProperty then
+    Result := (FProp as TRttiProperty).GetValue(Ptr)
+  else if FProp is TRttiField then
+    Result := (FProp as TRttiField).GetValue(Ptr);
 end;
 
 function TRttiStandardPropertyDescriptor.get_MemberType: TMemberType;
@@ -2069,8 +2082,11 @@ end;
 procedure TRttiStandardPropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
 begin
   if FProp is TRttiIndexedProperty then
-    (FProp as TRttiIndexedProperty).SetValue(Ptr, Index, Value) else
-    (FProp as TRttiProperty).SetValue(Ptr, Value);
+    (FProp as TRttiIndexedProperty).SetValue(Ptr, Index, Value)
+  else if FProp is TRttiProperty then
+    (FProp as TRttiProperty).SetValue(Ptr, Value)
+  else if FProp is TRttiField then
+    (FProp as TRttiField).SetValue(Ptr, Value);
 end;
 
 { TRttiMethodPropertyDescriptor }
