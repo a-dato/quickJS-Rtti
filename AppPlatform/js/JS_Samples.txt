@@ -82,5 +82,3 @@ let p = d.CreateInstance();
 p.Name = 'New project';
 data.Add(p);
 */
-
-curl -X GET "https://api.smartsheet.eu/2.0/sheets/3945631838242692?include=projectSettings" -H "Authorization: Bearer HPQgqT91fnVkihhyV0IugSjDtscZFqf6np4nr"
