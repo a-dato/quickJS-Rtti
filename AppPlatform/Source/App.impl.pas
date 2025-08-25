@@ -16,12 +16,14 @@ uses
   ADato.ObjectModel.List.intf,
   App.PropertyDescriptor.intf,
   ADato.AI.SpaceAccessor.intf;
+  App.Factory.intf;
 
 type
   TAppObject = class(TBaseInterfacedObject, IAppObject, IJSExtendableObject)
   protected
     _Config: IAppConfig;
     _Environment: IEnvironment;
+    _Factory: IAppFactory;
     _Windows: IWindows;
     _storage: Dictionary<string, IAppStorage>;
     _SpaceAccessor: ISpaceAccessor;
@@ -30,6 +32,7 @@ type
     // IAppObject
     function get_Config: IAppConfig;
     function get_Environment: IEnvironment;
+    function get_Factory: IAppFactory;
     function get_Storage(const Name: string): IAppStorage;
     function get_Windows: IWindows;
 
@@ -58,11 +61,13 @@ uses
   App.Config.impl,
   App.Windows.impl, App.Storage.impl,
   ADato.AI.SpaceAccessor.impl;
+  App.Factory.impl;
 { TAppObject }
 
 constructor TAppObject.Create(const Environment: IEnvironment);
 begin
   _Environment := Environment;
+  _Factory := TAppFactory.Create;
   _Config := TAppConfig.Create;
   _Windows := Windows.Create;
   _storage := CDictionary<string, IAppStorage>.Create;
@@ -97,6 +102,11 @@ end;
 function TAppObject.get_Environment: IEnvironment;
 begin
   Result := _Environment;
+end;
+
+function TAppObject.get_Factory: IAppFactory;
+begin
+
 end;
 
 function TAppObject.get_Storage(const Name: string): IAppStorage;
