@@ -9,7 +9,8 @@ uses
   App.Storage.intf,
   App.Windows.intf,
   App.Environment.intf,
-  ADato.ObjectModel.List.intf;
+  ADato.ObjectModel.List.intf,
+  App.Factory.intf;
 
 type
   {$M+}
@@ -17,6 +18,7 @@ type
     ['{0519E4B9-3CD3-4B42-A776-7E62173F5967}']
     function get_Config: IAppConfig;
     function get_Environment: IEnvironment;
+    function get_Factory: IAppFactory;
     function get_Storage(const Name: string): IAppStorage;
     function get_Windows: IWindows;
 
@@ -27,6 +29,7 @@ type
 
     property Config: IAppConfig read get_Config;
     property Environment: IEnvironment read get_Environment;
+    property Factory: IAppFactory read get_Factory;
     property Storage[const Value: string]: IAppStorage read get_Storage;
     property Windows: IWindows read get_Windows;
   end;

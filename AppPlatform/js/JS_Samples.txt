@@ -1,0 +1,86 @@
+// TestObject
+class TestObject_ {
+}
+
+console.log(tst.Data);
+
+let t = new TestObject_();
+tst.Data.Add(t);
+
+// Project
+import {Project} from '/adato_lynx_master/js/Project.js';
+
+let s = app.Storage['Projects'];
+console.log(s.Model.Context);
+
+let p = new Project(1);
+p.Description = `Project 1`;
+
+s.Model.Context.Add(p);
+
+// Smartsheet
+import {SMSheet,SMSheetType} from '/adato_quickjs/AppPlatform/js/SmartSheet.js';
+
+SMSheetType.register();
+console.log(SMSheetType.Instance.Provider);
+
+let storage = app.AddStorage(SMSheetType, SMSheetType.StorageName);
+let data = SMSheetType.Instance.Provider.Data();
+storage.Attach(data);
+*/
+
+const w = app.Windows.CreateWindow(null, Customer);
+w.Build();
+w.Bind(storage);
+w.Show();
+*/
+
+
+import {Resource} from '../../../js/Resource.js';
+
+let r_type = app.Config.TypeDescriptorByName('IResource');
+let data = r_type.Provider.Data();
+
+console.log(data.Count);
+
+for(let n = 0; n < 1000; n++) {
+	let r = new Resource(n);
+	r.Description = `Resource ${n}`;
+	data.Add(r);
+}
+
+
+console.log(data.Count);
+let c = new Customer(-99, 'Customer');
+data.Add(c);
+
+
+let c = new Customer(10, 'tst');
+tst.Test2(c);
+
+
+let c = new Customer();
+
+const proto = Object.getPrototypeOf(c);
+console.log(Object.getOwnPropertyNames(proto));
+
+const proto2 = Object.getPrototypeOf(Customer);
+console.log(Object.getOwnPropertyNames(proto2));
+
+console.log(Object.getOwnPropertyNames(Customer.prototype));
+
+
+let d = app.Config.TypeDescriptorByName('IProject');
+let data = d.Provider.Data();
+console.log(data.Count);
+
+let c = new Customer(-10);
+data.Add(c);
+
+/*
+let p = d.CreateInstance();
+p.Name = 'New project';
+data.Add(p);
+*/
+
+curl -X GET "https://api.smartsheet.eu/2.0/sheets/3945631838242692?include=projectSettings" -H "Authorization: Bearer HPQgqT91fnVkihhyV0IugSjDtscZFqf6np4nr"
