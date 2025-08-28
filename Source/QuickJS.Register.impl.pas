@@ -1944,11 +1944,12 @@ begin
     end;
 
     tkRecord:
-      if Param.Handle = TypeInfo(TValue) then
-      begin
-        ParamIsGenericValue := True;
-        Result := True;
-      end;
+      Result := True;
+//      if Param.Handle = TypeInfo(TValue) then
+//      begin
+//        ParamIsGenericValue := True;
+//        Result := True;
+//      end;
 
     tkInterface:
       // test for method

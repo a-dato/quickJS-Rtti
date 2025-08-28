@@ -66,7 +66,7 @@ type
     function get_Names(const Value: string): string;
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
-    function Test3 : TScheduledInterval;
+    function Test3(const Value: &Type) : CObject;
     procedure Attach(const Data: IList);
     property Names[const Value: string]: string read get_Names;
 
@@ -83,7 +83,7 @@ type
     function get_Names(const Value: string): string;
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
-    function Test3 : TScheduledInterval;
+    function Test3(const Value: &Type) : CObject;
   public
     constructor Create;
 
@@ -118,7 +118,8 @@ uses
   System.Rtti, App.PropertyDescriptor.intf, System.JSON,
   ADato.ObjectModel.impl,
   System.ComponentModel,
-  ADato.ObjectModel.TrackInterfaces;
+  ADato.ObjectModel.TrackInterfaces,
+  App.Factory.impl;
 
 {$R *.fmx}
 
@@ -236,6 +237,11 @@ begin
   TProject.TypeDescriptor.Provider := ProjectProvider.Create;
 
   _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
+
+  _app.Factory.RegisterType(TProject.Type, function : CObject begin
+    Result := CObject.From<IProject>(TProject.Create);
+  end);
+
   var storage := _app.AddStorage(TProject.Type, TProject.TypeDescriptor.StorageName);
   storage.Attach(TProject.TypeDescriptor.Provider.Data(nil));
 end;
@@ -375,9 +381,9 @@ begin
 //    an.AddNew;
 end;
 
-function TTestObject.Test3: TScheduledInterval;
+function TTestObject.Test3(const Value: &Type) : CObject;
 begin
-  Result.TaskID := 100;
+  Result := Value.ToString;
 end;
 
 end.

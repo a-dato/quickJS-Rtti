@@ -31,7 +31,6 @@ type
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject) : CObject; overload;
 
   public
-    class constructor Create;
     constructor Create;
 
     procedure RegisterType<T>(const Func: TCreatorFunc<T>); overload;
@@ -42,7 +41,7 @@ type
     function  CreateInstance<T, P0>(const Param0: P0) : T; overload;
     function  CreateInstance<T, P0, P1>(const Param0: P0; const Param1: P1) : T; overload;
 
-    class property Instance: IAppFactory read _Instance;
+    class property Instance: IAppFactory read _Instance write _Instance;
     class property Generic: TAppFactory read get_GenericInstance;
   end;
 
@@ -52,11 +51,6 @@ uses
   System.SysUtils;
 
 { TAppFactory }
-
-class constructor TAppFactory.Create;
-begin
-  TAppFactory._Instance := TAppFactory.Create;
-end;
 
 class function TAppFactory.get_GenericInstance: TAppFactory;
 begin
@@ -85,8 +79,10 @@ end;
 
 function TAppFactory.CreateInstance(const AType: &Type): CObject;
 begin
-  var func := _dict[AType].AsType<TCreatorFunc_0>();
-  Result := func();
+  var func := _dict[AType];
+  var cf_0: TCreatorFunc_0;
+  if func.TryAsType<TCreatorFunc_0>(cf_0) then
+    Result := cf_0();
 end;
 
 function TAppFactory.CreateInstance(const AType: &Type; const Param0: CObject): CObject;
@@ -103,11 +99,8 @@ end;
 
 procedure TAppFactory.RegisterType<T>(const Func: TCreatorFunc<T>);
 begin
-  {$IFDEF DELPHI}
-  _dict[TypeInfo(T)] := TValue.From<TCreatorFunc<T>>(Func);
-  {$ELSE}
-  _dict[&Type.From<T>] := TValue.From<TCreatorFunc<T>>(Func);
-  {$ENDIF}
+  var tp := &Type.From<T>;
+  _dict[tp] := TValue.From<TCreatorFunc<T>>(Func);
 end;
 
 procedure TAppFactory.RegisterType<T, P0>(const Func: TCreatorFunc<T, P0>);

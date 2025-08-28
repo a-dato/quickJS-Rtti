@@ -379,14 +379,18 @@ begin
   var proto: JSValue;
 
   // Did we get a constructor?
-  if JS_IsFunction(ctx, Value) then
-    // Call function.prototype to get the actual type
-    proto := JS_GetPropertyStr(ctx, Value, 'prototype')
-//  // Did we get a live object?
-//  else if JS_IsObject(Value) then
-//    proto := JS_GetProtoType(ctx, Value)
-  else
-    raise CException.Create('Could not get type');
+  if JS_IsConstructor(ctx, Value) then
+    proto := JS_GetPropertyStr(ctx, Value, 'prototype') else
+    proto := Value;
+
+//  else if JS_IsFunction(ctx, Value) then
+//    // Call function.prototype to get the actual type
+//    proto := JS_GetPropertyStr(ctx, Value, 'prototype')
+////  // Did we get a live object?
+////  else if JS_IsObject(Value) then
+////    proto := JS_GetProtoType(ctx, Value)
+//  else
+//    raise CException.Create('Could not get type');
 
   var reg: IRegisteredObject;
   shouldRegister := not TJSRegister.TryGetRegisteredJSObject(proto, reg);

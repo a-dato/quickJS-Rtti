@@ -22,7 +22,6 @@ type
   protected
     _Config: IAppConfig;
     _Environment: IEnvironment;
-    _Factory: IAppFactory;
     _Windows: IWindows;
     _storage: Dictionary<string, IAppStorage>;
     _extendabePropertyValues: Dictionary<string, JSValue>;
@@ -64,8 +63,9 @@ uses
 
 constructor TAppObject.Create(const Environment: IEnvironment);
 begin
+  TAppFactory.Instance := TAppFactory.Create;
+
   _Environment := Environment;
-  _Factory := TAppFactory.Create;
   _Config := TAppConfig.Create;
   _Windows := Windows.Create;
   _storage := CDictionary<string, IAppStorage>.Create;
@@ -104,7 +104,7 @@ end;
 
 function TAppObject.get_Factory: IAppFactory;
 begin
-
+  Result := TAppFactory.Instance;
 end;
 
 function TAppObject.get_Storage(const Name: string): IAppStorage;
