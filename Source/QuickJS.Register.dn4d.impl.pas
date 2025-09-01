@@ -139,29 +139,6 @@ type
     constructor Create(AInfo: PTypeInfo; IsInterface: Boolean);
   end;
 
-  TJSObject = class(TBaseInterfacedObject, IJSObject)
-  protected
-    _type: &Type;
-    _ctx: JSContext;
-    _value: JSValueConst;
-    _ImplementingInterfaces: List<TInterfaceRef>;
-
-    function get_Ctx: JSContext;
-    function get_Value: JSValueConst;
-
-    function QueryInterface(const IID: TGUID; out Obj): HResult; reintroduce; stdcall;
-    function InternalInvoke(const Func: AnsiString; argc: Integer; argv: PJSValueConstArr): JSValue;
-    function Invoke(const Func: AnsiString; const Args: TArray<TValue>; ReturnType: PTypeInfo) : TValue;
-
-    function  GetType: &Type; override;
-    function  ToString: CString; override;
-
-  public
-    constructor Create(const Ctx: JSContext; const Value: JSValueConst);
-    destructor  Destroy; override;
-  end;
-
-
 implementation
 
 uses
@@ -374,46 +351,35 @@ end;
 { TJSTypedConverter }
 class function TJSTypedConverter.GetTypeFromJSObject(ctx: JSContext; Value: JSValueConst): &Type;
 begin
-  var shouldRegister := False;
-  var name: PAnsiChar := nil;
-  var proto: JSValue;
+  var reg: IRegisteredObject;
 
   // Did we get a constructor?
   if JS_IsConstructor(ctx, Value) then
-    proto := JS_GetPropertyStr(ctx, Value, 'prototype') else
-    proto := Value;
-
-//  else if JS_IsFunction(ctx, Value) then
-//    // Call function.prototype to get the actual type
-//    proto := JS_GetPropertyStr(ctx, Value, 'prototype')
-////  // Did we get a live object?
-////  else if JS_IsObject(Value) then
-////    proto := JS_GetProtoType(ctx, Value)
-//  else
-//    raise CException.Create('Could not get type');
-
-  var reg: IRegisteredObject;
-  shouldRegister := not TJSRegister.TryGetRegisteredJSObject(proto, reg);
-  if shouldRegister then
   begin
-    var c := JS_GetPropertyStr(ctx, proto, 'constructor');
-    var n := JS_GetPropertyStr(ctx, c, 'name');
-    name := JS_ToCString(ctx, n);
+    // Registered Delphi object?
+    if TJSRegister.TryGetRegisteredObjectFromConstructor(Value, reg) then
+      Exit(&Type.Create(reg.GetTypeInfo));
 
-    var tp: PTypeInfo := New(PTypeInfo);
-    tp.Kind := TJSRegisterTypedObjects.tkJSType;
-    tp.Name := name;
+    // Registered JS Object?
+    if not TJSRegister.TryGetRegisteredJSObject(Value, reg) then
+    begin
+      var n := JS_GetPropertyStr(ctx, Value, 'name');
+      var name := JS_ToCString(ctx, n);
 
-    reg := TJSRegister.RegisterJSObject(TJSRuntime.Context[ctx], proto, tp);
+      var tp: PTypeInfo := New(PTypeInfo);
+      tp.Kind := TJSRegisterTypedObjects.tkJSType;
+      tp.Name := name;
 
-    JS_FreeValue(ctx, n);
-    JS_FreeValue(ctx, c);
-    JS_FreeCString(ctx, name);
-  end;
+      reg := TJSRegister.RegisterJSObject(TJSRuntime.Context[ctx], Value, tp);
 
-  var js_reg: IJSRegisteredObject;
-  if Interfaces.Supports<IJSRegisteredObject>(reg, js_reg) then
-    Result := js_reg.GetType else
+      JS_FreeCString(ctx, name);
+      JS_FreeValue(ctx, n);
+    end;
+
+    var js_reg: IJSRegisteredObject;
+    if Interfaces.Supports<IJSRegisteredObject>(reg, js_reg) then
+      Result := js_reg.GetType;
+  end else
     Result := &Type.Unknown;
 end;
 
@@ -875,144 +841,6 @@ end;
 function TJSPropertyInfo.ToString: CString;
 begin
   Result := string(_name);
-end;
-
-
-{ TJSObject }
-
-constructor TJSObject.Create(const Ctx: JSContext; const Value: JSValueConst);
-begin
-  _ctx := Ctx;
-  _value := JS_DupValue(Ctx, Value);
-end;
-
-destructor TJSObject.Destroy;
-begin
-  inherited;
-  JS_FreeValue(_ctx, _value);
-end;
-
-function TJSObject.get_Ctx: JSContext;
-begin
-  Result := _ctx;
-end;
-
-function TJSObject.get_Value: JSValueConst;
-begin
-  Result := _value;
-end;
-
-function TJSObject.InternalInvoke(const Func: AnsiString; argc: Integer; argv: PJSValueConstArr): JSValue;
-begin
-  Result := JS_GetPropertyStr(_ctx, _value, PAnsiChar(Func));
-  TJSRuntime.Check(_ctx, Result);
-  Result := TJSRuntime.WaitForJobs(_ctx, Result);
-  TJSRuntime.Check(_ctx, Result);
-
-  // Property returns a function, call function to get actual value
-  if JS_IsFunction(_ctx, Result) then
-  begin
-    var tmp := Result;
-    Result := JS_Call(_ctx, tmp, _value, argc, argv);
-    TJSRuntime.Check(_ctx, Result);
-    Result := TJSRuntime.WaitForJobs(_ctx, Result);
-    TJSRuntime.Check(_ctx, Result);
-    JS_FreeValue(_ctx, tmp);
-    if not TJSRuntime.Check(_ctx) then Exit;
-  end
-  // Call on property with sub-properties
-  // obj.ObjectWithProps['SUB-PROPERTY']
-  else if (argc = 1) and JS_IsObject(Result) then
-  begin
-    // Result := JS_GetPropertyStr(_jsValue.ctx, Result, PAnsiChar('Customer'));
-    var js_obj := Result;
-    var prop_name := JSConverter.Instance.JSValueToTValue(_ctx, argv[0], TypeInfo(string));
-    if not prop_name.IsEmpty then
-    begin
-      var s: AnsiString := prop_name.ToString;
-      Result := JS_GetPropertyStr(_ctx, js_obj, PAnsiChar(s));
-      TJSRuntime.Check(_ctx, Result);
-      Result := TJSRuntime.WaitForJobs(_ctx, Result);
-      TJSRuntime.Check(_ctx, Result);
-    end;
-    JS_FreeValue(_ctx, js_obj);
-  end;
-end;
-
-function TJSObject.Invoke(const Func: AnsiString; const Args: TArray<TValue>; ReturnType: PTypeInfo): TValue;
-begin
-  var argv: array of JSValueConst;
-  SetLength(argv, Length(Args));
-  for var i := 0 to High(Args) do
-    argv[i] := JSConverter.Instance.TValueToJSValue(_ctx, Args[i]);
-
-  var js_val := InternalInvoke(Func, Length(argv), PJSValueConstArr(argv));
-  Result := JSConverter.Instance.JSValueToTValue(_ctx, js_val, ReturnType);
-  JS_FreeValue(_ctx, js_val);
-
-  for var i := 0 to High(Args) do
-    JS_FreeValue(_ctx, argv[i]);
-end;
-
-function TJSObject.QueryInterface(const IID: TGUID; out Obj): HResult;
-begin
-  Result := inherited;
-
-  if Result <> S_OK then
-  begin
-    var ii_ref: TInterfaceRef;
-
-    if _ImplementingInterfaces <> nil then
-    begin
-      ii_ref := _ImplementingInterfaces.Find(function(const item: TInterfaceRef) : Boolean begin
-                      Result := IsEqualGUID(IID, item.IID);
-                    end);
-
-      if not ii_ref.IID.IsEmpty then
-      begin
-        // ii can still be nil!
-        if ii_ref.ii <> nil then
-        begin
-          IInterface(Obj) := ii_ref.ii;
-          Result := S_OK;
-        end;
-
-        Exit;
-      end;
-    end;
-
-    // Call QuickJS, we expect an object to be returned. This object will be wrapped inside
-    // an TJSVirtualInterface object as well and can be cast to the requested type
-    var reg: IRegisteredObject;
-    if TJSRegister.TryGetRegisteredInterface(IID, reg) then
-    begin
-      var tp := TValue.From<&Type>(&Type.Create(reg.GetTypeInfo));
-      var val := Invoke('QueryInterface', [tp], reg.GetTypeInfo);
-      if not val.IsEmpty then
-      begin
-        ii_ref.ii := IInterface(val.GetReferenceToRawData^);
-        IInterface(Obj) := ii_ref.ii;
-        Result := S_OK;
-      end;
-    end;
-
-    ii_ref.IID := IID;
-    if _ImplementingInterfaces = nil then
-      _ImplementingInterfaces := CList<TInterfaceRef>.Create;
-    _ImplementingInterfaces.Add(ii_ref);
-  end;
-end;
-
-function TJSObject.GetType: &Type;
-begin
-  if _type = nil then
-    _type := TJSTypedConverter.GetTypeFromJSObject(_ctx, _value);
-  Result := _type;
-end;
-
-function TJSObject.ToString: CString;
-begin
-  Result := Invoke('ToString', nil, TypeInfo(string)).ToString;
 end;
 
 end.

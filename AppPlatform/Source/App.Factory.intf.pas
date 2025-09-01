@@ -3,10 +3,12 @@
 interface
 
 uses
-  System_;
+  System_,
+  System.SysUtils;
 
 type
-  TCreatorFunc_0 = reference to function : CObject;
+  {$M+}
+  TCreatorFunc_0 = reference to function: CObject;
   TCreatorFunc_1 = reference to function(const Param0: CObject) : CObject;
   TCreatorFunc_2 = reference to function(const Param0: CObject; const Param1: CObject) : CObject;
 

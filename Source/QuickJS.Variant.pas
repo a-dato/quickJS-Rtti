@@ -87,7 +87,7 @@ var
 implementation
 
 uses
-  System.SysUtils, QuickJS.Register.dn4d.intf;
+  System.SysUtils, QuickJS.Register.dn4d.intf, QuickJS.Register.intf;
 
 function VarJSVariantCreate(const Value: IInterface): Variant;
 begin
