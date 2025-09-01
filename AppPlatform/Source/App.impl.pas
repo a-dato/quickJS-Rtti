@@ -8,6 +8,7 @@ uses
   System.Collections.Generic,
   quickjs_ng,
   QuickJS.Register.intf,
+  App.Base.intf,
   App.intf,
   App.Config.intf,
   App.Storage.intf,
@@ -18,13 +19,16 @@ uses
   App.Factory.intf;
 
 type
-  TAppObject = class(TBaseInterfacedObject, IAppObject, IJSExtendableObject)
+  TAppObject = class(TBaseInterfacedObject, IAppObject, IConverterSupport, IJSExtendableObject)
   protected
     _Config: IAppConfig;
     _Environment: IEnvironment;
     _Windows: IWindows;
     _storage: Dictionary<string, IAppStorage>;
+    _typeConverter: ITypeConverter;
     _extendabePropertyValues: Dictionary<string, JSValue>;
+
+    function AsType(const AType: &Type) : CObject; override;
 
     // IAppObject
     function get_Config: IAppConfig;
@@ -37,6 +41,10 @@ type
     function  HasStorage(const Name: string): Boolean;
     function  TryGetStorage(const Name: string; out Value: IAppStorage) : Boolean;
     function  RemoveStorage(const Name: string) : Boolean;
+
+    // IConverterSupport
+    function  get_Converter: ITypeConverter;
+    procedure set_Converter(const Value: ITypeConverter);
 
     // IJSExtendableObject
     function  define_own_property(Ctx: JSContext; const Name: string) : Boolean;
@@ -72,6 +80,12 @@ begin
   _extendabePropertyValues := CDictionary<string, JSValue>.Create;
 end;
 
+function TAppObject.AsType(const AType: &Type) : CObject;
+begin
+  if (_typeConverter = nil) or not _typeConverter.TryAsType(AType, Result) then
+    Result := inherited;
+end;
+
 function TAppObject.AddStorage(const DataType: &Type; const Name: string) : IAppStorage;
 begin
   var storage: IAppStorage := TAppStorage.Create(DataType, Name);
@@ -95,6 +109,11 @@ end;
 function TAppObject.get_Config: IAppConfig;
 begin
   Result := _Config;
+end;
+
+function TAppObject.get_Converter: ITypeConverter;
+begin
+  Result := _typeConverter;
 end;
 
 function TAppObject.get_Environment: IEnvironment;
@@ -137,6 +156,11 @@ begin
   if JS_IsUndefined(Value) then
     _extendabePropertyValues.Remove(Name) else
     _extendabePropertyValues[Name] := JS_DupValue(Ctx, Value);
+end;
+
+procedure TAppObject.set_Converter(const Value: ITypeConverter);
+begin
+  _typeConverter := Value;
 end;
 
 function TAppObject.TryGetStorage(const Name: string; out Value: IAppStorage): Boolean;

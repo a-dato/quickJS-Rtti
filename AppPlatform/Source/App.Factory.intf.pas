@@ -15,9 +15,9 @@ type
   IAppFactory = interface(IBaseInterface)
     ['{ED9DEEB4-F0FD-4996-8CF4-B8B817D2EFCB}']
 
-    procedure RegisterType(const AType: &Type; const Func: TCreatorFunc_0); overload;
-    procedure RegisterType(const AType: &Type; const Func: TCreatorFunc_1); overload;
-    procedure RegisterType(const AType: &Type; const Func: TCreatorFunc_2); overload;
+    procedure RegisterType(const AType: &Type; const Func: TCreatorFunc_0);
+    procedure RegisterType_1(const AType: &Type; const Func: TCreatorFunc_1);
+    procedure RegisterType_2(const AType: &Type; const Func: TCreatorFunc_2);
 
     function  CreateInstance(const AType: &Type) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject) : CObject; overload;
