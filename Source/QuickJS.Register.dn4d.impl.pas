@@ -18,7 +18,7 @@ type
     tkJSType = TTypeKind(Ord(tkMRecord) + 1);
 
   protected
-    function CreateRegisteredJSObject(ctx: JSContext; Value: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; override;
+    function CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; override;
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject; override;
 
   public
@@ -70,12 +70,12 @@ type
   TRegisteredJSObject = class(TRegisteredObject, IJSRegisteredObject)
   protected
     _ctx: JSContext;
-    _proto: JSValueConst;
+    _JSConstructor: JSValueConst;
 
     function GetProperties : PropertyInfoArray;
 
   public
-    constructor Create(Ctx: JSContext; Proto: JSValueConst; ATypeInfo: PTypeInfo);
+    constructor Create(Ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo);
     destructor Destroy; override;
 
     function GetType : &Type;
@@ -159,9 +159,9 @@ begin
   Result := TRegisteredTypedObject.Create(ATypeInfo, AConstructor);
 end;
 
-function TJSRegisterTypedObjects.CreateRegisteredJSObject(ctx: JSContext; Value: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject;
+function TJSRegisterTypedObjects.CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject;
 begin
-  Result := TRegisteredJSObject.Create(ctx, Value, ATypeInfo);
+  Result := TRegisteredJSObject.Create(ctx, JSConstructor, ATypeInfo);
 end;
 
 { JSIEnumerableIterator }
@@ -694,17 +694,17 @@ end;
 
 { TRegisteredJSObject }
 
-constructor TRegisteredJSObject.Create(Ctx: JSContext; Proto: JSValueConst; ATypeInfo: PTypeInfo);
+constructor TRegisteredJSObject.Create(Ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo);
 begin
   inherited Create(ATypeInfo, nil);
   _ctx := Ctx;
-  _proto := JS_DupValue(Ctx, Proto);
+  _JSConstructor := JS_DupValue(Ctx, JSConstructor);
 end;
 
 destructor TRegisteredJSObject.Destroy;
 begin
   Dispose(FTypeInfo);
-  JS_FreeValue(_ctx, _proto);
+  JS_FreeValue(_ctx, _JSConstructor);
   inherited;
 end;
 
@@ -715,12 +715,14 @@ type
 
 begin
   {$IFDEF DEBUG}
-  var s := TJSRegister.Describe(_ctx, _proto);
+  var s := TJSRegister.Describe(_ctx, _JSConstructor);
   {$ENDIF}
+
+  var proto := JS_GetPropertyStr(_ctx, _JSConstructor, 'prototype');
 
   var p_enum: PJSPropertyEnum := nil;
   var p_len: UInt32;
-  JS_GetOwnPropertyNames(_ctx, @p_enum, @p_len, _proto, JS_PROP_C_W_E);
+  JS_GetOwnPropertyNames(_ctx, @p_enum, @p_len, proto, JS_PROP_C_W_E);
 
   if p_len > 0 then
   begin
@@ -728,10 +730,11 @@ begin
 
     for var i := 0 to p_len -1 do
     begin
-      // Filter out 'real' properties ==> prototype.PropertyName returns 'undefined'
       var jv := JS_AtomToString(_ctx, PJSPropertyEnumArr(p_enum)[i].atom);
       var ansistr := JS_ToCString(_ctx, jv);
-      var jsPropType := JS_GetPropertyStr(_ctx, _proto, ansistr);
+      var jsPropType := JS_GetPropertyStr(_ctx, proto, ansistr);
+
+      // Filter out 'real' properties ==> prototype.PropertyName returns 'undefined'
       if JS_IsUndefined(jsPropType) then
       begin
         SetLength(Result, Length(Result) + 1);
@@ -745,6 +748,7 @@ begin
   end;
 
   js_free(_ctx, p_enum);
+  JS_FreeValue(_ctx, proto);
 end;
 
 function TRegisteredJSObject.GetType: &Type;

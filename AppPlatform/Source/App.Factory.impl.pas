@@ -19,10 +19,14 @@ type
     procedure RegisterType(const AType: &Type; const Func: TCreatorFunc_0);
     procedure RegisterType_1(const AType: &Type; const Func: TCreatorFunc_1);
     procedure RegisterType_2(const AType: &Type; const Func: TCreatorFunc_2);
+    procedure RegisterType_3(const AType: &Type; const Func: TCreatorFunc_3);
+    procedure RegisterType_4(const AType: &Type; const Func: TCreatorFunc_4);
 
     function  CreateInstance(const AType: &Type) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject) : CObject; overload;
+    function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject) : CObject; overload;
+    function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject) : CObject; overload;
 
   public
     constructor Create;
@@ -57,6 +61,16 @@ begin
   _dict[AType] := TValue.From<TCreatorFunc_2>(Func);
 end;
 
+procedure TAppFactory.RegisterType_3(const AType: &Type; const Func: TCreatorFunc_3);
+begin
+  _dict[AType] := TValue.From<TCreatorFunc_3>(Func);
+end;
+
+procedure TAppFactory.RegisterType_4(const AType: &Type; const Func: TCreatorFunc_4);
+begin
+  _dict[AType] := TValue.From<TCreatorFunc_4>(Func);
+end;
+
 function TAppFactory.CreateInstance(const AType: &Type): CObject;
 begin
   var func := _dict[AType].AsType<TCreatorFunc_0>();
@@ -73,6 +87,18 @@ function TAppFactory.CreateInstance(const AType: &Type; const Param0, Param1: CO
 begin
   var func := _dict[AType].AsType<TCreatorFunc_2>();
   Result := func(Param0, Param1);
+end;
+
+function TAppFactory.CreateInstance(const AType: &Type; const Param0, Param1, Param2: CObject): CObject;
+begin
+  var func := _dict[AType].AsType<TCreatorFunc_3>();
+  Result := func(Param0, Param1, Param2);
+end;
+
+function TAppFactory.CreateInstance(const AType: &Type; const Param0, Param1, Param2, Param3: CObject): CObject;
+begin
+  var func := _dict[AType].AsType<TCreatorFunc_4>();
+  Result := func(Param0, Param1, Param2, Param3);
 end;
 
 end.

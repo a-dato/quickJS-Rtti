@@ -113,7 +113,7 @@ type
     class procedure InternalRegisterInterface(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
 
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; virtual;
-    function CreateRegisteredJSObject(ctx: JSContext; Value: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; virtual;
+    function CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; virtual;
 
     // Static method callbacks to be called by QuickJS
     class function GenericInvokeCallBack(ctx: JSContext; this_val: JSValueConst;
@@ -1240,12 +1240,15 @@ type
   PJSPropertyEnumArr = ^JSPropertyEnumArr;
 
 begin
-  if not JS_IsObject(Value) then
-    Exit;
+  var proto: JSValue;
+  if JS_IsConstructor(ctx, Value) then
+    proto := JS_GetPropertyStr(ctx, Value, 'prototype')
+  else if JS_IsObject(Value) then
+    proto := JS_GetPrototype(ctx, Value);
 
   var p_enum: PJSPropertyEnum := nil;
   var p_len: UInt32;
-  JS_GetOwnPropertyNames(ctx, @p_enum, @p_len, Value, JS_PROP_C_W_E);
+  JS_GetOwnPropertyNames(ctx, @p_enum, @p_len, proto, JS_PROP_C_W_E);
 
   if p_len > 0 then
   begin
@@ -1267,6 +1270,8 @@ begin
   end;
 
   js_free(ctx, p_enum);
+
+  JS_FreeValue(ctx, proto);
 end;
 
 class destructor TJSRegister.Destroy;
@@ -1351,7 +1356,7 @@ begin
   Result := TRegisteredObject.Create(ATypeInfo, AConstructor);
 end;
 
-function TJSRegister.CreateRegisteredJSObject(ctx: JSContext; Value: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject;
+function TJSRegister.CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject;
 begin
   raise ENotSupportedException.Create('Wrapping of JS objects requires dn4d extensions');
 end;
