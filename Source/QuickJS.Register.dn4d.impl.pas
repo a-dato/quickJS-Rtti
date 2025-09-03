@@ -530,6 +530,13 @@ begin
         Result := TValue.From<CObject>(v);
       end
 
+      else if JS_IsBigInt(Value) then
+      begin
+        var v: Int64;
+        JS_ToBigInt64(ctx, @v, Value);
+        Result := TValue.From<CObject>(v);
+      end
+
       else if JS_IsObject(Value) then
       begin
         var obj: TRegisteredObjectWithPtr;

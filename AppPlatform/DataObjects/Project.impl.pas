@@ -51,13 +51,12 @@ type
 
   ProjectType = class(TTypeDescriptor)
   protected
-    function CreateInstance: CObject; override;
     function GetType: &Type; override;
   end;
 
   ProjectProvider = class(TContentProvider)
   protected
-    // _data: List<IProject>;
+    function CreateInstance: CObject; override;
     function Data(const Filter: CObject): IList;
   end;
 
@@ -65,7 +64,7 @@ implementation
 
 uses
   ADato.ObjectModel.List.Tracking.impl,
-  System.SysUtils, System.Rtti;
+  System.SysUtils, System.Rtti, App.intf;
 
 
 { TProject }
@@ -156,35 +155,10 @@ begin
   _TimeInterval := Value;
 end;
 
-{ ProjectProvider }
-
-//procedure ProjectProvider.Add(const Item: CObject);
-//begin
-//  _data.Add(Item.AsType<IProject>);
-//end;
-//
-//function ProjectProvider.CanAdd: Boolean;
-//begin
-//  Result := True;
-//end;
-//
-//function ProjectProvider.CanDelete(const Item: CObject): Boolean;
-//begin
-//  Result := True;
-//end;
-//
-//function ProjectProvider.CreateInstance: CObject;
-//begin
-//  var p: IProject := TProject.Create;
-//  p.ID := -1;
-//  p.Name := 'Project (new)';
-//  Result := CObject.From<IProject>(p);
-//end;
-
-//function ProjectProvider.Remove(const Item: CObject): Boolean;
-//begin
-//  Result := _data.Remove(Item.AsType<IProject>);
-//end;
+function ProjectProvider.CreateInstance: CObject;
+begin
+  Result := _app.Factory.CreateInstance(_descriptor.GetType);
+end;
 
 function ProjectProvider.Data(const Filter: CObject): IList;
 begin
@@ -200,29 +174,6 @@ begin
   end;
 
   Result := l as IList;
-
-//  if _data = nil then
-//  begin
-//    _data := CList<IProject>.Create;
-//
-//    for var i := 0 to 9 do
-//    begin
-//      var p: IProject := TProject.Create;
-//      p.ID := i;
-//      p.Name := 'Project ' + i.ToString;
-//
-//      _data.Add(p);
-//    end;
-//  end;
-//
-//  Result := CObject.From<List<IProject>>(_data);
-end;
-
-function ProjectType.CreateInstance: CObject;
-begin
-  var p: IProject := TProject.Create;
-  p.ID := -1;
-  Result := p;
 end;
 
 function ProjectType.GetType: &Type;
