@@ -1152,7 +1152,8 @@ end;
 
 function JS_IsBigInt(v : JSValueConst): Boolean; inline;
 begin
- Result := Boolean(JS_VALUE_GET_TAG(v) = JS_TAG_BIG_INT);
+  // Result := Boolean(JS_VALUE_GET_TAG(v) = JS_TAG_BIG_INT);
+  Result := Boolean(JS_VALUE_GET_TAG(v) = JS_TAG_SHORT_BIG_INT);
 end;
 
 function JS_IsBool(v : JSValueConst): JS_BOOL; inline;
