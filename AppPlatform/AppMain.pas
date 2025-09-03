@@ -257,7 +257,7 @@ begin
 
   TProject.TypeDescriptor.Builder := TFrameBuilder.Create(TProjectFrame);
   TProject.TypeDescriptor.Binder := TFrameBinder.Create();
-  // TProject.TypeDescriptor.Provider := ProjectProvider.Create;
+  TProject.TypeDescriptor.Provider := ProjectProvider.Create(TProject.TypeDescriptor);
 
   _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
 
