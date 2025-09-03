@@ -22,7 +22,8 @@ type
     function get_Storage(const Name: string): IAppStorage;
     function get_Windows: IWindows;
 
-    function  AddStorage(const DataType: &Type; const Name: string) : IAppStorage;
+    procedure AddStorage(const Storage : IAppStorage); overload;
+    function  AddStorage(const DataType: &Type; const Name: string) : IAppStorage; overload;
     function  HasStorage(const Name: string): Boolean;
     function  TryGetStorage(const Name: string; out Value: IAppStorage) : Boolean;
     function  RemoveStorage(const Name: string) : Boolean;

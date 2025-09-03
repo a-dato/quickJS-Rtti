@@ -78,6 +78,9 @@ type
     function Test3(const Value: &Type) : CObject;
     function Test4(const Value: TFunc<CObject>) : CObject;
     function Test5(const Value: TTestFunc) : CObject;
+
+    function NextID: Int64;
+
     procedure Attach(const Data: IList);
     property Names[const Value: string]: string read get_Names;
 
@@ -86,12 +89,16 @@ type
 
   TTestObject = class(TBaseInterfacedObject, ITestObject)
   protected
+    _id: Int64;
     _data: List<ITestObject>;
 
     procedure Attach(const Data: IList);
     function get_Data: IList;
 
     function get_Names(const Value: string): string;
+
+    function NextID: Int64;
+
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
     function Test3(const Value: &Type) : CObject;
@@ -250,7 +257,7 @@ begin
 
   TProject.TypeDescriptor.Builder := TFrameBuilder.Create(TProjectFrame);
   TProject.TypeDescriptor.Binder := TFrameBinder.Create();
-  TProject.TypeDescriptor.Provider := ProjectProvider.Create;
+  // TProject.TypeDescriptor.Provider := ProjectProvider.Create;
 
   _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
 
@@ -409,6 +416,12 @@ end;
 function TTestObject.get_Names(const Value: string): string;
 begin
   Result := Value;
+end;
+
+function TTestObject.NextID: Int64;
+begin
+  dec(_id);
+  Result := _id;
 end;
 
 function TTestObject.Test(const Value: CObject): CObject;

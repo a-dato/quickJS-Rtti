@@ -28,6 +28,7 @@ type
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject) : CObject; overload;
 
+    function  NextID: Int64;
   public
     constructor Create;
 
@@ -37,7 +38,7 @@ type
 implementation
 
 uses
-  System.SysUtils;
+  System.SysUtils, ADato.ObjectIdentifier;
 
 { TAppFactory }
 
@@ -99,6 +100,11 @@ function TAppFactory.CreateInstance(const AType: &Type; const Param0, Param1, Pa
 begin
   var func := _dict[AType].AsType<TCreatorFunc_4>();
   Result := func(Param0, Param1, Param2, Param3);
+end;
+
+function TAppFactory.NextID: Int64;
+begin
+  Result := TObjectIdentifier.Next;
 end;
 
 end.

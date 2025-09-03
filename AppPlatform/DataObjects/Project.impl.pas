@@ -9,7 +9,7 @@ uses
   App.TypeDescriptor.impl,
   App.Content.intf,
   ADato.ObjectModel.List.intf, System.Collections.Generic, System.Collections,
-  ADato.AvailabilityProfile.intf;
+  ADato.AvailabilityProfile.intf, App.Content.impl;
 
 type
   TProject = class(TBaseInterfacedObject, IProject, IExtendableObject)
@@ -55,7 +55,7 @@ type
     function GetType: &Type; override;
   end;
 
-  ProjectProvider = class(TBaseInterfacedObject, IContentProvider)
+  ProjectProvider = class(TContentProvider)
   protected
     // _data: List<IProject>;
     function Data(const Filter: CObject): IList;
