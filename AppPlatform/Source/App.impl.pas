@@ -8,6 +8,7 @@ uses
   System.Collections.Generic,
   quickjs_ng,
   QuickJS.Register.intf,
+  App.Base.intf,
   App.intf,
   App.Config.intf,
   App.Storage.intf,
@@ -19,15 +20,17 @@ uses
   App.Factory.intf;
 
 type
-  TAppObject = class(TBaseInterfacedObject, IAppObject, IJSExtendableObject)
+  TAppObject = class(TBaseInterfacedObject, IAppObject, IConverterSupport, IJSExtendableObject)
   protected
     _Config: IAppConfig;
     _Environment: IEnvironment;
-    _Factory: IAppFactory;
     _Windows: IWindows;
     _storage: Dictionary<string, IAppStorage>;
     _SpaceAccessor: ISpaceAccessor;
+    _typeConverter: ITypeConverter;
     _extendabePropertyValues: Dictionary<string, JSValue>;
+
+    function AsType(const AType: &Type) : CObject; override;
 
     // IAppObject
     function get_Config: IAppConfig;
@@ -36,10 +39,15 @@ type
     function get_Storage(const Name: string): IAppStorage;
     function get_Windows: IWindows;
 
-    function  AddStorage(const DataType: &Type; const Name: string) : IAppStorage;
+    procedure AddStorage(const Storage : IAppStorage); overload;
+    function  AddStorage(const DataType: &Type; const Name: string) : IAppStorage; overload;
     function  HasStorage(const Name: string): Boolean;
     function  TryGetStorage(const Name: string; out Value: IAppStorage) : Boolean;
     function  RemoveStorage(const Name: string) : Boolean;
+
+    // IConverterSupport
+    function  get_Converter: ITypeConverter;
+    procedure set_Converter(const Value: ITypeConverter);
 
     // IJSExtendableObject
     function  define_own_property(Ctx: JSContext; const Name: string) : Boolean;
@@ -66,12 +74,24 @@ uses
 
 constructor TAppObject.Create(const Environment: IEnvironment);
 begin
+  TAppFactory.Instance := TAppFactory.Create;
+
   _Environment := Environment;
-  _Factory := TAppFactory.Create;
   _Config := TAppConfig.Create;
   _Windows := Windows.Create;
   _storage := CDictionary<string, IAppStorage>.Create;
   _extendabePropertyValues := CDictionary<string, JSValue>.Create;
+end;
+
+function TAppObject.AsType(const AType: &Type) : CObject;
+begin
+  if (_typeConverter = nil) or not _typeConverter.TryAsType(AType, Result) then
+    Result := inherited;
+end;
+
+procedure TAppObject.AddStorage(const Storage: IAppStorage);
+begin
+  _storage[Storage.Name] := Storage;
 end;
 
 function TAppObject.AddStorage(const DataType: &Type; const Name: string) : IAppStorage;
@@ -99,6 +119,11 @@ begin
   Result := _Config;
 end;
 
+function TAppObject.get_Converter: ITypeConverter;
+begin
+  Result := _typeConverter;
+end;
+
 function TAppObject.get_Environment: IEnvironment;
 begin
   Result := _Environment;
@@ -106,7 +131,7 @@ end;
 
 function TAppObject.get_Factory: IAppFactory;
 begin
-
+  Result := TAppFactory.Instance;
 end;
 
 function TAppObject.get_Storage(const Name: string): IAppStorage;
@@ -149,6 +174,11 @@ begin
   if JS_IsUndefined(Value) then
     _extendabePropertyValues.Remove(Name) else
     _extendabePropertyValues[Name] := JS_DupValue(Ctx, Value);
+end;
+
+procedure TAppObject.set_Converter(const Value: ITypeConverter);
+begin
+  _typeConverter := Value;
 end;
 
 function TAppObject.TryGetStorage(const Name: string; out Value: IAppStorage): Boolean;

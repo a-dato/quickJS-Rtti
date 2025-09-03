@@ -7,7 +7,10 @@ uses
   System.TypInfo,
   System.SysUtils,
   quickjs_ng,
-  QuickJS.Variant, System.Rtti, System.Collections.Generic;
+  QuickJS.Variant,
+  System.Rtti,
+  System.Collections.Generic,
+  QuickJS.Register.intf;
 
 type
   IJSRegisteredObject = interface
@@ -17,22 +20,6 @@ type
   IJSCapturedObject = interface
     function ctx: JSContext;
     function value: JSValueConst;
-  end;
-
-  IJSObject = interface(IBaseInterface)
-    ['{8D30FEC0-2EE4-4F09-A8BF-64D6FDA92AF8}']
-    function get_Ctx: JSContext;
-    function get_Value: JSValueConst;
-
-    function Invoke(const Func: AnsiString; const Args: TArray<TValue>; ReturnType: PTypeInfo) : TValue;
-
-    property Ctx: JSContext read get_Ctx;
-    property Value: JSValueConst read get_Value;
-  end;
-
-  TInterfaceRef = record
-    IID: TGuid;
-    ii: IInterface;
   end;
 
   TJSVirtualInterface = class(TVirtualInterface, IJSObject)
@@ -59,7 +46,6 @@ type
 implementation
 
 uses
-  QuickJS.Register.intf,
   QuickJS.Register.impl,
   System.Variants;
 

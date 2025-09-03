@@ -30,6 +30,24 @@ type
   PObjectMember = Pointer;  // Generic pointer to TRttiMember/TRttiMethod/TrriProperty/_PropertyInfo
   PRttiMember = ^TRttiMember;
 
+  TInterfaceRef = record
+    IID: TGuid;
+    ii: IInterface;
+  end;
+
+  IJSObject = interface
+    ['{8D30FEC0-2EE4-4F09-A8BF-64D6FDA92AF8}']
+    function get_Ctx: JSContext;
+    function get_Value: JSValueConst;
+
+    function Invoke(const Func: AnsiString; const Args: TArray<TValue>; ReturnType: PTypeInfo) : TValue;
+    function Call(const Args: TArray<TValue>; ReturnType: PTypeInfo) : TValue; overload;
+    function Call(const JSFunc: JSValueConst; const Args: TArray<TValue>; ReturnType: PTypeInfo) : TValue; overload;
+
+    property Ctx: JSContext read get_Ctx;
+    property Value: JSValueConst read get_Value;
+  end;
+
   IPropertyDescriptor = interface
     function  get_MemberType: TMemberType;
     function  get_TypeInfo: PTypeInfo;

@@ -9,63 +9,42 @@ uses
   App.Factory.intf;
 
 type
-  TCreatorFunc<T> = reference to function : T;
-  TCreatorFunc<T, P0> = reference to function(const Param0: P0) : T;
-  TCreatorFunc<T, P0, P1> = reference to function(const Param0: P0; const Param1: P1) : T;
-
   TAppFactory = class(TBaseInterfacedObject, IAppFactory)
   protected
     class var _Instance: IAppFactory;
 
     var _dict: Dictionary<&Type, TValue>;
 
-    class function get_GenericInstance: TAppFactory; static;
-
     // IAppFactory
-    procedure RegisterType(const AType: &Type; const Func: TCreatorFunc_0); overload;
-    procedure RegisterType(const AType: &Type; const Func: TCreatorFunc_1); overload;
-    procedure RegisterType(const AType: &Type; const Func: TCreatorFunc_2); overload;
+    procedure RegisterType(const AType: &Type; const Func: TCreatorFunc_0);
+    procedure RegisterType_1(const AType: &Type; const Func: TCreatorFunc_1);
+    procedure RegisterType_2(const AType: &Type; const Func: TCreatorFunc_2);
+    procedure RegisterType_3(const AType: &Type; const Func: TCreatorFunc_3);
+    procedure RegisterType_4(const AType: &Type; const Func: TCreatorFunc_4);
 
     function  CreateInstance(const AType: &Type) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject) : CObject; overload;
+    function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject) : CObject; overload;
+    function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject) : CObject; overload;
 
+    function  NextID: Int64;
   public
-    class constructor Create;
     constructor Create;
 
-    procedure RegisterType<T>(const Func: TCreatorFunc<T>); overload;
-    procedure RegisterType<T, P0>(const Func: TCreatorFunc<T, P0>); overload;
-    procedure RegisterType<T, P0, P1>(const Func: TCreatorFunc<T, P0, P1>); overload;
-
-    function  CreateInstance<T> : T; overload;
-    function  CreateInstance<T, P0>(const Param0: P0) : T; overload;
-    function  CreateInstance<T, P0, P1>(const Param0: P0; const Param1: P1) : T; overload;
-
-    class property Instance: IAppFactory read _Instance;
-    class property Generic: TAppFactory read get_GenericInstance;
+    class property Instance: IAppFactory read _Instance write _Instance;
   end;
 
 implementation
 
 uses
-  System.SysUtils;
+  System.SysUtils, ADato.ObjectIdentifier;
 
 { TAppFactory }
 
-class constructor TAppFactory.Create;
-begin
-  TAppFactory._Instance := TAppFactory.Create;
-end;
-
-class function TAppFactory.get_GenericInstance: TAppFactory;
-begin
-  Result := TAppFactory(_Instance);
-end;
-
 constructor TAppFactory.Create;
 begin
-  _dict := CDictionary<&Type, TValue>.Create;
+  _dict := CDictionary<&Type, TValue>.Create(10, TypeEqualityComparer.Create);
 end;
 
 procedure TAppFactory.RegisterType(const AType: &Type; const Func: TCreatorFunc_0);
@@ -73,14 +52,24 @@ begin
   _dict[AType] := TValue.From<TCreatorFunc_0>(Func);
 end;
 
-procedure TAppFactory.RegisterType(const AType: &Type; const Func: TCreatorFunc_1);
+procedure TAppFactory.RegisterType_1(const AType: &Type; const Func: TCreatorFunc_1);
 begin
   _dict[AType] := TValue.From<TCreatorFunc_1>(Func);
 end;
 
-procedure TAppFactory.RegisterType(const AType: &Type; const Func: TCreatorFunc_2);
+procedure TAppFactory.RegisterType_2(const AType: &Type; const Func: TCreatorFunc_2);
 begin
   _dict[AType] := TValue.From<TCreatorFunc_2>(Func);
+end;
+
+procedure TAppFactory.RegisterType_3(const AType: &Type; const Func: TCreatorFunc_3);
+begin
+  _dict[AType] := TValue.From<TCreatorFunc_3>(Func);
+end;
+
+procedure TAppFactory.RegisterType_4(const AType: &Type; const Func: TCreatorFunc_4);
+begin
+  _dict[AType] := TValue.From<TCreatorFunc_4>(Func);
 end;
 
 function TAppFactory.CreateInstance(const AType: &Type): CObject;
@@ -101,61 +90,21 @@ begin
   Result := func(Param0, Param1);
 end;
 
-procedure TAppFactory.RegisterType<T>(const Func: TCreatorFunc<T>);
+function TAppFactory.CreateInstance(const AType: &Type; const Param0, Param1, Param2: CObject): CObject;
 begin
-  {$IFDEF DELPHI}
-  _dict[TypeInfo(T)] := TValue.From<TCreatorFunc<T>>(Func);
-  {$ELSE}
-  _dict[&Type.From<T>] := TValue.From<TCreatorFunc<T>>(Func);
-  {$ENDIF}
+  var func := _dict[AType].AsType<TCreatorFunc_3>();
+  Result := func(Param0, Param1, Param2);
 end;
 
-procedure TAppFactory.RegisterType<T, P0>(const Func: TCreatorFunc<T, P0>);
+function TAppFactory.CreateInstance(const AType: &Type; const Param0, Param1, Param2, Param3: CObject): CObject;
 begin
-  {$IFDEF DELPHI}
-  _dict[TypeInfo(T)] := TValue.From<TCreatorFunc<T, P0>>(Func);
-  {$ELSE}
-  _dict[&Type.From<T>] := TValue.From<TCreatorFunc<T, P0>>(Func);
-  {$ENDIF}
+  var func := _dict[AType].AsType<TCreatorFunc_4>();
+  Result := func(Param0, Param1, Param2, Param3);
 end;
 
-procedure TAppFactory.RegisterType<T, P0, P1>(const Func: TCreatorFunc<T, P0, P1>);
+function TAppFactory.NextID: Int64;
 begin
-  {$IFDEF DELPHI}
-  _dict[TypeInfo(T)] := TValue.From<TCreatorFunc<T, P0, P1>>(Func);
-  {$ELSE}
-  _dict[&Type.From<T>] := TValue.From<TCreatorFunc<T, P0, P1>>(Func);
-  {$ENDIF}
-end;
-
-function TAppFactory.CreateInstance<T>: T;
-begin
-  {$IFDEF DELPHI}
-  var func := _dict[TypeInfo(T)].AsType<TCreatorFunc<T>>();
-  {$ELSE}
-  var func := _dict[&Type.From<T>].AsType<TCreatorFunc<T>>();
-  {$ENDIF}
-  Result := func();
-end;
-
-function TAppFactory.CreateInstance<T, P0>(const Param0: P0): T;
-begin
-  {$IFDEF DELPHI}
-  var func := _dict[TypeInfo(T)].AsType<TCreatorFunc<T, P0>>();
-  {$ELSE}
-  var func := _dict[&Type.From<T>].AsType<TCreatorFunc<T, P0>>();
-  {$ENDIF}
-  Result := func(Param0);
-end;
-
-function TAppFactory.CreateInstance<T, P0, P1>(const Param0: P0; const Param1: P1): T;
-begin
-  {$IFDEF DELPHI}
-  var func := _dict[TypeInfo(T)].AsType<TCreatorFunc<T, P0, P1>>();
-  {$ELSE}
-  var func := _dict[&Type.From<T>].AsType<TCreatorFunc<T, P0, P1>>();
-  {$ENDIF}
-  Result := func(Param0, Param1);
+  Result := TObjectIdentifier.Next;
 end;
 
 end.

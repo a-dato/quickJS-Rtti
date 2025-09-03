@@ -9,11 +9,13 @@ uses
   FMX.ScrollBox, FMX.Memo,
   App.intf, System.Actions, FMX.ActnList, FMX.StdCtrls, System.Net.URLClient,
   System.Net.HttpClient, System.Net.HttpClientComponent, System_,
-  Project.intf, System.Collections, System.Collections.Generic;
+  Project.intf, System.Collections, System.Collections.Generic, System.Rtti;
 
 type
   {$M+}
   ITestObject = interface;
+  TTestFunc = reference to function(const Param: string) : string;
+  TGenFunc<T> = reference to function : T;
 
   TForm1 = class(TForm)
     Layout1: TLayout;
@@ -34,6 +36,8 @@ type
     mmInitialize: TMemo;
     Button5: TButton;
     btnExecResult: TButton;
+    TestFunc: TButton;
+    TestFunc2: TButton;
     procedure acExecuteExecute(Sender: TObject);
     procedure btnCustomerClick(Sender: TObject);
     procedure btnExecResultClick(Sender: TObject);
@@ -42,16 +46,21 @@ type
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure TestFunc2Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
+    procedure TestFuncClick(Sender: TObject);
   private
     procedure InitializeAppEnvironment;
     procedure Initialize;
     procedure LogCallBack(S: string);
+
+    function CreateTestFunc : TTestFunc;
     { Private declarations }
 
   public
     _context: IJSContext;
     _test: ITestObject;
+    _testFunc: TTestFunc;
     { Public declarations }
   end;
 
@@ -66,7 +75,12 @@ type
     function get_Names(const Value: string): string;
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
-    function Test3 : TScheduledInterval;
+    function Test3(const Value: &Type) : CObject;
+    function Test4(const Value: TFunc<CObject>) : CObject;
+    function Test5(const Value: TTestFunc) : CObject;
+
+    function NextID: Int64;
+
     procedure Attach(const Data: IList);
     property Names[const Value: string]: string read get_Names;
 
@@ -75,15 +89,21 @@ type
 
   TTestObject = class(TBaseInterfacedObject, ITestObject)
   protected
+    _id: Int64;
     _data: List<ITestObject>;
 
     procedure Attach(const Data: IList);
     function get_Data: IList;
 
     function get_Names(const Value: string): string;
+
+    function NextID: Int64;
+
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
-    function Test3 : TScheduledInterval;
+    function Test3(const Value: &Type) : CObject;
+    function Test4(const Value: TFunc<CObject>) : CObject;
+    function Test5(const Value: TTestFunc) : CObject;
   public
     constructor Create;
 
@@ -115,10 +135,13 @@ uses
   ObjectDesigner,
   Project.frame,
   App.TypeDescriptor.intf,
-  System.Rtti, App.PropertyDescriptor.intf, System.JSON,
+  App.PropertyDescriptor.intf, System.JSON,
   ADato.ObjectModel.impl,
   System.ComponentModel,
-  ADato.ObjectModel.TrackInterfaces;
+  ADato.ObjectModel.TrackInterfaces,
+  App.Factory.impl,
+  System.TypInfo,
+  QuickJS.VirtualMethod.impl;
 
 {$R *.fmx}
 
@@ -189,12 +212,6 @@ begin
 
   for var m in t.GetMethods do
     ShowMessage(m.Name);
-
-//  var ctx := TRttiContext.Create;
-//  var tp := ctx.GetType(TTestObject);
-//
-//  for var p in tp.GetProperties do
-//    ShowMessage(p.Name);
 end;
 
 procedure TForm1.Button4Click(Sender: TObject);
@@ -223,6 +240,13 @@ begin
   end;
 end;
 
+function TForm1.CreateTestFunc: TTestFunc;
+begin
+  Result := function(const Param: string) : string begin
+    Result := 'Done';
+  end;
+end;
+
 procedure TForm1.InitializeAppEnvironment;
 begin
   App.Environment.impl.Environment.FormClass := TfrmObjectWindow;
@@ -233,9 +257,14 @@ begin
 
   TProject.TypeDescriptor.Builder := TFrameBuilder.Create(TProjectFrame);
   TProject.TypeDescriptor.Binder := TFrameBinder.Create();
-  TProject.TypeDescriptor.Provider := ProjectProvider.Create;
+  // TProject.TypeDescriptor.Provider := ProjectProvider.Create;
 
   _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
+
+  _app.Factory.RegisterType(TProject.Type, function : CObject begin
+    Result := CObject.From<IProject>(TProject.Create);
+  end);
+
   var storage := _app.AddStorage(TProject.Type, TProject.TypeDescriptor.StorageName);
   storage.Attach(TProject.TypeDescriptor.Provider.Data(nil));
 end;
@@ -319,9 +348,47 @@ begin
   end);
 end;
 
+procedure TForm1.TestFunc2Click(Sender: TObject);
+begin
+  var ctx := TRttiContext.Create;
+  var m := ctx.GetType(TypeInfo(TFunc<string>)).GetMethods;
+  //var m := ctx.GetType(TypeInfo(TGenFunc<string>)).GetMethods;
+
+  var p := m[0].GetParameters[0];
+
+  ShowMessage(p.Name);
+  if p.ParamType is TRttiInterfaceType then
+  begin
+    var it := (p.ParamType as TRttiInterfaceType);
+
+    if TIntfFlag.ifMethRef in it.IntfFlags then
+      ShowMessage(it.Name);
+  end;
+
+//  var ii: IVirtualMethodImplementation := TVirtualMethodImplementation.Create(TypeInfo(TTestFunc));
+//  _testFunc := ii.Func;
+//  var o := _testFunc('test');
+//  ShowMessage(o);
+end;
+
 procedure TForm1.Timer1Timer(Sender: TObject);
 begin
   lblPosition.Text := Format('Position: %d:%d', [mmCode.CaretPosition.Line + 1, mmCode.CaretPosition.Pos]);
+end;
+
+procedure TForm1.TestFuncClick(Sender: TObject);
+begin
+  var ii: IInterface := TVirtualMethodImplementation.Create(TypeInfo(TTestFunc), nil);
+
+  var t: IInterface;
+  ii.QueryInterface(IInterface, t);
+
+  var v: TValue;
+  TValue.Make(@t, TypeInfo(TTestFunc), v);
+  _testFunc := TTestFunc(Pointer(v.GetReferenceToRawData^));
+
+  var o := _testFunc('test');
+  ShowMessage(o);
 end;
 
 { TTestObject }
@@ -351,6 +418,12 @@ begin
   Result := Value;
 end;
 
+function TTestObject.NextID: Int64;
+begin
+  dec(_id);
+  Result := _id;
+end;
+
 function TTestObject.Test(const Value: CObject): CObject;
 begin
 //  var jo: JSObjectReference;
@@ -375,9 +448,19 @@ begin
 //    an.AddNew;
 end;
 
-function TTestObject.Test3: TScheduledInterval;
+function TTestObject.Test3(const Value: &Type) : CObject;
 begin
-  Result.TaskID := 100;
+  Result := Value.ToString;
+end;
+
+function TTestObject.Test4(const Value: TFunc<CObject>): CObject;
+begin
+  Result := 'Done';
+end;
+
+function TTestObject.Test5(const Value: TTestFunc) : CObject;
+begin
+  Result := Value('Test 123');
 end;
 
 end.
