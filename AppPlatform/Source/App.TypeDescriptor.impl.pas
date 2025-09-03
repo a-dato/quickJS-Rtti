@@ -24,12 +24,13 @@ type
   TTypeDescriptor = class(TBaseInterfacedObject, ITypeDescriptor)
   protected
     _storageName: CString;
+    _type: &Type;
     _binder: IContentBinder;
     _builder: IContentBuilder;
     _provider: IContentProvider;
     _PropertyDescriptor: Dictionary<string, IPropertyDescriptor>;
 
-    function  CreateInstance: CObject; virtual;
+    function  GetType: &Type; override;
     function  AddPropertyDescriptor(const Name: string; const Value: IPropertyDescriptor) : Boolean; virtual;
 
     function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor; virtual;
@@ -42,7 +43,7 @@ type
     procedure set_Provider(const Value: IContentProvider); virtual;
 
   public
-    constructor Create(const StorageName: CString);
+    constructor Create(const AType: &Type; const StorageName: CString);
   end;
 
 implementation
@@ -51,15 +52,16 @@ uses
   System.ClassHelpers;
 
 { ObjectType }
-constructor TTypeDescriptor.Create(const StorageName: CString);
+constructor TTypeDescriptor.Create(const AType: &Type; const StorageName: CString);
 begin
+  _type := AType;
   _storageName := StorageName;
   _PropertyDescriptor := CDictionary<string, IPropertyDescriptor>.Create;
 end;
 
-function TTypeDescriptor.CreateInstance: CObject;
+function TTypeDescriptor.GetType: &Type;
 begin
-  Result := nil;
+  Result := _type;
 end;
 
 function TTypeDescriptor.AddPropertyDescriptor(const Name: string; const Value: IPropertyDescriptor): Boolean;

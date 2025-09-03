@@ -327,7 +327,9 @@ begin
     vt := TValue.From<IInterface>(IInterface(Ptr)) else
     vt := TValue.From<TObject>(TObject(Ptr));
 
-  FProp.SetValue(CObject.From<TValue>(vt), Value, []);
+  if FProp.PropInfo.PropType = TypeInfo(CObject) then
+    FProp.SetValue(CObject.From<TValue>(vt), Value.AsType<CObject>, []) else
+    FProp.SetValue(CObject.From<TValue>(vt), Value, []);
 end;
 
 { TTypedIteratorDescriptor }

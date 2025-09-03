@@ -1,3 +1,13 @@
+let p = app.Factory.CreateInstance(IProject, app.AsType(IScheduleApplication));
+p.ID = app.Factory.NextID();
+p.Description = 'New project';
+let st = app.Storage['Projects'];
+st.Add(p);
+
+p.AsType(IGanttLoader).ForceOpen();
+let t = app.Factory.CreateInstance(ITask, app.Factory.NextID());
+let ts = p.Tasks;
+
 // TestObject
 class TestObject_ {
 }
