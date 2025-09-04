@@ -327,7 +327,9 @@ begin
     vt := TValue.From<IInterface>(IInterface(Ptr)) else
     vt := TValue.From<TObject>(TObject(Ptr));
 
-  FProp.SetValue(CObject.From<TValue>(vt), Value, []);
+  if FProp.PropInfo.PropType = TypeInfo(CObject) then
+    FProp.SetValue(CObject.From<TValue>(vt), Value.AsType<CObject>, []) else
+    FProp.SetValue(CObject.From<TValue>(vt), Value, []);
 end;
 
 { TTypedIteratorDescriptor }
@@ -551,7 +553,8 @@ begin
         end else
           Result := TValue.From<CObject>(CObject.From<IJSObject>(TJSObject.Create(ctx, Value)));
           // Result := TValue.From<CObject>(CObject.From<JSObjectReference>(JSObjectReference.Create(ctx, Value)));
-      end;
+      end else
+        Result := TValue.From<CObject>(CObject.Create(nil))
     end
     else if Target = TypeInfo(&Type) then
       Result := TValue.From<&Type>(GetTypeFromJSObject(ctx, Value))

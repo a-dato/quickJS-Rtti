@@ -71,6 +71,9 @@ type
 
   ITestObject = interface(IBaseInterface)
     ['{4A8C6FB1-5CFB-49C5-A0EB-2BEC6E554F01}']
+    function  get_ID: CObject;
+    procedure set_ID(const Value: CObject);
+
     function get_Data: IList;
     function get_Names(const Value: string): string;
     function Test(const Value: CObject) : CObject;
@@ -85,14 +88,21 @@ type
     property Names[const Value: string]: string read get_Names;
 
     property Data: IList read get_Data;
+    property ID: CObject read get_ID write set_ID;
   end;
 
   TTestObject = class(TBaseInterfacedObject, ITestObject)
   protected
-    _id: Int64;
+    _nextID: Int64;
+
+    _id: CObject;
     _data: List<ITestObject>;
 
     procedure Attach(const Data: IList);
+
+    function  get_ID: CObject;
+    procedure set_ID(const Value: CObject);
+
     function get_Data: IList;
 
     function get_Names(const Value: string): string;
@@ -413,6 +423,11 @@ begin
   Result := _data as IList;
 end;
 
+function TTestObject.get_ID: CObject;
+begin
+  Result := _id;
+end;
+
 function TTestObject.get_Names(const Value: string): string;
 begin
   Result := Value;
@@ -420,15 +435,19 @@ end;
 
 function TTestObject.NextID: Int64;
 begin
-  dec(_id);
-  Result := _id;
+  dec(_nextID);
+  Result := _nextID;
+end;
+
+procedure TTestObject.set_ID(const Value: CObject);
+begin
+  _id := Value;
+  Form1.mmLog.Lines.Add('ID set to: ' + Value.ToString);
 end;
 
 function TTestObject.Test(const Value: CObject): CObject;
 begin
-//  var jo: JSObjectReference;
-//  if Value.TryGetValue<JSObjectReference>(jo) then
-//    jo.Invoke('QueryInterface', nil, nil);
+  Form1.mmLog.Lines.Add('Test call: ' + Value.ToString);
 end;
 
 function TTestObject.Test2(const Value: IProject): IInterface;

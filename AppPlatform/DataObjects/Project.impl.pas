@@ -97,7 +97,7 @@ end;
 class function TProject.get_TypeDescriptor: ITypeDescriptor;
 begin
   if _typeDescriptor = nil then
-    _typeDescriptor := ProjectType.Create('Projects');
+    _typeDescriptor := ProjectType.Create(&Type.From<IProject>, 'Projects');
 
   Result := _typeDescriptor;
 end;

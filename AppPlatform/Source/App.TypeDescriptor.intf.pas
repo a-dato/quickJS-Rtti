@@ -31,8 +31,6 @@ type
     procedure set_Provider(const Value: IContentProvider);
     function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor;
 
-    function  CreateInstance: CObject;
-
     function  AddPropertyDescriptor(const Name: string; const Value: IPropertyDescriptor) : Boolean;
 
     property StorageName: CString read get_StorageName;
