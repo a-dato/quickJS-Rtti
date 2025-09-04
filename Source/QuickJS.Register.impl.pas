@@ -2658,8 +2658,8 @@ end;
 
 function TJSContext.eval_with_result(const Code: string; const CodeContext: string): TValue;
 begin
-  var buf: AnsiString := 'export function __run__() {return ' + AnsiString(Code) + ';}';
-  // var buf: AnsiString := AnsiString(Code)  + ' ;export function __run__() { return resultValue; }';
+//  var buf: AnsiString := 'export function __run__() {return ' + AnsiString(Code) + ';}';
+   var buf: AnsiString := AnsiString(Code)  + ' ;export function __run__() { return resultValue; }';
 
   var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(CodeContext), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
   if not TJSRuntime.Check(_ctx, bytecode) then Exit;

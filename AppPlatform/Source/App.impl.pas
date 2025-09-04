@@ -16,7 +16,7 @@ uses
   App.Environment.intf,
   ADato.ObjectModel.List.intf,
   App.PropertyDescriptor.intf,
-  ADato.AI.SpaceAccessor.intf;
+  ADato.AI.SpaceAccessor.intf,
   App.Factory.intf;
 
 type
@@ -68,7 +68,7 @@ uses
   App.TypeDescriptor.intf,
   App.Config.impl,
   App.Windows.impl, App.Storage.impl,
-  ADato.AI.SpaceAccessor.impl;
+  ADato.AI.SpaceAccessor.impl,
   App.Factory.impl;
 { TAppObject }
 

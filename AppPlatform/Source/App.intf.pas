@@ -9,7 +9,7 @@ uses
   App.Storage.intf,
   App.Windows.intf,
   App.Environment.intf,
-  ADato.ObjectModel.List.intf, ADato.AI.SpaceAccessor.intf;
+  ADato.ObjectModel.List.intf, ADato.AI.SpaceAccessor.intf,
   App.Factory.intf;
 
 type
