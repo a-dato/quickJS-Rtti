@@ -92,7 +92,7 @@ type
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
 
   public
-    constructor Create(AInfo: PTypeInfo; const AProp: _PropertyInfo);
+    constructor Create(AInfo: PTypeInfo; const AProp: _PropertyInfo); reintroduce;
   end;
 
   TTypedArrayIndexerDescriptor = class(TPropertyDescriptor)
@@ -136,7 +136,7 @@ type
     function  Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
 
   public
-    constructor Create(AInfo: PTypeInfo; IsInterface: Boolean);
+    constructor Create(AInfo: PTypeInfo; IsInterface: Boolean); reintroduce;
   end;
 
 implementation
@@ -327,9 +327,7 @@ begin
     vt := TValue.From<IInterface>(IInterface(Ptr)) else
     vt := TValue.From<TObject>(TObject(Ptr));
 
-  if FProp.PropInfo.PropType = TypeInfo(CObject) then
-    FProp.SetValue(CObject.From<TValue>(vt), Value.AsType<CObject>, []) else
-    FProp.SetValue(CObject.From<TValue>(vt), Value, []);
+  FProp.SetValue(CObject.From<TValue>(vt), Value, []);
 end;
 
 { TTypedIteratorDescriptor }

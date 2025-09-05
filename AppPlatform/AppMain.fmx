@@ -99,6 +99,14 @@ object Form1: TForm1
       TextSettings.Trimming = None
       OnClick = TestFunc2Click
     end
+    object Button6: TButton
+      Position.X = 807.000000000000000000
+      Position.Y = 35.000000000000000000
+      TabOrder = 9
+      Text = 'Button6'
+      TextSettings.Trimming = None
+      OnClick = Button6Click
+    end
   end
   object mmCode: TMemo
     Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]

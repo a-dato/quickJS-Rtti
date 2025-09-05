@@ -38,6 +38,7 @@ type
     btnExecResult: TButton;
     TestFunc: TButton;
     TestFunc2: TButton;
+    Button6: TButton;
     procedure acExecuteExecute(Sender: TObject);
     procedure btnCustomerClick(Sender: TObject);
     procedure btnExecResultClick(Sender: TObject);
@@ -45,6 +46,7 @@ type
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
+    procedure Button6Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure TestFunc2Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -248,6 +250,14 @@ begin
     if Interfaces.Supports<IPropertyDescriptor>(objectProperty, descr) then
       ShowMessage(descr.Formatter.Format(nil, value, nil));
   end;
+end;
+
+procedure TForm1.Button6Click(Sender: TObject);
+begin
+  var i64: Int64 := 100;
+  var v := TValue.From<CObject>(i64);
+  _test.Test(v);
+  _test.ID := v;
 end;
 
 function TForm1.CreateTestFunc: TTestFunc;

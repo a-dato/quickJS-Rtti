@@ -65,7 +65,7 @@ type
   private
     function GetMethodKind: Integer; virtual; abstract;
     function GetCallingConvention: Integer; virtual; abstract;
-    function GetReturnType: TRttiType; virtual;
+    // function GetReturnType: TRttiType; virtual;
   end;
 
   TRttiMethodWithName = class(TRttiMethod_)
@@ -87,7 +87,8 @@ var
 implementation
 
 uses
-  System.SysUtils, QuickJS.Register.dn4d.intf, QuickJS.Register.intf;
+  System.SysUtils, QuickJS.Register.dn4d.intf, QuickJS.Register.intf,
+  System.TypInfo;
 
 function VarJSVariantCreate(const Value: IInterface): Variant;
 begin
@@ -208,7 +209,7 @@ end;
 function TJSVariantType.SetProperty(const V: TVarData; const Name: string;
   const Value: TVarData): Boolean;
 begin
-
+  Result := False;
 end;
 
 { TRttiMethodWithName }
@@ -225,10 +226,10 @@ end;
 
 { TRttiMethod_ }
 
-function TRttiMethod_.GetReturnType: TRttiType;
-begin
-  Result := nil;
-end;
+//function TRttiMethod_.GetReturnType: TRttiType;
+//begin
+//  Result := nil;
+//end;
 
 { TJSVariantVarData }
 

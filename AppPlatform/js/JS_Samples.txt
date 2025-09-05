@@ -1,12 +1,14 @@
-let p = app.Factory.CreateInstance(IProject, app.AsType(IScheduleApplication));
-p.ID = app.Factory.NextID();
-p.Description = 'New project';
+let project = app.Factory.CreateInstance(IProject, app.AsType(IScheduleApplication));
+project.ID = app.Factory.NextID();
+project.Description = 'New project';
+project.LUID = 'Q01';
 let st = app.Storage['Projects'];
-st.Add(p);
+st.Add(project);
 
-p.AsType(IGanttLoader).ForceOpen();
-let t = app.Factory.CreateInstance(ITask, app.Factory.NextID());
-let ts = p.Tasks;
+project.AsType(IProjectLoader).ForceOpen();
+let t = app.Factory.CreateInstance(ITask, app.Factory.NextID(), project);
+let ts = project.Tasks;
+ts.Add(t);
 
 // TestObject
 class TestObject_ {
