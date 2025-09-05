@@ -9,7 +9,7 @@ uses
   App.Storage.intf,
   App.Windows.intf,
   App.Environment.intf,
-  ADato.ObjectModel.List.intf,
+  ADato.ObjectModel.List.intf, ADato.AI.SpaceAccessor.intf,
   App.Factory.intf;
 
 type
@@ -21,6 +21,7 @@ type
     function get_Factory: IAppFactory;
     function get_Storage(const Name: string): IAppStorage;
     function get_Windows: IWindows;
+    function get_SpaceAccessor: ISpaceAccessor;
 
     procedure AddStorage(const Storage : IAppStorage); overload;
     function  AddStorage(const DataType: &Type; const Name: string) : IAppStorage; overload;
@@ -33,6 +34,7 @@ type
     property Factory: IAppFactory read get_Factory;
     property Storage[const Value: string]: IAppStorage read get_Storage;
     property Windows: IWindows read get_Windows;
+    property SpaceAccessor: ISpaceAccessor read get_SpaceAccessor;
   end;
 
 var

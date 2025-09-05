@@ -79,7 +79,6 @@ type
 
     function  eval_internal(Buf: PAnsiChar; buf_len: Integer; FileName: PAnsiChar; eval_flags: Integer): Integer;
 
-    procedure eval(const Code: string; const CodeContext: string);
     function  eval_with_result(const Code: string; const CodeContext: string): TValue;
 
 
@@ -89,6 +88,7 @@ type
 
   public
     constructor Create(const Runtime: IJSRuntime);
+    procedure eval(const Code: string; const CodeContext: string);
     procedure  BeforeDestruction; override;
   end;
 
@@ -1368,6 +1368,15 @@ end;
 
 class function TJSRegister.RegisterObject(const ctx: IJSContext; ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject;
 begin
+  TMonitor.Enter(FRegisteredObjectsByType);
+  try
+    // Check if type is already registered
+    if FRegisteredObjectsByType.TryGetValue(TypeInfo, Result) then
+      Exit; // Already registered, return existing registration
+  finally
+    TMonitor.Exit(FRegisteredObjectsByType);
+  end;
+
   var instance := TJSRegister.Instance;
 
   Result := Instance.CreateRegisteredObject(TypeInfo, nil);
@@ -1391,6 +1400,15 @@ end;
 
 class function TJSRegister.RegisterObject(const ctx: IJSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject;
 begin
+  TMonitor.Enter(FRegisteredObjectsByType);
+  try
+    // Check if type is already registered
+    if FRegisteredObjectsByType.TryGetValue(TypeInfo, Result) then
+      Exit; // Already registered, return existing registration
+  finally
+    TMonitor.Exit(FRegisteredObjectsByType);
+  end;
+
   var instance := TJSRegister.Instance;
 
   Result := instance.CreateRegisteredObject(TypeInfo, AConstructor);
@@ -2640,7 +2658,8 @@ end;
 
 function TJSContext.eval_with_result(const Code: string; const CodeContext: string): TValue;
 begin
-  var buf: AnsiString := 'export function __run__() {return ' + AnsiString(Code) + ';}';
+//  var buf: AnsiString := 'export function __run__() {return ' + AnsiString(Code) + ';}';
+   var buf: AnsiString := AnsiString(Code)  + ' ;export function __run__() { return resultValue; }';
 
   var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(CodeContext), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
   if not TJSRuntime.Check(_ctx, bytecode) then Exit;
