@@ -1,0 +1,17 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "type": "quickjs",
+            "request": "launch",
+            "name": "Debug QuickJS Script",
+            "console": "integratedTerminal",
+            "cwd": "${workspaceFolder}",
+            "env": {
+                "QUICKJS_DEBUG_ADDRESS": "127.0.0.1:5515"
+            },
+            "port": 5515
+        }
+    ]
+}

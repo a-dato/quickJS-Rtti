@@ -30,3 +30,10 @@ __recovery/
 *.update
 LynxConnnector/LynxConnector/Server/bin/*
 LynxConnnector/LynxConnector/Server/obj/*
+/AppPlatform/Win64
+/HtmlBrowser/Win32
+/Dn4dDemo/Win32
+/Dn4dDemo/Win64
+/QuickNodeJS/Win64
+/QuickNodeJS/Win32
+/QuickNodeJSConsole/Win64

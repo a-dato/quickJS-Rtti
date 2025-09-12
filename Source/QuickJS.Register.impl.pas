@@ -2653,17 +2653,24 @@ end;
 procedure TJSContext.eval(const Code: string; const CodeContext: string);
 begin
   var buf: AnsiString := AnsiString(Code);
-  eval_internal(PAnsiChar(buf), Length(buf), PAnsiChar(CodeContext), JS_EVAL_TYPE_MODULE);
+  var filename: AnsiString := AnsiString(CodeContext) + #0;
+  eval_internal(PAnsiChar(buf), Length(buf), PAnsiChar(filename), JS_EVAL_TYPE_MODULE);
 end;
 
 function TJSContext.eval_with_result(const Code: string; const CodeContext: string): TValue;
 begin
 //  var buf: AnsiString := 'export function __run__() {return ' + AnsiString(Code) + ';}';
    var buf: AnsiString := AnsiString(Code)  + ' ;export function __run__() { return resultValue; }';
+   var filename: AnsiString := AnsiString(CodeContext) + #0;
 
-  var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(CodeContext), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
+  // var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(CodeContext), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
+  var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(filename), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
+  bytecode := TJSRuntime.WaitForJobs(_ctx, bytecode);
+
   if not TJSRuntime.Check(_ctx, bytecode) then Exit;
   JS_EvalFunction(_ctx, bytecode);
+
+  bytecode := TJSRuntime.WaitForJobs(_ctx, bytecode);
 
   var moduledef := JS_VALUE_GET_PTR(bytecode);
   var namespace := JS_GetModuleNamespace(_ctx, moduledef);
@@ -2679,6 +2686,33 @@ begin
 
   JS_FreeValue(_ctx, res);
 end;
+
+//function TJSContext.eval_with_result_old(const Code: string; const CodeContext: string): TValue;
+//begin
+////  var buf: AnsiString := 'export function __run__() {return ' + AnsiString(Code) + ';}';
+//   var buf: AnsiString := AnsiString(Code)  + ' ;export function __run__() { return resultValue; }';
+//   var filename: AnsiString := AnsiString(CodeContext) + #0;
+//
+//  // var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(CodeContext), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
+//  var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(filename), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
+//
+//  if not TJSRuntime.Check(_ctx, bytecode) then Exit;
+//  JS_EvalFunction(_ctx, bytecode);
+//
+//  var moduledef := JS_VALUE_GET_PTR(bytecode);
+//  var namespace := JS_GetModuleNamespace(_ctx, moduledef);
+//
+//  var func := JS_GetPropertyStr(_ctx, namespace, '__run__');
+//  var res  := JS_Call(_ctx, func, JS_UNDEFINED, 0, nil);
+//
+//  if not TJSRuntime.Check(_ctx, res) then Exit;
+//  res := TJSRuntime.WaitForJobs(_ctx, res);
+//  TJSRuntime.Check(_ctx, res);
+//
+//  Result := JSConverter.Instance.JSValueToTValue(_ctx, res, nil);
+//
+//  JS_FreeValue(_ctx, res);
+//end;
 
 class function TJSContext.logme(ctx : JSContext; {%H-}this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue;
 var
