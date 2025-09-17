@@ -4,12 +4,14 @@ interface
 
 uses
   System_,
+  System.Collections,
+  System.Collections.Generic,
   Project.intf,
   App.TypeDescriptor.intf,
   App.TypeDescriptor.impl,
   App.Content.intf,
-  ADato.ObjectModel.List.intf, System.Collections.Generic, System.Collections,
-  ADato.AvailabilityProfile.intf, App.Content.impl;
+  ADato.ObjectModel.List.intf,
+  App.Content.impl;
 
 type
   TProject = class(TBaseInterfacedObject, IProject, IExtendableObject)
@@ -22,7 +24,6 @@ type
     _ID: CObject;
     _Name: string;
     _Child: IProject;
-    _TimeInterval: TimeInterval;
 
     _PropertyValue: Dictionary<_PropertyInfo, CObject>;
 
@@ -31,8 +32,6 @@ type
     function  get_Name: string;
     procedure set_Name(const Value: string);
     function  get_ChildProject: IProject;
-    function  get_TimeInterval: TimeInterval;
-    procedure set_TimeInterval(const Value: TimeInterval);
 
     // IExtendableObject
     function  get_PropertyValue(const AProperty: _PropertyInfo): CObject;
@@ -83,11 +82,6 @@ begin
   Result := Equals(Other.AsType<IProject>);
 end;
 
-function TProject.get_TimeInterval: TimeInterval;
-begin
-  Result := _TimeInterval;
-end;
-
 class function TProject.get_Type: &Type;
 begin
   // Result := System_.&Type.From<ProjectType>;
@@ -110,7 +104,6 @@ end;
 constructor TProject.Create;
 begin
   _PropertyValue := CDictionary<_PropertyInfo, CObject>.Create;
-  _TimeInterval := TimeInterval.Create(CDateTime.Now, CDateTime.Now.AddDays(10));
 end;
 
 function TProject.get_ID: CObject;
@@ -148,11 +141,6 @@ end;
 procedure TProject.set_PropertyValue(const AProperty: _PropertyInfo; const Value: CObject);
 begin
   _PropertyValue[AProperty] := Value;
-end;
-
-procedure TProject.set_TimeInterval(const Value: TimeInterval);
-begin
-  _TimeInterval := Value;
 end;
 
 function ProjectProvider.CreateInstance: CObject;

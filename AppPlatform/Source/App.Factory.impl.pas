@@ -11,6 +11,7 @@ uses
 type
   TAppFactory = class(TBaseInterfacedObject, IAppFactory)
   protected
+    class var _id: Int64;
     class var _Instance: IAppFactory;
 
     var _dict: Dictionary<&Type, TValue>;
@@ -38,7 +39,7 @@ type
 implementation
 
 uses
-  System.SysUtils, ADato.ObjectIdentifier;
+  System.SysUtils;
 
 { TAppFactory }
 
@@ -104,7 +105,8 @@ end;
 
 function TAppFactory.NextID: Int64;
 begin
-  Result := TObjectIdentifier.Next;
+  dec(_id);
+  Result := _id;
 end;
 
 end.
