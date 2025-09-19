@@ -10,25 +10,10 @@ uses
   System.SysUtils;
 
 type
-  IJSExtendableObject = interface;
-
-  TObjectConstuctor = reference to function: Pointer;
-
-  DefaultValueAttribute = class(TCustomAttribute)
-  protected
-    FValue: Variant;
-  public
-    constructor Create(Value: Boolean); overload;
-    constructor Create(Value: string); overload;
-    property Value: Variant read FValue;
-  end;
+  TObjectSupportsExtension = (Unknown, Supported, NotSupported);
 
   TMemberType = (None, Methods, &Property, Iterator, IteratorNext, ArrayIndexer, ExtensionProperty, IndexedProperty);
   TMemberTypes = set of TMemberType;
-  TObjectSupportsExtension = (Unknown, Supported, NotSupported);
-
-  PObjectMember = Pointer;  // Generic pointer to TRttiMember/TRttiMethod/TrriProperty/_PropertyInfo
-  PRttiMember = ^TRttiMember;
 
   TInterfaceRef = record
     IID: TGuid;
@@ -61,12 +46,6 @@ type
     property MemberType: TMemberType read get_MemberType;
     property TypeInfo: PTypeInfo read get_TypeInfo;
     property PropertyType: PTypeInfo read get_PropertyType;
-  end;
-
-  IMethodsPropertyDescriptor = interface
-    ['{3D51ABCB-4C43-482A-8AE4-0749F56CD1CA}']
-    function Methods: TArray<TRttiMethod>;
-    function Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
   end;
 
   IRegisteredObject = interface
@@ -147,19 +126,23 @@ type
   TOnGetMemberByName = function(const AObject: IRegisteredObject; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean) : IPropertyDescriptor of Object;
   TOnGetMemberNames = function(const AObject: IRegisteredObject; MemberTypes: TMemberTypes; var Handled: Boolean) : TArray<string> of Object;
 
+type
+  TJSValueToTValueFunc = function(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
+  TTValueToJSValueFunc = function(ctx: JSContext; const Value: TValue): JSValue;
+  TGetDefaultValueFunc = function(const Param: TRttiParameter): TValue;
+
+  TJSConverterFuncs = record
+    JSValueToTValue: TJSValueToTValueFunc;
+    TValueToJSValue: TTValueToJSValueFunc;
+    GetDefaultValue: TGetDefaultValueFunc;
+  end;
+
+var
+  JSConverterFuncs: TJSConverterFuncs;
+  // Shared RTTI context for performance (initialized in QuickJS.Register.impl)
+  _RttiContext: TRttiContext;
+
 implementation
-
-{ DefaultValueAttribute }
-
-constructor DefaultValueAttribute.Create(Value: Boolean);
-begin
-  FValue := Value;
-end;
-
-constructor DefaultValueAttribute.Create(Value: string);
-begin
-  FValue := Value;
-end;
 
 end.
 

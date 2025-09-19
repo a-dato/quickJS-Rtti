@@ -10,7 +10,9 @@ uses
   QuickJS.Register.intf,
   QuickJS.Register.impl,
   QuickJS.Register.dn4d.intf,
-  System.Generics.Collections, System.Collections, System.Collections.Generic;
+  System.Generics.Collections, System.Collections, System.Collections.Generic,
+  QuickJS.Register.PropertyDescriptors.intf,
+  QuickJS.Register.PropertyDescriptors.impl;
 
 type
   TJSRegisterTypedObjects = class(TJSRegister)
@@ -127,17 +129,7 @@ type
     function Current: TValue; override;
   end;
 
-  TTypedForEachDescriptor = class(TPropertyDescriptor, IMethodsPropertyDescriptor)
-  protected
-    FIsInterface: Boolean;
-
-    function  get_MemberType: TMemberType; override;
-    function  Methods: TArray<TRttiMethod>;
-    function  Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
-
-  public
-    constructor Create(AInfo: PTypeInfo; IsInterface: Boolean); reintroduce;
-  end;
+  
 
 implementation
 
@@ -222,15 +214,6 @@ begin
   begin
     Result := inherited;
     Exit;
-  end;
-
-  if AName = 'forEach' then
-  begin
-    if get_ObjectSupportsEnumeration then
-    begin
-      Result := TTypedForEachDescriptor.Create(FTypeInfo, True);
-      Exit;
-    end;
   end;
 
   if (FTypeInfo.Kind in [tkClass, tkInterface]) and (TMemberType.Property in MemberTypes) then
@@ -660,45 +643,6 @@ begin
   Result := TypeInfo(CObject);
 end;
 
-{ TTypedForEachDescriptor }
-
-function TTypedForEachDescriptor.Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
-begin
-  if argc <> 1 then
-    raise Exception.Create('Invalid number of arguments');
-
-  var e: IEnumerable;
-  if Interfaces.Supports<IEnumerable>(IInterface(Ptr), e) and JS_IsFunction(ctx, PJSValueConstArr(argv)[0]) then
-  begin
-    var func := PJSValueConstArr(argv)[0];
-    var enum := e.GetEnumerator;
-    while enum.MoveNext do
-    begin
-      var target: JSValue := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
-      var call_argv: array of JSValueConst;
-      SetLength(call_argv, 1);
-      call_argv[0] := target;
-      Result := JS_Call(ctx, func, JS_Null, argc, PJSValueConstArr(call_argv));
-      JS_FreeValue(ctx, call_argv[0]);
-    end;
-  end;
-end;
-
-constructor TTypedForEachDescriptor.Create(AInfo: PTypeInfo; IsInterface: Boolean);
-begin
-  FTypeInfo := AInfo;
-  FIsInterface := IsInterface;
-end;
-
-function TTypedForEachDescriptor.get_MemberType: TMemberType;
-begin
-  Result := TMemberType.Methods;
-end;
-
-function TTypedForEachDescriptor.Methods: TArray<TRttiMethod>;
-begin
-  Result := nil;
-end;
 
 { TRegisteredJSObject }
 
