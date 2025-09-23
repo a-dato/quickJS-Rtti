@@ -537,6 +537,37 @@ begin
       end else
         Result := TValue.From<CObject>(CObject.Create(nil))
     end
+    else if Target = TypeInfo(CDateTime) then
+    begin
+      if JS_IsObject(Value) then
+      begin
+        // Check if it's a Date object by checking constructor name
+        var constructor_val := JS_GetPropertyStr(ctx, Value, 'constructor');
+        var name_val := JS_GetPropertyStr(ctx, constructor_val, 'name');
+        var name_str := JS_ToCString(ctx, name_val);
+        var is_date := string(name_str) = 'Date';
+        JS_FreeCString(ctx, name_str);
+        JS_FreeValue(ctx, name_val);
+        JS_FreeValue(ctx, constructor_val);
+        
+        if is_date then
+        begin
+          // Call getTime() method to get milliseconds since epoch
+          var getTime := JS_GetPropertyStr(ctx, Value, 'getTime');
+          var time_val := JS_Call(ctx, getTime, Value, 0, nil);
+          var u_milis: Double;
+          JS_ToFloat64(ctx, @u_milis, time_val);
+          var ticks := DateTimeOffset.FromUnixTimeMiliSeconds(Trunc(u_milis));
+          Result := TValue.From<CDateTime>(CDateTime.Create(ticks));
+          JS_FreeValue(ctx, time_val);
+          JS_FreeValue(ctx, getTime);
+        end
+        else
+          Result := TValue.From<CDateTime>(CDateTime.Create(0));
+      end
+      else
+        Result := TValue.From<CDateTime>(CDateTime.Create(0));
+    end
     else if Target = TypeInfo(&Type) then
       Result := TValue.From<&Type>(GetTypeFromJSObject(ctx, Value))
     else

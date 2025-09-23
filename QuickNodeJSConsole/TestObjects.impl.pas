@@ -14,6 +14,7 @@ type
     // ITestObject
     function GetTestArray: IList<CString>;
     function EchoDateTime(const ADateTime: CDateTime): CDateTime;
+    function CreateTimeInterval(const Start, Stop: CDateTime): TimeInterval;
   public
     constructor Create;
   end;
@@ -41,6 +42,11 @@ end;
 function TTestObject.EchoDateTime(const ADateTime: CDateTime): CDateTime;
 begin
   Result := ADateTime;
+end;
+
+function TTestObject.CreateTimeInterval(const Start, Stop: CDateTime): TimeInterval;
+begin
+  Result := TimeInterval.Create(Start, Stop);
 end;
 
 end.
