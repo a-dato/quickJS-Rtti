@@ -48,8 +48,31 @@ type
     function GetTestArray: IList<CString>;
     function EchoDateTime(const ADateTime: CDateTime): CDateTime;
     function CreateTimeInterval(const Start, Stop: CDateTime): TimeInterval;
+    function ProcessNumbers(const Numbers: IList<Integer>): IList<Integer>;
+    function CreateNumberList(const Count: Integer): IList<Integer>;
+    function CreateStringList(const Items: array of CString): IList<CString>;
+    function CreateTimeIntervalList(const Items: array of TimeInterval): IList<TimeInterval>;
+    function ValidateEmail(const Email: CString): Boolean;
+    function FormatMessage(const Template: CString; const Args: IList<CString>): CString;
 
     property TestArray: IList<CString> read GetTestArray;
+  end;
+
+  ITestObject2 = interface(IBaseInterface)
+    ['{B8C2F1A4-3E7D-4A5B-9F2C-1D8E6A7B3C9F}']
+    function ProcessTimeIntervals(const Intervals: IList<TimeInterval>): IList<TimeInterval>;
+    function GetRandomNumbers(const Count: Integer): IList<Double>;
+    function MergeArrays(const Array1, Array2: IList<CString>): IList<CString>;
+    function GetObjectInfo(const Obj: CObject): CString;
+  end;
+
+  ITestObject3 = interface(IBaseInterface)
+    ['{F4E8D2C6-9A1B-4F3E-8D7C-2B5A9E4F1C8D}']
+    function GetTestObjects: IList<ITestObject>;
+    function GetMixedTestObjects: IList<IBaseInterface>;
+    function ProcessTestObjectArray(const Objects: IList<ITestObject>): IList<CString>;
+    function FindTestObjectByProperty(const Objects: IList<ITestObject>; const SearchValue: CString): ITestObject;
+    function CreateTestObjectChain(const Count: Integer): IList<ITestObject>;
   end;
 
 implementation
