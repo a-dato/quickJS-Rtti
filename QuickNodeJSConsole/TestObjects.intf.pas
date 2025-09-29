@@ -42,6 +42,10 @@ type
     property Stop: CDateTime read _Stop;
   end;
 
+  // Forward declarations
+  ITestObject2 = interface;
+  ITestObject3 = interface;
+
   {$M+}
   ITestObject = interface(IBaseInterface)
     ['{455B5ABD-E751-4FD4-999F-3B70301B4AA5}']
@@ -50,29 +54,37 @@ type
     function CreateTimeInterval(const Start, Stop: CDateTime): TimeInterval;
     function ProcessNumbers(const Numbers: IList<Integer>): IList<Integer>;
     function CreateNumberList(const Count: Integer): IList<Integer>;
-    function CreateStringList(const Items: array of CString): IList<CString>;
-    function CreateTimeIntervalList(const Items: array of TimeInterval): IList<TimeInterval>;
+    function CreateStringList(const Items: IList<CString>): IList<CString>;
+    function CreateEmptyStringList: IList<CString>;
+    function CreateTimeIntervalList(const Items: IList<TimeInterval>): IList<TimeInterval>;
+    function CreateEmptyTimeIntervalList: IList<TimeInterval>;
     function ValidateEmail(const Email: CString): Boolean;
     function FormatMessage(const Template: CString; const Args: IList<CString>): CString;
+    function GetTestObject2: ITestObject2;
+    function GetTestObject2List(const Count: Integer): IList<ITestObject2>;
 
     property TestArray: IList<CString> read GetTestArray;
   end;
 
-  ITestObject2 = interface(IBaseInterface)
+  ITestObject2 = interface(ITestObject)
     ['{B8C2F1A4-3E7D-4A5B-9F2C-1D8E6A7B3C9F}']
     function ProcessTimeIntervals(const Intervals: IList<TimeInterval>): IList<TimeInterval>;
     function GetRandomNumbers(const Count: Integer): IList<Double>;
     function MergeArrays(const Array1, Array2: IList<CString>): IList<CString>;
     function GetObjectInfo(const Obj: CObject): CString;
+    function GetTestObject3: ITestObject3;
+    function GetTestObject3List(const Count: Integer): IList<ITestObject3>;
+    function GetMixedObjectList: IList<IBaseInterface>;
   end;
 
-  ITestObject3 = interface(IBaseInterface)
+  ITestObject3 = interface(ITestObject2)
     ['{F4E8D2C6-9A1B-4F3E-8D7C-2B5A9E4F1C8D}']
     function GetTestObjects: IList<ITestObject>;
     function GetMixedTestObjects: IList<IBaseInterface>;
     function ProcessTestObjectArray(const Objects: IList<ITestObject>): IList<CString>;
     function FindTestObjectByProperty(const Objects: IList<ITestObject>; const SearchValue: CString): ITestObject;
     function CreateTestObjectChain(const Count: Integer): IList<ITestObject>;
+    function GetTestObjectsWithData(const Count: Integer): IList<ITestObject>;
   end;
 
 implementation

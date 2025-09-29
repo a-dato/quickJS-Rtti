@@ -571,7 +571,19 @@ begin
     else if Target = TypeInfo(&Type) then
       Result := TValue.From<&Type>(GetTypeFromJSObject(ctx, Value))
     else
+    begin
+      // Generic record unwrap: if JS value is a registered record wrapper, unwrap to record pointer
+      if JS_IsObject(Value) then
+      begin
+        var recPtr := TJSRegister.GetObjectFromJSValue(Value, True {PointerIsAnObject to unwrap TRecordReference});
+        if recPtr <> nil then
+        begin
+          TValue.Make(recPtr, Target, Result);
+          Exit;
+        end;
+      end;
       Result := inherited;
+    end;
   end else
     Result := inherited;
 end;

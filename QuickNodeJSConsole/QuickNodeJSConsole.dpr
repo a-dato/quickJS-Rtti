@@ -16,7 +16,8 @@ uses
   QuickJS.Register.impl,
   TestObjects.intf,
   TestObjects.impl,
-  QuickJS.Register.dn4d.impl;
+  QuickJS.Register.dn4d.impl,
+  TestObjectsDefinitionsTest.impl;
 
 type
   TQuickJSConsole = class
@@ -78,8 +79,15 @@ begin
   FContext := TJSContext.Create(FRuntime);
 
   TJSRegisterTypedObjects.Initialize(FContext);
+  
+  // Register our test ObjectBridge definitions
+   TestObjectBridgeDefinitions.RegisterWithObjectBridge(TJSRegister.ObjectBridgeResolver);
+
   // Create and register the test object
-  FTestObject := TTestObject.Create;
+  // Use TTestObject3 which inherits from ITestObject2 and ITestObject
+  // This will allow testing inheritance - the object supports all three interfaces
+  var testObj3 := TTestObject3.Create;
+  FTestObject := testObj3 as ITestObject;
   TJSRegister.RegisterLiveObject(FContext, 'testObj', TypeInfo(ITestObject), FTestObject);
 end;
 

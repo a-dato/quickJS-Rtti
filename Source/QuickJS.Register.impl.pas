@@ -1850,16 +1850,10 @@ begin
     begin
       if JS_IsNumber(Value) then
       begin
-        var v: Integer;
-        TJSRuntime.Check(JS_ToInt32(ctx, @v, Value));
-        Result := TValue.From<Double>(Double(v));
-      end
-//      else if JS_IsFloat64(Value) then
-//      begin
-//        var v: Double;
-//        TJSRuntime.Check(JS_ToFloat64(ctx, @v, Value));
-//        Result := TValue.From<Double>(v);
-//      end;
+        var v: Double;
+        TJSRuntime.Check(JS_ToFloat64(ctx, @v, Value));
+        Result := TValue.From<Double>(v);
+      end;
     end;
 
     tkString, tkUString:
@@ -1989,8 +1983,23 @@ begin
     tkInteger:
       Result := JS_NewInt32(ctx, Value.AsInteger);
 //    tkChar:
-//    tkEnumeration:
-//    tkFloat:
+    tkEnumeration:
+    begin
+      if Value.TypeInfo = TypeInfo(Boolean) then
+        Result := JS_NewBool(ctx, Value.AsBoolean)
+      else
+      begin
+        // Handle other enumerations as integers
+        var v: Integer := Value.AsOrdinal;
+        Result := JS_NewInt32(ctx, v);
+      end;
+    end;
+    
+    tkFloat:
+    begin
+      Result := JS_NewFloat64(ctx, Value.AsExtended);
+    end;
+    
     tkString, tkUString:
     begin
       var s := AnsiString(Value.AsString);
@@ -2078,10 +2087,11 @@ begin
 //    tkChar:
     tkEnumeration:
       if Param.ParamType.Handle = System.TypeInfo(Boolean) then
-        Result := JS_IsBool(Value) else
-        Result := False;
+        Result := JS_IsBool(Value) or JS_IsNumber(Value) or JS_IsString(Value) else
+        Result := JS_IsNumber(Value);
 
-//    tkFloat:
+    tkFloat:
+      Result := JS_IsNumber(Value);
     tkString, tkUString:
       Result := JS_IsString(Value);
 
