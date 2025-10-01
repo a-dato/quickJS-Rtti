@@ -8,14 +8,15 @@ uses
   QuickJS.Register.ObjectBridge.intf,
   App.PropertyDescriptor.intf,
   QuickJS.Register.intf, System.TypInfo,
-  QuickJS.Register.ObjectBridgeTypes.impl;
+  QuickJS.Register.ObjectBridgeTypes.impl,
+  System.Collections.Generic;
 
 type
 
   TObjectBridgeResolver = class(TBaseInterfacedObject, IObjectBridgeResolver)
   private
-    class var _propertyDescriptors: TDescriptorList;
-    class var _methodDescriptors: TDescriptorList;
+    class var _propertyDescriptors: IDictionary<CString, IList<IObjectBridgePropertyDescriptor>>;
+    class var _methodDescriptors: IDictionary<CString, IList<IObjectBridgeMethodDescriptor>>;
     class var _isResolving: Boolean; // Recursion guard
     
     class procedure InitializeResolvers;
@@ -38,7 +39,7 @@ uses
   QuickJS.Register.impl,
   System.Collections,
   System.Rtti,
-  System.Collections.Generic, quickjs_ng;
+  quickjs_ng;
 
 { TObjectBridgeResolver }
 
@@ -50,72 +51,86 @@ end;
 
 class destructor TObjectBridgeResolver.Destroy;
 begin
-  SetLength(_propertyDescriptors, 0);
-  SetLength(_methodDescriptors, 0);
+  _propertyDescriptors := nil;
+  _methodDescriptors := nil;
 end;
 
 class procedure TObjectBridgeResolver.InitializeResolvers;
 begin
-  SetLength(_propertyDescriptors, 0);
-  SetLength(_methodDescriptors, 0);
+  _propertyDescriptors := CDictionary<CString, IList<IObjectBridgePropertyDescriptor>>.Create;
+  _methodDescriptors := CDictionary<CString, IList<IObjectBridgeMethodDescriptor>>.Create;
 end;
 
 class function TObjectBridgeResolver.TryGetPropertyDescriptor(const AObject: IRegisteredObject; const PropertyName: string): IPropertyDescriptor;
-var
-  i: Integer;
-  lowerPropertyName: string;
-  descriptor: IObjectBridgePropertyDescriptor;
 begin
   Result := nil;
-  lowerPropertyName := LowerCase(PropertyName);
+  var lowerPropertyName: CString := CString(LowerCase(PropertyName));
   
-  // Search through all registered property descriptors
-  for i := 0 to Length(_propertyDescriptors) - 1 do
+  // Look up descriptors by name in dictionary
+  var descriptorList: IList<IObjectBridgePropertyDescriptor>;
+  if not _propertyDescriptors.TryGetValue(lowerPropertyName, descriptorList) then
+    Exit;
+  
+  // Only check CanHandle on descriptors with matching name
+  for var descriptor in descriptorList do
   begin
-    if Supports(_propertyDescriptors[i], IObjectBridgePropertyDescriptor, descriptor) then
+    if descriptor.CanHandle(AObject) then
     begin
-      if (LowerCase(descriptor.PropertyName) = lowerPropertyName) and descriptor.CanHandle(AObject) then
-      begin
-        Result := _propertyDescriptors[i];
-        Exit;
-      end;
+      Result := descriptor as IPropertyDescriptor;
+      Exit;
     end;
   end;
 end;
 
 class function TObjectBridgeResolver.TryGetMethodDescriptor(const AObject: IRegisteredObject; const MethodName: string): IPropertyDescriptor;
-var
-  i: Integer;
-  lowerMethodName: string;
-  descriptor: IObjectBridgeMethodDescriptor;
 begin
   Result := nil;
-  lowerMethodName := LowerCase(MethodName);
+  var lowerMethodName: CString := CString(LowerCase(MethodName));
 
-  // Search through all registered method descriptors
-  for i := 0 to Length(_methodDescriptors) - 1 do
+  // Look up descriptors by name in dictionary
+  var descriptorList: IList<IObjectBridgeMethodDescriptor>;
+  if not _methodDescriptors.TryGetValue(lowerMethodName, descriptorList) then
+    Exit;
+  
+  // Only check CanHandle on descriptors with matching name
+  for var descriptor in descriptorList do
   begin
-    if Supports(_methodDescriptors[i], IObjectBridgeMethodDescriptor, descriptor) then
+    if descriptor.CanHandle(AObject) then
     begin
-      if (LowerCase(descriptor.MethodName) = lowerMethodName) and descriptor.CanHandle(AObject) then
-      begin
-        Result := _methodDescriptors[i];
-        Exit;
-      end;
+      Result := descriptor as IPropertyDescriptor;
+      Exit;
     end;
   end;
 end;
 
 procedure TObjectBridgeResolver.AddPropertyDescriptor(const Descriptor: IObjectBridgePropertyDescriptor);
 begin
-  SetLength(_propertyDescriptors, Length(_propertyDescriptors) + 1);
-  _propertyDescriptors[Length(_propertyDescriptors) - 1] := Descriptor;
+  var lowerPropertyName: CString := CString(LowerCase(Descriptor.PropertyName));
+  
+  // Get or create the list for this property name
+  var descriptorList: IList<IObjectBridgePropertyDescriptor>;
+  if not _propertyDescriptors.TryGetValue(lowerPropertyName, descriptorList) then
+  begin
+    descriptorList := CList<IObjectBridgePropertyDescriptor>.Create;
+    _propertyDescriptors.Add(lowerPropertyName, descriptorList);
+  end;
+  
+  descriptorList.Add(Descriptor);
 end;
 
 procedure TObjectBridgeResolver.AddMethodDescriptor(const Descriptor: IObjectBridgeMethodDescriptor);
 begin
-  SetLength(_methodDescriptors, Length(_methodDescriptors) + 1);
-  _methodDescriptors[Length(_methodDescriptors) - 1] := Descriptor;
+  var lowerMethodName: CString := CString(LowerCase(Descriptor.MethodName));
+  
+  // Get or create the list for this method name
+  var descriptorList: IList<IObjectBridgeMethodDescriptor>;
+  if not _methodDescriptors.TryGetValue(lowerMethodName, descriptorList) then
+  begin
+    descriptorList := CList<IObjectBridgeMethodDescriptor>.Create;
+    _methodDescriptors.Add(lowerMethodName, descriptorList);
+  end;
+  
+  descriptorList.Add(Descriptor);
 end;
 
 function TObjectBridgeResolver.OnGetMemberByName(const AObject: IRegisteredObject; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean): IPropertyDescriptor;

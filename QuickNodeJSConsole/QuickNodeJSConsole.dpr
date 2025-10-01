@@ -25,6 +25,7 @@ type
     FRuntime: IJSRuntime;
     FContext: IJSContext;
     FTestObject: ITestObject;
+    FTestObject3: ITestObject3;
     FJavaScriptFilePath: string;
     
     function EscapeJS(const S: string): string;
@@ -80,15 +81,14 @@ begin
 
   TJSRegisterTypedObjects.Initialize(FContext);
   
-  // Register our test ObjectBridge definitions
-   TestObjectBridgeDefinitions.RegisterWithObjectBridge(TJSRegister.ObjectBridgeResolver);
 
   // Create and register the test object
   // Use TTestObject3 which inherits from ITestObject2 and ITestObject
   // This will allow testing inheritance - the object supports all three interfaces
-  var testObj3 := TTestObject3.Create;
-  FTestObject := testObj3 as ITestObject;
+  FTestObject3 := TTestObject3.Create;
+  FTestObject := FTestObject3 as ITestObject;
   TJSRegister.RegisterLiveObject(FContext, 'testObj', TypeInfo(ITestObject), FTestObject);
+  TJSRegister.RegisterLiveObject(FContext, 'testObj3', TypeInfo(ITestObject3), FTestObject3);
 end;
 
 function TQuickJSConsole.EscapeJS(const S: string): string;

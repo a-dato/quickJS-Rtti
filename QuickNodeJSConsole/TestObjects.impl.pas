@@ -12,7 +12,7 @@ type
   TTestObject = class(TBaseInterfacedObject, ITestObject)
   protected
     // ITestObject
-    function GetTestArray: IList<CString>;
+    function get_TestArray: IList<CString>;
     function EchoDateTime(const ADateTime: CDateTime): CDateTime;
     function CreateTimeInterval(const Start, Stop: CDateTime): TimeInterval;
     function ProcessNumbers(const Numbers: IList<Integer>): IList<Integer>;
@@ -23,7 +23,7 @@ type
     function CreateEmptyTimeIntervalList: IList<TimeInterval>;
     function ValidateEmail(const Email: CString): Boolean;
     function FormatMessage(const Template: CString; const Args: IList<CString>): CString;
-    function GetTestObject2: ITestObject2;
+    function get_TestObject2: ITestObject2;
     function GetTestObject2List(const Count: Integer): IList<ITestObject2>;
   public
     constructor Create;
@@ -32,7 +32,7 @@ type
   TTestObject2 = class(TBaseInterfacedObject, ITestObject2)
   protected
     // ITestObject (inherited)
-    function GetTestArray: IList<CString>;
+    function get_TestArray: IList<CString>;
     function EchoDateTime(const ADateTime: CDateTime): CDateTime;
     function CreateTimeInterval(const Start, Stop: CDateTime): TimeInterval;
     function ProcessNumbers(const Numbers: IList<Integer>): IList<Integer>;
@@ -43,24 +43,24 @@ type
     function CreateEmptyTimeIntervalList: IList<TimeInterval>;
     function ValidateEmail(const Email: CString): Boolean;
     function FormatMessage(const Template: CString; const Args: IList<CString>): CString;
-    function GetTestObject2: ITestObject2;
+    function get_TestObject2: ITestObject2;
     function GetTestObject2List(const Count: Integer): IList<ITestObject2>;
     // ITestObject2
     function ProcessTimeIntervals(const Intervals: IList<TimeInterval>): IList<TimeInterval>;
     function GetRandomNumbers(const Count: Integer): IList<Double>;
     function MergeArrays(const Array1, Array2: IList<CString>): IList<CString>;
     function GetObjectInfo(const Obj: CObject): CString;
-    function GetTestObject3: ITestObject3;
+    function get_TestObject3: ITestObject3;
     function GetTestObject3List(const Count: Integer): IList<ITestObject3>;
-    function GetMixedObjectList: IList<IBaseInterface>;
+    function get_MixedObjectList: IList<IBaseInterface>;
   public
     constructor Create;
   end;
 
-  TTestObject3 = class(TBaseInterfacedObject, ITestObject3)
+  TTestObject3 = class(TBaseInterfacedObject, ITestObject3, ITestObject2, ITestObject)
   protected
     // ITestObject (inherited)
-    function GetTestArray: IList<CString>;
+    function get_TestArray: IList<CString>;
     function EchoDateTime(const ADateTime: CDateTime): CDateTime;
     function CreateTimeInterval(const Start, Stop: CDateTime): TimeInterval;
     function ProcessNumbers(const Numbers: IList<Integer>): IList<Integer>;
@@ -71,19 +71,19 @@ type
     function CreateEmptyTimeIntervalList: IList<TimeInterval>;
     function ValidateEmail(const Email: CString): Boolean;
     function FormatMessage(const Template: CString; const Args: IList<CString>): CString;
-    function GetTestObject2: ITestObject2;
+    function get_TestObject2: ITestObject2;
     function GetTestObject2List(const Count: Integer): IList<ITestObject2>;
     // ITestObject2 (inherited)
     function ProcessTimeIntervals(const Intervals: IList<TimeInterval>): IList<TimeInterval>;
     function GetRandomNumbers(const Count: Integer): IList<Double>;
     function MergeArrays(const Array1, Array2: IList<CString>): IList<CString>;
     function GetObjectInfo(const Obj: CObject): CString;
-    function GetTestObject3: ITestObject3;
+    function get_TestObject3: ITestObject3;
     function GetTestObject3List(const Count: Integer): IList<ITestObject3>;
-    function GetMixedObjectList: IList<IBaseInterface>;
+    function get_MixedObjectList: IList<IBaseInterface>;
     // ITestObject3
-    function GetTestObjects: IList<ITestObject>;
-    function GetMixedTestObjects: IList<IBaseInterface>;
+    function get_TestObjects: IList<ITestObject>;
+    function get_MixedTestObjects: IList<IBaseInterface>;
     function ProcessTestObjectArray(const Objects: IList<ITestObject>): IList<CString>;
     function FindTestObjectByProperty(const Objects: IList<ITestObject>; const SearchValue: CString): ITestObject;
     function CreateTestObjectChain(const Count: Integer): IList<ITestObject>;
@@ -101,7 +101,7 @@ begin
   inherited Create;
 end;
 
-function TTestObject.GetTestArray: IList<CString>;
+function TTestObject.get_TestArray: IList<CString>;
 begin
   // Create a simple list with some test data
   Result := CList<CString>.Create;
@@ -184,7 +184,7 @@ begin
   end;
 end;
 
-function TTestObject.GetTestObject2: ITestObject2;
+function TTestObject.get_TestObject2: ITestObject2;
 begin
   Result := TTestObject2.Create;
 end;
@@ -245,7 +245,7 @@ begin
     Result := CString.Format('Object type: {0}, Value: {1}', Obj.GetType.Name, Obj.ToString);
 end;
 
-function TTestObject2.GetTestObject3: ITestObject3;
+function TTestObject2.get_TestObject3: ITestObject3;
 begin
   Result := TTestObject3.Create;
 end;
@@ -259,7 +259,7 @@ begin
   end;
 end;
 
-function TTestObject2.GetMixedObjectList: IList<IBaseInterface>;
+function TTestObject2.get_MixedObjectList: IList<IBaseInterface>;
 begin
   Result := CList<IBaseInterface>.Create;
   
@@ -272,7 +272,7 @@ begin
 end;
 
 // ITestObject inherited methods for TTestObject2
-function TTestObject2.GetTestArray: IList<CString>;
+function TTestObject2.get_TestArray: IList<CString>;
 begin
   Result := CList<CString>.Create;
   Result.Add('TestObject2 Item 1');
@@ -352,7 +352,7 @@ begin
   end;
 end;
 
-function TTestObject2.GetTestObject2: ITestObject2;
+function TTestObject2.get_TestObject2: ITestObject2;
 begin
   Result := TTestObject2.Create;
 end;
@@ -373,7 +373,7 @@ begin
   inherited Create;
 end;
 
-function TTestObject3.GetTestObjects: IList<ITestObject>;
+function TTestObject3.get_TestObjects: IList<ITestObject>;
 begin
   Result := CList<ITestObject>.Create;
   
@@ -384,7 +384,7 @@ begin
   end;
 end;
 
-function TTestObject3.GetMixedTestObjects: IList<IBaseInterface>;
+function TTestObject3.get_MixedTestObjects: IList<IBaseInterface>;
 begin
   Result := CList<IBaseInterface>.Create;
   
@@ -401,7 +401,7 @@ begin
   for var i := 0 to Objects.Count - 1 do
   begin
     var testObj := Objects[i];
-    var testArray := testObj.GetTestArray;
+    var testArray := testObj.TestArray;
     var summary := CString.Format('Object {0} has {1} items', i + 1, testArray.Count);
     Result.Add(summary);
   end;
@@ -414,7 +414,7 @@ begin
   for var i := 0 to Objects.Count - 1 do
   begin
     var testObj := Objects[i];
-    var testArray := testObj.GetTestArray;
+    var testArray := testObj.TestArray;
     
     for var j := 0 to testArray.Count - 1 do
     begin
@@ -450,7 +450,7 @@ begin
 end;
 
 // ITestObject inherited methods for TTestObject3
-function TTestObject3.GetTestArray: IList<CString>;
+function TTestObject3.get_TestArray: IList<CString>;
 begin
   Result := CList<CString>.Create;
   Result.Add('TestObject3 Item 1');
@@ -531,7 +531,7 @@ begin
   end;
 end;
 
-function TTestObject3.GetTestObject2: ITestObject2;
+function TTestObject3.get_TestObject2: ITestObject2;
 begin
   Result := TTestObject2.Create;
 end;
@@ -585,7 +585,7 @@ begin
     Result := CString.Format('TestObject3 - Object type: {0}, Value: {1}', Obj.GetType.Name, Obj.ToString);
 end;
 
-function TTestObject3.GetTestObject3: ITestObject3;
+function TTestObject3.get_TestObject3: ITestObject3;
 begin
   Result := TTestObject3.Create;
 end;
@@ -599,7 +599,7 @@ begin
   end;
 end;
 
-function TTestObject3.GetMixedObjectList: IList<IBaseInterface>;
+function TTestObject3.get_MixedObjectList: IList<IBaseInterface>;
 begin
   Result := CList<IBaseInterface>.Create;
   

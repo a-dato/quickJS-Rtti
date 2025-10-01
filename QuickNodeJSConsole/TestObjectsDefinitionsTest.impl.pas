@@ -56,6 +56,7 @@ begin
   // Test extending ITestObject with properties from ITestObject2 and ITestObject3
   // Since we're using TTestObject3 registered as ITestObject, it will support all interfaces
   // This allows access to inherited methods through ObjectBridge
+  // Also bridge ITestObject to itself so base interface properties are captured
   AddAllInterfacePropertiesAndMethods(TypeInfo(ITestObject), TypeInfo(ITestObject2), ObjectBridgeResolver);
   AddAllInterfacePropertiesAndMethods(TypeInfo(ITestObject), TypeInfo(ITestObject3), ObjectBridgeResolver);
 
@@ -91,7 +92,7 @@ begin
         var testObj: ITestObject;
         if Interfaces.Supports(IInterface(Ptr), ITestObject, testObj) then
         begin
-          var testArray := testObj.GetTestArray;
+          var testArray := testObj.TestArray;
           Result := TValue.From<Integer>(testArray.Count);
         end;
       end));
@@ -109,38 +110,23 @@ var
   jsPropertyName: CString;
   properties: TArray<TRttiProperty>;
   prop: TRttiProperty;
-begin
-  // Get RTTI for target interface
-  rtti := TRttiContext.Create;
-  rttiType := rtti.GetType(TargetInterface);
-  
-  // Register properties from target interface to be accessible on source interface
-  properties := rttiType.GetProperties;
-  for prop in properties do
+  printedPropsHeader: Boolean;
+  anyPropsFound: Boolean;
+
+  procedure RegisterPropertyDescriptor(const TargetProp: TRttiProperty; const JsName: CString);
+  var
+    localProp: TRttiProperty;
+    localJsName: CString;
   begin
-    // Convert property name to JavaScript-style (lowercase first letter)
-    jsPropertyName := CString.Create(prop.Name);
-    if jsPropertyName.Length > 0 then
-    begin
-      jsPropertyName := jsPropertyName.Substring(0, 1).ToLower + jsPropertyName.Substring(1);
-    end;
-    // Capture the Delphi property name for use inside the closures
-    var propertyNameDelphi: string := prop.Name;
-    
-    // Register the property using the new descriptor system
+    localProp := TargetProp;
+    localJsName := JsName;
+
     ObjectBridgeResolver.AddPropertyDescriptor(
-      TObjectBridgePropertyDescriptor.Create(jsPropertyName,
-        // Object checker - check if object is source interface type AND property exists on target
+      TObjectBridgePropertyDescriptor.Create(localJsName,
+        // Object checker - apply to registered objects of the source interface type (by GUID)
         function(const AObject: IRegisteredObject): Boolean
         begin
-          if AObject.GetTypeInfo <> SourceInterface then
-            Exit(False);
-          
-          // Check if the property actually exists on the target interface
-          var ctx: TRttiContext := TRttiContext.Create;
-          var rttiType: TRttiType := ctx.GetType(TargetInterface);
-          var targetProp: TRttiProperty := rttiType.GetProperty(propertyNameDelphi);
-          Result := targetProp <> nil;
+          Result := (AObject <> nil) and IsEqualGUID(AObject.GetTypeInfo.TypeData.GUID, SourceInterface.TypeData.GUID);
         end,
         // Property getter - get property from target interface
         function(const Ptr: Pointer): TValue
@@ -153,48 +139,26 @@ begin
           var targetIntf: IInterface;
           if Interfaces.Supports(sourceIntf, TargetInterface.TypeData.Guid, targetIntf) then
           begin
-            // Use RTTI to call the property getter method on the target interface
-            var ctx: TRttiContext := TRttiContext.Create;
-            var rttiType: TRttiType := ctx.GetType(TargetInterface);
-            var getter: TRttiMethod := rttiType.GetMethod('get_' + propertyNameDelphi);
-            if getter <> nil then
-            begin
-              var targetValue := TValue.From<IInterface>(targetIntf);
-              Result := getter.Invoke(targetValue, []);
-            end;
+            var targetValue := TValue.From<IInterface>(targetIntf);
+            Result := localProp.GetValue(targetValue.GetReferenceToRawData);
           end;
         end));
   end;
 
-  // Register methods as well
-  methods := rttiType.GetMethods;
-  for m in methods do
+  procedure RegisterMethodDescriptor(const TargetMethod: TRttiMethod; const JsName: CString);
+  var
+    localMethod: TRttiMethod;
+    localJsName: CString;
   begin
-    // Only expose real methods, skip getters/setters (get_/set_) and special names
-    if m.IsConstructor then
-      continue;
-    if (m.Name.StartsWith('get_')) or (m.Name.StartsWith('set_')) then
-      continue;
-
-    jsMethodName := CString.Create(m.Name);
-    if jsMethodName.Length > 0 then
-      jsMethodName := jsMethodName.Substring(0, 1).ToLower + jsMethodName.Substring(1);
-    // Capture the Delphi method name for use inside the closures
-    var delphiMethodName: string := m.Name;
+    localMethod := TargetMethod;
+    localJsName := JsName;
 
     ObjectBridgeResolver.AddMethodDescriptor(
-      TObjectBridgeMethodDescriptor.Create(jsMethodName,
-        // Object checker - check if object is source interface type AND method exists on target
+      TObjectBridgeMethodDescriptor.Create(localJsName,
+        // Object checker - apply to registered objects of the source interface type (by GUID)
         function(const AObject: IRegisteredObject): Boolean
         begin
-          if AObject.GetTypeInfo <> SourceInterface then
-            Exit(False);
-          
-          // Check if the method actually exists on the target interface
-          var ctx: TRttiContext := TRttiContext.Create;
-          var rttiType: TRttiType := ctx.GetType(TargetInterface);
-          var method: TRttiMethod := rttiType.GetMethod(delphiMethodName);
-          Result := method <> nil;
+          Result := (AObject <> nil) and IsEqualGUID(AObject.GetTypeInfo.TypeData.GUID, SourceInterface.TypeData.GUID);
         end,
         // Method caller - call method on target interface
         function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
@@ -207,31 +171,91 @@ begin
           var targetIntf: IInterface;
           if Interfaces.Supports(sourceIntf, TargetInterface.TypeData.Guid, targetIntf) then
           begin
-            // Use RTTI to call method on target interface
-            var rttiCtx: TRttiContext := TRttiContext.Create;
-            var rttiType: TRttiType := rttiCtx.GetType(TargetInterface);
-            var rttiMethod: TRttiMethod := rttiType.GetMethod(delphiMethodName);
-            if rttiMethod <> nil then
+            // Convert JS arguments to Delphi parameters
+            var params := localMethod.GetParameters;
+            var args: array of TValue;
+            SetLength(args, Length(params));
+            
+            for var i := 0 to High(params) do
             begin
-              // Convert JS arguments to Delphi parameters
-              var params := rttiMethod.GetParameters;
-              var args: array of TValue;
-              SetLength(args, Length(params));
-              
-              for var i := 0 to High(params) do
-              begin
-                if i < argc then
-                  args[i] := JSConverterFuncs.JSValueToTValue(ctx, PJSValueConstArr(argv)[i], params[i].ParamType.Handle)
-                else
-                  args[i] := JSConverterFuncs.GetDefaultValue(params[i]);
-              end;
-              
-              var targetValue := TValue.From<IInterface>(targetIntf);
-              var resultValue := rttiMethod.Invoke(targetValue, args);
-              Result := JSConverterFuncs.TValueToJSValue(ctx, resultValue);
+              if i < argc then
+                args[i] := JSConverterFuncs.JSValueToTValue(ctx, PJSValueConstArr(argv)[i], params[i].ParamType.Handle)
+              else
+                args[i] := JSConverterFuncs.GetDefaultValue(params[i]);
             end;
+            
+            var targetValue := TValue.From<IInterface>(targetIntf);
+            var resultValue := localMethod.Invoke(targetValue, args);
+            Result := JSConverterFuncs.TValueToJSValue(ctx, resultValue);
           end;
         end));
+  end;
+begin
+  // Get RTTI for target interface
+  rtti := TRttiContext.Create;
+  rttiType := rtti.GetType(TargetInterface);
+  
+  Writeln(Format('Adding properties and methods from %s to %s:', [string(TargetInterface.Name), string(SourceInterface.Name)]));
+  
+  // Register properties from target interface to be accessible on source interface
+  properties := rttiType.GetProperties;
+  printedPropsHeader := False;
+  anyPropsFound := False;
+  if Length(properties) > 0 then
+  begin
+    Writeln('  Properties:');
+    printedPropsHeader := True;
+    anyPropsFound := True;
+    for prop in properties do
+    begin
+      // Convert property name to JavaScript-style (lowercase first letter)
+      jsPropertyName := CString.Create(prop.Name);
+      if jsPropertyName.Length > 0 then
+      begin
+        jsPropertyName := jsPropertyName.Substring(0, 1).ToLower + jsPropertyName.Substring(1);
+      end;
+      Writeln(Format('    - %s (JS: %s)', [prop.Name, string(jsPropertyName)]));
+      RegisterPropertyDescriptor(prop, jsPropertyName);
+    end;
+  end;
+
+  // Note: No synthetic GetX -> x properties here to avoid collisions with methods
+
+  if not anyPropsFound then
+    Writeln('  Properties: (none)');
+
+  // Register methods as well
+  methods := rttiType.GetMethods;
+  var validMethods: IList<TRttiMethod> := CList<TRttiMethod>.Create;
+  try
+    for m in methods do
+    begin
+      // Only expose real methods, skip getters/setters (get_/set_) and special names
+      if m.IsConstructor then
+        continue;
+      if (m.Name.StartsWith('get_')) or (m.Name.StartsWith('set_')) then
+        continue;
+      
+      validMethods.Add(m);
+    end;
+    
+    if validMethods.Count > 0 then
+    begin
+      Writeln('  Methods:');
+      for m in validMethods do
+      begin
+        jsMethodName := CString.Create(m.Name);
+        if jsMethodName.Length > 0 then
+          jsMethodName := jsMethodName.Substring(0, 1).ToLower + jsMethodName.Substring(1);
+        
+        Writeln(Format('    - %s (JS: %s)', [m.Name, string(jsMethodName)]));
+        RegisterMethodDescriptor(m, jsMethodName);
+      end;
+    end
+    else
+      Writeln('  Methods: (none)');
+  finally
+
   end;
 end;
 
