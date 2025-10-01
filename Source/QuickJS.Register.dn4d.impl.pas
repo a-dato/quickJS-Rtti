@@ -523,17 +523,17 @@ begin
         JS_FreeCString(ctx, str);
       end
 
-      else if JS_IsNumber(Value) then
-      begin
-        var v: Integer;
-        JS_ToInt32(ctx, @v, Value);
-        Result := TValue.From<CObject>(v);
-      end
-
       else if JS_IsBigInt(Value) then
       begin
         var v: Int64;
         JS_ToBigInt64(ctx, @v, Value);
+        Result := TValue.From<CObject>(v);
+      end
+
+      else if JS_IsNumber(Value) then
+      begin
+        var v: Int64;
+        JS_ToInt64(ctx, @v, Value);
         Result := TValue.From<CObject>(v);
       end
 
