@@ -53,6 +53,11 @@ export const access_right = {
   CanAddTaskDependencies: 524288
 }
 
+export function hoursToTimeSpan(hours)
+{
+	return hours*36000000000;
+}
+
 class AddingNew {
 	CreateInstance() {
 		console.log('CreateInstance()');
