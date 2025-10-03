@@ -143,7 +143,7 @@ begin
   JSConverter.Instance := TJSTypedConverter.Create;
   TJSRegister.Instance := TJSRegisterTypedObjects.Create;
 
-  TJSRegister.RegisterObject(Context, 'JSIEnumerableIterator', TypeInfo(TJSIEnumerableIterator));
+  TJSRegister.RegisterObject('JSIEnumerableIterator', TypeInfo(TJSIEnumerableIterator));
 end;
 
 function TJSRegisterTypedObjects.CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject;

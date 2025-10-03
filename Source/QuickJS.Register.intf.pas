@@ -10,7 +10,13 @@ uses
   System.SysUtils;
 
 type
+  TObjectConstuctor = function : Pointer;
+
   TObjectSupportsExtension = (Unknown, Supported, NotSupported);
+  
+  // Forward declarations
+  IJSContext = interface;
+  IJSRuntime = interface;
 
   TMemberType = (None, Methods, &Property, Iterator, IteratorNext, ArrayIndexer, ExtensionProperty, IndexedProperty);
   TMemberTypes = set of TMemberType;
@@ -101,6 +107,7 @@ type
     function  get_LogString: TProc<string>;
     procedure set_LogString(const Value: TProc<string>);
 
+    function  CreateContext: IJSContext;
     procedure OutputLog(const Value: string);
 
     property rt: JSRuntime read get_rt;
