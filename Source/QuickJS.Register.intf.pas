@@ -34,6 +34,7 @@ type
   end;
 
   IPropertyDescriptor = interface
+    ['{41133217-8E74-455D-953A-4FB4723A4EBE}']
     function  get_MemberType: TMemberType;
     function  get_TypeInfo: PTypeInfo;
     function  get_PropertyType: PTypeInfo;
@@ -49,6 +50,7 @@ type
   end;
 
   IRegisteredObject = interface
+    ['{A4D3F263-C1BE-4550-B460-87CD6F8EEA38}']
     function  get_IsObject: Boolean;
     function  get_IsInterface: Boolean;
     function  get_IsIterator: Boolean;

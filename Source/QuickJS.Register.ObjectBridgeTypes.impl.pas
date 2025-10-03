@@ -35,6 +35,16 @@ type
     class function CreateCrossInterfaceProperty(const PropertyName: string; const SourceInterface: PTypeInfo; const TargetInterface: PTypeInfo; const DelphiPropertyName: string): IObjectBridgePropertyDescriptor; static;
     class function CreateExtensionProperty(const PropertyName: string; const TargetInterface: PTypeInfo; const Getter: TExtensionGetter): IObjectBridgePropertyDescriptor; static;
     class function CreatePatternProperty(const PropertyName: string; const PatternMatcher: TPatternChecker; const DelphiPropertyName: string): IObjectBridgePropertyDescriptor; static;
+    
+    // Simplified typed creation methods (automatic casting and nil checking)
+    class function CreateTypedProperty(const PropertyName: string; const InterfaceType: PTypeInfo; 
+      const Getter: TTypedPropertyGetter; const Setter: TTypedPropertySetter = nil;
+      const PropertyTypeInfo: PTypeInfo = nil): IObjectBridgePropertyDescriptor; overload; static;
+    
+    // Generic typed creation methods - the lambda receives the actual typed interface
+    class function CreateTypedProperty<T: IInterface>(const PropertyName: string;
+      const Getter: TTypedPropertyGetter<T>; const Setter: TTypedPropertySetter<T> = nil;
+      const PropertyTypeInfo: PTypeInfo = nil): IObjectBridgePropertyDescriptor; overload; static;
 
     function CanHandle(const AObject: IRegisteredObject): Boolean;
     property PropertyName: string read get_PropertyName;
@@ -59,6 +69,14 @@ type
     // Static creation methods for common patterns
     class function CreateInterfaceMethod(const MethodName: string; const TargetInterface: PTypeInfo; const DelphiMethodName: string): IObjectBridgeMethodDescriptor; static;
     class function CreateCrossInterfaceMethod(const MethodName: string; const SourceInterface: PTypeInfo; const TargetInterface: PTypeInfo; const DelphiMethodName: string): IObjectBridgeMethodDescriptor; static;
+    
+    // Simplified typed creation methods (automatic casting and nil checking)
+    class function CreateTypedMethod(const MethodName: string; const InterfaceType: PTypeInfo;
+      const Caller: TTypedMethodCaller): IObjectBridgeMethodDescriptor; overload; static;
+    
+    // Generic typed creation methods - the lambda receives the actual typed interface
+    class function CreateTypedMethod<T: IInterface>(const MethodName: string;
+      const Caller: TTypedMethodCaller<T>): IObjectBridgeMethodDescriptor; overload; static;
 
     function CanHandle(const AObject: IRegisteredObject): Boolean;
     property MethodName: string read get_MethodName;
@@ -289,6 +307,162 @@ begin
       Result := JS_UNDEFINED;
       // Simplified implementation - actual cross-interface method calling would need
       // to be implemented based on your specific requirements
+    end
+  );
+end;
+
+{ Simplified typed creation methods }
+
+class function TObjectBridgePropertyDescriptor.CreateTypedProperty(
+  const PropertyName: string; const InterfaceType: PTypeInfo; 
+  const Getter: TTypedPropertyGetter; const Setter: TTypedPropertySetter = nil;
+  const PropertyTypeInfo: PTypeInfo = nil): IObjectBridgePropertyDescriptor;
+begin
+  Result := TObjectBridgePropertyDescriptor.Create(
+    PropertyName,
+    // Object checker - automatically check if object matches the interface type
+    function(const AObject: IRegisteredObject): Boolean
+    begin
+      Result := AObject.GetTypeInfo = InterfaceType;
+    end,
+    // Property getter - automatically handle nil check and casting
+    function(const Ptr: Pointer): TValue
+    begin
+      Result := TValue.Empty;
+      if Ptr = nil then Exit;
+      if not Assigned(Getter) then Exit;
+      
+      var intf: IInterface := IInterface(Ptr);
+      var typedIntf: IInterface;
+      if Interfaces.Supports(intf, InterfaceType.TypeData.Guid, typedIntf) then
+        Result := Getter(typedIntf);
+    end,
+    // Property setter - automatically handle nil check and casting
+    procedure(const Ptr: Pointer; const Value: TValue)
+    begin
+      if Ptr = nil then Exit;
+      if not Assigned(Setter) then Exit;
+      
+      var intf: IInterface := IInterface(Ptr);
+      var typedIntf: IInterface;
+      if Interfaces.Supports(intf, InterfaceType.TypeData.Guid, typedIntf) then
+        Setter(typedIntf, Value);
+    end,
+    PropertyTypeInfo
+  );
+end;
+
+class function TObjectBridgeMethodDescriptor.CreateTypedMethod(
+  const MethodName: string; const InterfaceType: PTypeInfo;
+  const Caller: TTypedMethodCaller): IObjectBridgeMethodDescriptor;
+begin
+  Result := TObjectBridgeMethodDescriptor.Create(
+    MethodName,
+    // Object checker - automatically check if object matches the interface type
+    function(const AObject: IRegisteredObject): Boolean
+    begin
+      Result := AObject.GetTypeInfo = InterfaceType;
+    end,
+    // Method caller - automatically handle nil check and casting
+    function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
+    begin
+      Result := JS_UNDEFINED;
+      if Ptr = nil then Exit;
+      if not Assigned(Caller) then Exit;
+      
+      var intf: IInterface := IInterface(Ptr);
+      var typedIntf: IInterface;
+      if Interfaces.Supports(intf, InterfaceType.TypeData.Guid, typedIntf) then
+        Result := Caller(ctx, typedIntf, argc, argv);
+    end
+  );
+end;
+
+{ Generic typed creation methods }
+
+class function TObjectBridgePropertyDescriptor.CreateTypedProperty<T>(
+  const PropertyName: string;
+  const Getter: TTypedPropertyGetter<T>; const Setter: TTypedPropertySetter<T> = nil;
+  const PropertyTypeInfo: PTypeInfo = nil): IObjectBridgePropertyDescriptor;
+var
+  interfaceType: PTypeInfo;
+  localGetter: TTypedPropertyGetter<T>;
+  localSetter: TTypedPropertySetter<T>;
+begin
+  // Extract TypeInfo from the generic type parameter T
+  interfaceType := TypeInfo(T);
+  localGetter := Getter;
+  localSetter := Setter;
+  
+  Result := TObjectBridgePropertyDescriptor.Create(
+    PropertyName,
+    // Object checker - automatically check if object matches the interface type T
+    function(const AObject: IRegisteredObject): Boolean
+    begin
+      Result := AObject.GetTypeInfo = interfaceType;
+    end,
+    // Property getter - automatically handle nil check and casting to T
+    function(const Ptr: Pointer): TValue
+    var
+      baseIntf: IInterface;
+      typedIntf: T;
+    begin
+      Result := TValue.Empty;
+      if Ptr = nil then Exit;
+      if not Assigned(localGetter) then Exit;
+      
+      baseIntf := IInterface(Ptr);
+      if Interfaces.Supports(baseIntf, interfaceType.TypeData.Guid, typedIntf) then
+        Result := localGetter(typedIntf);
+    end,
+    // Property setter - automatically handle nil check and casting to T
+    procedure(const Ptr: Pointer; const Value: TValue)
+    var
+      baseIntf: IInterface;
+      typedIntf: T;
+    begin
+      if Ptr = nil then Exit;
+      if not Assigned(localSetter) then Exit;
+      
+      baseIntf := IInterface(Ptr);
+      if Interfaces.Supports(baseIntf, interfaceType.TypeData.Guid, typedIntf) then
+        localSetter(typedIntf, Value);
+    end,
+    PropertyTypeInfo
+  );
+end;
+
+class function TObjectBridgeMethodDescriptor.CreateTypedMethod<T>(
+  const MethodName: string;
+  const Caller: TTypedMethodCaller<T>): IObjectBridgeMethodDescriptor;
+var
+  interfaceType: PTypeInfo;
+  localCaller: TTypedMethodCaller<T>;
+begin
+  // Extract TypeInfo from the generic type parameter T
+  interfaceType := TypeInfo(T);
+  localCaller := Caller;
+  
+  Result := TObjectBridgeMethodDescriptor.Create(
+    MethodName,
+    // Object checker - automatically check if object matches the interface type T
+    function(const AObject: IRegisteredObject): Boolean
+    begin
+      Result := AObject.GetTypeInfo = interfaceType;
+    end,
+    // Method caller - automatically handle nil check and casting to T
+    function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
+    var
+      baseIntf: IInterface;
+      typedIntf: T;
+    begin
+      Result := JS_UNDEFINED;
+      if Ptr = nil then Exit;
+      if not Assigned(localCaller) then Exit;
+      
+      baseIntf := IInterface(Ptr);
+      if Interfaces.Supports(baseIntf, interfaceType.TypeData.Guid, typedIntf) then
+        Result := localCaller(ctx, typedIntf, argc, argv);
     end
   );
 end;

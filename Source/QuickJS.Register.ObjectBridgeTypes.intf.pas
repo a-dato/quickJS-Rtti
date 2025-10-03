@@ -14,6 +14,16 @@ type
   TMethodCaller = reference to function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
   TExtensionGetter = reference to function(const Target: IInterface): TValue;
   TPatternChecker = reference to function(const AObject: IRegisteredObject): Boolean;
+  
+  // Simplified lambda types for typed helpers (already casted and nil-checked)
+  TTypedPropertyGetter = reference to function(const Instance: IInterface): TValue;
+  TTypedPropertySetter = reference to procedure(const Instance: IInterface; const Value: TValue);
+  TTypedMethodCaller = reference to function(ctx: JSContext; const Instance: IInterface; argc: Integer; argv: PJSValueConst): JSValue;
+  
+  // Generic lambda types - the Instance parameter is the actual interface type T
+  TTypedPropertyGetter<T: IInterface> = reference to function(const Instance: T): TValue;
+  TTypedPropertySetter<T: IInterface> = reference to procedure(const Instance: T; const Value: TValue);
+  TTypedMethodCaller<T: IInterface> = reference to function(ctx: JSContext; const Instance: T; argc: Integer; argv: PJSValueConst): JSValue;
 
   // Descriptor interfaces
   IObjectBridgePropertyDescriptor = interface(IPropertyDescriptor)
