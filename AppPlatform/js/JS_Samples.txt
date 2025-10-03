@@ -30,7 +30,23 @@ p.Description = `Project 1`;
 
 s.Model.Context.Add(p);
 
-// Smartsheet
+// Smartsheet direct
+import {smartsheet} from '/adato_quickjs/AppPlatform/js/SmartSheet_Direct.js';
+
+let sm = new smartsheet();
+let projects = sm.load_projects(await sm.fetch_projects());
+console.log(projects);
+console.log(projects[4].Description);
+
+let sm_project = await sm.fetch_project(projects[4]);
+let project = sm.load_project(projects[4], sm_project);
+console.log(project);
+
+let st = app.Storage['Projects'];
+st.Add(project);
+
+
+// Smartsheet provider
 import {SMSheet,SMSheetType} from '/adato_quickjs/AppPlatform/js/SmartSheet.js';
 
 SMSheetType.register();

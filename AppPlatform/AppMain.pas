@@ -78,6 +78,7 @@ type
 
     function get_Data: IList;
     function get_Names(const Value: string): string;
+    procedure SaveToFile(const FileName: string; const Data: CObject);
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
     function Test3(const Value: &Type) : CObject;
@@ -110,6 +111,8 @@ type
     function get_Names(const Value: string): string;
 
     function NextID: Int64;
+
+    procedure SaveToFile(const FileName: string; const Data: CObject);
 
     function Test(const Value: CObject) : CObject;
     function Test2(const Value: IProject) : IInterface;
@@ -449,6 +452,14 @@ begin
   Result := _nextID;
 end;
 
+procedure TTestObject.SaveToFile(const FileName: string; const Data: CObject);
+begin
+  var sl := TStringList.Create;
+  sl.Text := Data.ToString;
+  sl.SaveToFile(FileName);
+  sl.Free;
+end;
+
 procedure TTestObject.set_ID(const Value: CObject);
 begin
   _id := Value;
@@ -457,7 +468,10 @@ end;
 
 function TTestObject.Test(const Value: CObject): CObject;
 begin
-  Form1.mmLog.Lines.Add('Test call: ' + Value.ToString);
+  var sl := TStringList.Create;
+  sl.Text := Value.ToString;
+  sl.SaveToFile('d:\Temp\Tasks.json');
+  sl.Free;
 end;
 
 function TTestObject.Test2(const Value: IProject): IInterface;
