@@ -3,8 +3,6 @@ unit QuickJS.Register.ObjectBridgeTypes.impl;
 interface
 
 uses
-  System_,
-  System.Collections.Generic,
   QuickJS.Register.intf,
   QuickJS.Register.PropertyDescriptors.intf,
   QuickJS.Register.ObjectBridgeTypes.intf,
@@ -334,7 +332,7 @@ begin
       
       var intf: IInterface := IInterface(Ptr);
       var typedIntf: IInterface;
-      if Interfaces.Supports(intf, InterfaceType.TypeData.Guid, typedIntf) then
+      if Supports(intf, InterfaceType.TypeData.Guid, typedIntf) then
         Result := Getter(typedIntf);
     end,
     // Property setter - automatically handle nil check and casting
@@ -345,7 +343,7 @@ begin
       
       var intf: IInterface := IInterface(Ptr);
       var typedIntf: IInterface;
-      if Interfaces.Supports(intf, InterfaceType.TypeData.Guid, typedIntf) then
+      if Supports(intf, InterfaceType.TypeData.Guid, typedIntf) then
         Setter(typedIntf, Value);
     end,
     PropertyTypeInfo
@@ -372,7 +370,7 @@ begin
       
       var intf: IInterface := IInterface(Ptr);
       var typedIntf: IInterface;
-      if Interfaces.Supports(intf, InterfaceType.TypeData.Guid, typedIntf) then
+      if Supports(intf, InterfaceType.TypeData.Guid, typedIntf) then
         Result := Caller(ctx, typedIntf, argc, argv);
     end
   );
@@ -412,7 +410,7 @@ begin
       if not Assigned(localGetter) then Exit;
       
       baseIntf := IInterface(Ptr);
-      if Interfaces.Supports(baseIntf, interfaceType.TypeData.Guid, typedIntf) then
+      if Supports(baseIntf, interfaceType.TypeData.Guid, typedIntf) then
         Result := localGetter(typedIntf);
     end,
     // Property setter - automatically handle nil check and casting to T
@@ -425,7 +423,7 @@ begin
       if not Assigned(localSetter) then Exit;
       
       baseIntf := IInterface(Ptr);
-      if Interfaces.Supports(baseIntf, interfaceType.TypeData.Guid, typedIntf) then
+      if Supports(baseIntf, interfaceType.TypeData.Guid, typedIntf) then
         localSetter(typedIntf, Value);
     end,
     PropertyTypeInfo
@@ -461,7 +459,7 @@ begin
       if not Assigned(localCaller) then Exit;
       
       baseIntf := IInterface(Ptr);
-      if Interfaces.Supports(baseIntf, interfaceType.TypeData.Guid, typedIntf) then
+      if Supports(baseIntf, interfaceType.TypeData.Guid, typedIntf) then
         Result := localCaller(ctx, typedIntf, argc, argv);
     end
   );

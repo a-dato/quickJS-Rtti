@@ -7,7 +7,7 @@ uses
   System.Rtti,
   System.TypInfo,
   quickjs_ng,
-  System.SysUtils, QuickJS.Register.dn4d.intf,
+  System.SysUtils,
   QuickJS.Register.intf;
 
 type

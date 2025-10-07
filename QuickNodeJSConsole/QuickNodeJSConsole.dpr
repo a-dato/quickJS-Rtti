@@ -22,9 +22,10 @@ uses
 type
   TQuickJSConsole = class
   private
-    FRuntime: IJSRuntime;
+    // Shared runtime is now managed internally by QuickJS.Register
     FContext: IJSContext;
     FTestObject: ITestObject;
+    FTestObject2: ITestObject2;
     FTestObject3: ITestObject3;
     FJavaScriptFilePath: string;
     
@@ -76,18 +77,20 @@ begin
     begin
       Writeln(S);
     end);
-  FRuntime := TJSRuntime.Create;
-  FContext := TJSContext.Create(FRuntime);
+  FContext := TJSRegister.CreateContext;
 
-  TJSRegisterTypedObjects.Initialize(FContext);
-  
+ TJSRegisterTypedObjects.Initialize(FContext);
+
 
   // Create and register the test object
   // Use TTestObject3 which inherits from ITestObject2 and ITestObject
   // This will allow testing inheritance - the object supports all three interfaces
   FTestObject3 := TTestObject3.Create;
+  FTestObject2 := FTestObject3 as ITestObject2;
   FTestObject := FTestObject3 as ITestObject;
+
   TJSRegister.RegisterLiveObject(FContext, 'testObj', TypeInfo(ITestObject), FTestObject);
+  TJSRegister.RegisterLiveObject(FContext, 'testObj2', TypeInfo(ITestObject2), FTestObject2);
   TJSRegister.RegisterLiveObject(FContext, 'testObj3', TypeInfo(ITestObject3), FTestObject3);
 end;
 

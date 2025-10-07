@@ -43,6 +43,7 @@ type
   TJSRuntime = class(TInterfacedObject, IJSRuntime)
   protected
     class var _ActiveContexts: TDictionary<JSContext, Pointer {Unsafe IJSContext pointer}>;
+    class var _GlobalRuntime: IJSRuntime;
     var _rt: JSRuntime;
 
     function  get_rt: JSRuntime;
@@ -69,6 +70,7 @@ type
     function CreateContext: IJSContext;
 
     class property Context[const Value: JSContext]: IJSContext read get_Context;
+    class function Shared: IJSRuntime; static;
   end;
 
   TJSContext = class(TInterfacedObject, IJSContext)
@@ -179,7 +181,7 @@ type
 
     class procedure RegisterContext(const Context: IJSContext);
     class procedure UnregisterContext(const Context: IJSContext);
-    class function  CreateContext(const Runtime: IJSRuntime): IJSContext;
+    class function  CreateContext: IJSContext;
 
     class function  RegisterObject(ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject; overload;
     class function  RegisterObject(ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; overload;
@@ -1369,9 +1371,9 @@ begin
   end;
 end;
 
-class function TJSRegister.CreateContext(const Runtime: IJSRuntime): IJSContext;
+class function TJSRegister.CreateContext: IJSContext;
 begin
-  Result := TJSContext.Create(Runtime);
+  Result := TJSContext.Create(TJSRuntime.Shared);
   RegisterContext(Result);
 end;
 
@@ -2334,6 +2336,10 @@ begin
   // Register internal QuickJS types globally
   TJSRegister.RegisterObject('JSIterator', TypeInfo(TJSIterator), nil);
   TJSRegister.RegisterObject('JSIndexedPropertyAccessor', TypeInfo(TJSIndexedPropertyAccessor), nil);
+
+  // Create shared runtime instance
+  if _GlobalRuntime = nil then
+    _GlobalRuntime := TJSRuntime.Create;
 end;
 
 class destructor TJSRuntime.Destroy;
@@ -2349,6 +2355,13 @@ end;
 function TJSRuntime.CreateContext: IJSContext;
 begin
   Result := TJSContext.Create(Self);
+end;
+
+class function TJSRuntime.Shared: IJSRuntime;
+begin
+  Result := _GlobalRuntime;
+  if Result = nil then
+    Result := TJSRuntime.Create; // Fallback safety
 end;
 
 function TJSRuntime.get_LogString: TProc<string>;

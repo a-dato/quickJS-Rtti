@@ -6,8 +6,8 @@ uses
   System.SysUtils,
   System.TypInfo,
   System.Rtti,
-  System.Collections,
   System.AnsiStrings,
+  System.Generics.Collections,
   quickjs_ng,
   QuickJS.Register.intf,
   QuickJS.Register.ObjectBridge.intf,
@@ -23,7 +23,140 @@ type
 implementation
 
 uses
-  QuickJS.Register.impl, System_; // for JSConverter
+  QuickJS.Register.impl; // for JSConverter
+
+type
+  // RTTI-based enumerator wrapper to avoid DN4D System.Collections dependency
+  TRttiEnumeratorHelper = record
+    EnumeratorValue: TValue;
+    MoveNextMethod: TRttiMethod;
+    CurrentProperty: TRttiProperty;
+    
+    function MoveNext: Boolean;
+    function GetCurrent: TValue;
+    class function TryGetEnumerator(const Intf: IInterface; out Helper: TRttiEnumeratorHelper): Boolean; static;
+  end;
+
+  // RTTI-based list accessor to avoid DN4D System.Collections.IList dependency  
+  TRttiListHelper = record
+    ListInterface: IInterface;
+    ListType: TRttiType;
+    ItemProperty: TRttiIndexedProperty;
+    CountProperty: TRttiProperty;
+    
+    function GetCount: Integer;
+    function GetItem(Index: Integer): TValue;
+    procedure SetItem(Index: Integer; const Value: TValue);
+    class function TryGetListHelper(const Intf: IInterface; out Helper: TRttiListHelper): Boolean; static;
+  end;
+
+function TRttiEnumeratorHelper.MoveNext: Boolean;
+begin
+  if MoveNextMethod <> nil then
+  begin
+    var resultValue := MoveNextMethod.Invoke(EnumeratorValue, []);
+    Result := resultValue.AsBoolean;
+  end
+  else
+    Result := False;
+end;
+
+function TRttiEnumeratorHelper.GetCurrent: TValue;
+begin
+  if CurrentProperty <> nil then
+    Result := CurrentProperty.GetValue(EnumeratorValue.AsObject)
+  else
+    Result := TValue.Empty;
+end;
+
+class function TRttiEnumeratorHelper.TryGetEnumerator(const Intf: IInterface; out Helper: TRttiEnumeratorHelper): Boolean;
+begin
+  Result := False;
+  if Intf = nil then Exit;
+  
+  var ctx := TRttiContext.Create;
+  var rttiType := ctx.GetType((Intf as TObject).ClassType);
+  if rttiType = nil then Exit;
+  
+  // Find GetEnumerator method
+  var getEnumMethod := rttiType.GetMethod('GetEnumerator');
+  if getEnumMethod = nil then Exit;
+  
+  // Call GetEnumerator
+  Helper.EnumeratorValue := getEnumMethod.Invoke(TValue.From(Intf), []);
+  if Helper.EnumeratorValue.IsEmpty then Exit;
+  
+  // Get enumerator type
+  var enumType := ctx.GetType(Helper.EnumeratorValue.TypeInfo);
+  if enumType = nil then Exit;
+  
+  // Find MoveNext and Current
+  Helper.MoveNextMethod := enumType.GetMethod('MoveNext');
+  Helper.CurrentProperty := enumType.GetProperty('Current');
+  
+  Result := (Helper.MoveNextMethod <> nil) and (Helper.CurrentProperty <> nil);
+end;
+
+function TRttiListHelper.GetCount: Integer;
+begin
+  if CountProperty <> nil then
+  begin
+    var listObj := ListInterface as TObject;
+    Result := CountProperty.GetValue(listObj).AsInteger;
+  end
+  else
+    Result := 0;
+end;
+
+function TRttiListHelper.GetItem(Index: Integer): TValue;
+begin
+  if ItemProperty <> nil then
+  begin
+    var listObj := ListInterface as TObject;
+    Result := ItemProperty.GetValue(listObj, [Index]);
+  end
+  else
+    Result := TValue.Empty;
+end;
+
+procedure TRttiListHelper.SetItem(Index: Integer; const Value: TValue);
+begin
+  if ItemProperty <> nil then
+  begin
+    var listObj := ListInterface as TObject;
+    ItemProperty.SetValue(listObj, [Index], Value);
+  end;
+end;
+
+class function TRttiListHelper.TryGetListHelper(const Intf: IInterface; out Helper: TRttiListHelper): Boolean;
+begin
+  Result := False;
+  if Intf = nil then Exit;
+  
+  var ctx := TRttiContext.Create;
+  var rttiType := ctx.GetType((Intf as TObject).ClassType);
+  if rttiType = nil then Exit;
+  
+  Helper.ListInterface := Intf;
+  Helper.ListType := rttiType;
+  
+  // Find Count property
+  Helper.CountProperty := rttiType.GetProperty('Count');
+  if Helper.CountProperty = nil then Exit;
+  
+  // Find indexed Item property (default property)
+  var indexedProps := rttiType.GetIndexedProperties;
+  for var idxProp in indexedProps do
+  begin
+    // Look for Item[Integer] or any single-parameter indexer
+    if (idxProp.ReadMethod <> nil) and (Length(idxProp.ReadMethod.GetParameters) = 1) then
+    begin
+      Helper.ItemProperty := idxProp;
+      Result := True;
+      Exit;
+    end;
+  end;
+end;
 
 class procedure TObjectBridgeDefaultDefinitions.Initialize(const Resolver: IObjectBridgeResolver);
 begin
@@ -41,7 +174,7 @@ begin
       // Method caller implementation
       function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
       var
-        enumerable: IEnumerable;
+        enumerator: TRttiEnumeratorHelper;
       begin
         Result := JS_UNDEFINED;
 
@@ -52,15 +185,15 @@ begin
         var func := PJSValueConstArr(argv)[0];
         if not JS_IsFunction(ctx, func) then Exit;
 
-        // We treat bridged pointers as interfaces for enumeration
-        if Interfaces.Supports<IEnumerable>(IInterface(Ptr), enumerable) then
+        // Use RTTI to get enumerator
+        if TRttiEnumeratorHelper.TryGetEnumerator(IInterface(Ptr), enumerator) then
         begin
-          var enum := enumerable.GetEnumerator;
           var index := 0;
 
-          while enum.MoveNext do
+          while enumerator.MoveNext do
           begin
-            var target := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
+            var current := enumerator.GetCurrent;
+            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -91,15 +224,14 @@ begin
       end,
       function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
       var
-        l: IEnumerable; // for quick checks if needed
-        ilist: System.Collections.IList;
+        listHelper: TRttiListHelper;
       begin
         Result := JS_UNDEFINED;
 
-        // Only handle IList for slicing
-        if not Interfaces.Supports<System.Collections.IList>(IInterface(Ptr), ilist) then Exit;
+        // Only handle list-like interfaces for slicing
+        if not TRttiListHelper.TryGetListHelper(IInterface(Ptr), listHelper) then Exit;
 
-        var count := ilist.Count;
+        var count := listHelper.GetCount;
         var startIdx: Integer := 0;
         var endIdx: Integer := count;
 
@@ -132,7 +264,8 @@ begin
           var outIndex := 0;
           for var i := startIdx to endIdx - 1 do
           begin
-            var v := JSConverter.Instance.TValueToJSValue(ctx, ilist[i].AsType<TValue>);
+            var item := listHelper.GetItem(i);
+            var v := JSConverter.Instance.TValueToJSValue(ctx, item);
             // Use string index to avoid depending on Uint32 setter availability
             var s := AnsiString(outIndex.ToString);
             JS_SetPropertyStr(ctx, jsArr, PAnsiChar(s), v);
@@ -157,7 +290,7 @@ begin
       // Method caller implementation
       function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
       var
-        enumerable: IEnumerable;
+        enumerator: TRttiEnumeratorHelper;
       begin
         Result := JS_UNDEFINED;
 
@@ -171,15 +304,15 @@ begin
         var jsArr := JS_NewArray(ctx);
         var outIndex := 0;
 
-        // We treat bridged pointers as interfaces for enumeration
-        if Interfaces.Supports<IEnumerable>(IInterface(Ptr), enumerable) then
+        // Use RTTI to get enumerator
+        if TRttiEnumeratorHelper.TryGetEnumerator(IInterface(Ptr), enumerator) then
         begin
-          var enum := enumerable.GetEnumerator;
           var index := 0;
 
-          while enum.MoveNext do
+          while enumerator.MoveNext do
           begin
-            var target := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
+            var current := enumerator.GetCurrent;
+            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -217,20 +350,20 @@ begin
       end,
       function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
       var
-        ilist: System.Collections.IList;
+        listHelper: TRttiListHelper;
         compareFunc: JSValue;
         hasCompareFunc: Boolean;
       begin
         Result := JS_UNDEFINED;
 
-        // Only handle IList for sorting
-        if not Interfaces.Supports<System.Collections.IList>(IInterface(Ptr), ilist) then Exit;
+        // Only handle list-like interfaces for sorting
+        if not TRttiListHelper.TryGetListHelper(IInterface(Ptr), listHelper) then Exit;
 
         hasCompareFunc := (argc >= 1) and JS_IsFunction(ctx, PJSValueConstArr(argv)[0]);
         if hasCompareFunc then
           compareFunc := PJSValueConstArr(argv)[0];
 
-        var count := ilist.Count;
+        var count := listHelper.GetCount;
         if count <= 1 then
         begin
           Result := JSConverter.Instance.TValueToJSValue(ctx, TValue.From<IInterface>(IInterface(Ptr)));
@@ -247,8 +380,10 @@ begin
             if hasCompareFunc then
             begin
               // Use custom comparison function
-              var item1 := JSConverter.Instance.TValueToJSValue(ctx, ilist[j].AsType<TValue>);
-              var item2 := JSConverter.Instance.TValueToJSValue(ctx, ilist[j + 1].AsType<TValue>);
+              var itemVal1 := listHelper.GetItem(j);
+              var itemVal2 := listHelper.GetItem(j + 1);
+              var item1 := JSConverter.Instance.TValueToJSValue(ctx, itemVal1);
+              var item2 := JSConverter.Instance.TValueToJSValue(ctx, itemVal2);
               
               var call_argv: array of JSValueConst;
               SetLength(call_argv, 2);
@@ -268,27 +403,27 @@ begin
             else
             begin
               // Default string comparison
-              var val1 := ilist[j];
-              var val2 := ilist[j + 1];
+              var val1 := listHelper.GetItem(j);
+              var val2 := listHelper.GetItem(j + 1);
               
               // Convert to strings for comparison
-              var str1: CString := '';
-              var str2: CString := '';
+              var str1: string := '';
+              var str2: string := '';
               
-              if val1 <> nil then
+              if not val1.IsEmpty then
                 str1 := val1.ToString;
-              if val2 <> nil then
+              if not val2.IsEmpty then
                 str2 := val2.ToString;
                 
-              shouldSwap := str1.Length > str2.Length;
+              shouldSwap := Length(str1) > Length(str2);
             end;
             
             if shouldSwap then
             begin
               // Swap elements
-              var temp := ilist[j];
-              ilist[j] := ilist[j + 1];
-              ilist[j + 1] := temp;
+              var temp := listHelper.GetItem(j);
+              listHelper.SetItem(j, listHelper.GetItem(j + 1));
+              listHelper.SetItem(j + 1, temp);
             end;
           end;
         end;
@@ -311,7 +446,7 @@ begin
       // Method caller implementation
       function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
       var
-        enumerable: IEnumerable;
+        enumerator: TRttiEnumeratorHelper;
       begin
         Result := JS_NewBool(ctx, False); // Default to false
 
@@ -322,15 +457,15 @@ begin
         var func := PJSValueConstArr(argv)[0];
         if not JS_IsFunction(ctx, func) then Exit;
 
-        // We treat bridged pointers as interfaces for enumeration
-        if Interfaces.Supports<IEnumerable>(IInterface(Ptr), enumerable) then
+        // Use RTTI to get enumerator
+        if TRttiEnumeratorHelper.TryGetEnumerator(IInterface(Ptr), enumerator) then
         begin
-          var enum := enumerable.GetEnumerator;
           var index := 0;
 
-          while enum.MoveNext do
+          while enumerator.MoveNext do
           begin
-            var target := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
+            var current := enumerator.GetCurrent;
+            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -370,7 +505,7 @@ begin
       // Method caller implementation
       function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
       var
-        enumerable: IEnumerable;
+        enumerator: TRttiEnumeratorHelper;
       begin
         Result := JS_NewBool(ctx, True); // Default to true
 
@@ -381,15 +516,15 @@ begin
         var func := PJSValueConstArr(argv)[0];
         if not JS_IsFunction(ctx, func) then Exit;
 
-        // We treat bridged pointers as interfaces for enumeration
-        if Interfaces.Supports<IEnumerable>(IInterface(Ptr), enumerable) then
+        // Use RTTI to get enumerator
+        if TRttiEnumeratorHelper.TryGetEnumerator(IInterface(Ptr), enumerator) then
         begin
-          var enum := enumerable.GetEnumerator;
           var index := 0;
 
-          while enum.MoveNext do
+          while enumerator.MoveNext do
           begin
-            var target := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
+            var current := enumerator.GetCurrent;
+            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -429,7 +564,7 @@ begin
       // Method caller implementation
       function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
       var
-        enumerable: IEnumerable;
+        enumerator: TRttiEnumeratorHelper;
       begin
         Result := JS_UNDEFINED; // Default to undefined
 
@@ -440,15 +575,15 @@ begin
         var func := PJSValueConstArr(argv)[0];
         if not JS_IsFunction(ctx, func) then Exit;
 
-        // We treat bridged pointers as interfaces for enumeration
-        if Interfaces.Supports<IEnumerable>(IInterface(Ptr), enumerable) then
+        // Use RTTI to get enumerator
+        if TRttiEnumeratorHelper.TryGetEnumerator(IInterface(Ptr), enumerator) then
         begin
-          var enum := enumerable.GetEnumerator;
           var index := 0;
 
-          while enum.MoveNext do
+          while enumerator.MoveNext do
           begin
-            var target := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
+            var current := enumerator.GetCurrent;
+            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -488,7 +623,7 @@ begin
       // Method caller implementation
       function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
       var
-        enumerable: IEnumerable;
+        enumerator: TRttiEnumeratorHelper;
       begin
         Result := JS_NewInt32(ctx, -1); // Default to -1 (not found)
 
@@ -499,15 +634,15 @@ begin
         var func := PJSValueConstArr(argv)[0];
         if not JS_IsFunction(ctx, func) then Exit;
 
-        // We treat bridged pointers as interfaces for enumeration
-        if Interfaces.Supports<IEnumerable>(IInterface(Ptr), enumerable) then
+        // Use RTTI to get enumerator
+        if TRttiEnumeratorHelper.TryGetEnumerator(IInterface(Ptr), enumerator) then
         begin
-          var enum := enumerable.GetEnumerator;
           var index := 0;
 
-          while enum.MoveNext do
+          while enumerator.MoveNext do
           begin
-            var target := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
+            var current := enumerator.GetCurrent;
+            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -547,7 +682,7 @@ begin
       // Method caller implementation
       function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
       var
-        enumerable: IEnumerable;
+        enumerator: TRttiEnumeratorHelper;
       begin
         Result := JS_UNDEFINED;
 
@@ -561,15 +696,15 @@ begin
         var jsArr := JS_NewArray(ctx);
         var outIndex := 0;
 
-        // We treat bridged pointers as interfaces for enumeration
-        if Interfaces.Supports<IEnumerable>(IInterface(Ptr), enumerable) then
+        // Use RTTI to get enumerator
+        if TRttiEnumeratorHelper.TryGetEnumerator(IInterface(Ptr), enumerator) then
         begin
-          var enum := enumerable.GetEnumerator;
           var index := 0;
 
-          while enum.MoveNext do
+          while enumerator.MoveNext do
           begin
-            var target := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
+            var current := enumerator.GetCurrent;
+            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -614,7 +749,7 @@ begin
       // Method caller implementation
       function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
       var
-        enumerable: IEnumerable;
+        enumerator: TRttiEnumeratorHelper;
       begin
         Result := JS_NewBool(ctx, False); // Default to false
 
@@ -622,14 +757,13 @@ begin
 
         var searchValue := PJSValueConstArr(argv)[0];
 
-        // We treat bridged pointers as interfaces for enumeration
-        if Interfaces.Supports<IEnumerable>(IInterface(Ptr), enumerable) then
+        // Use RTTI to get enumerator
+        if TRttiEnumeratorHelper.TryGetEnumerator(IInterface(Ptr), enumerator) then
         begin
-          var enum := enumerable.GetEnumerator;
-
-          while enum.MoveNext do
+          while enumerator.MoveNext do
           begin
-            var target := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
+            var current := enumerator.GetCurrent;
+            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
             
             // Use string comparison for equality
             var targetStr: PAnsiChar;
@@ -669,7 +803,7 @@ begin
       // Method caller implementation
       function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
       var
-        enumerable: IEnumerable;
+        enumerator: TRttiEnumeratorHelper;
       begin
         Result := JS_NewInt32(ctx, -1); // Default to -1 (not found)
 
@@ -677,15 +811,15 @@ begin
 
         var searchValue := PJSValueConstArr(argv)[0];
 
-        // We treat bridged pointers as interfaces for enumeration
-        if Interfaces.Supports<IEnumerable>(IInterface(Ptr), enumerable) then
+        // Use RTTI to get enumerator
+        if TRttiEnumeratorHelper.TryGetEnumerator(IInterface(Ptr), enumerator) then
         begin
-          var enum := enumerable.GetEnumerator;
           var index := 0;
 
-          while enum.MoveNext do
+          while enumerator.MoveNext do
           begin
-            var target := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
+            var current := enumerator.GetCurrent;
+            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
             
             // Use string comparison for equality
             var targetStr: PAnsiChar;
@@ -727,7 +861,7 @@ begin
       // Method caller implementation
       function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
       var
-        enumerable: IEnumerable;
+        enumerator: TRttiEnumeratorHelper;
       begin
         Result := JS_UNDEFINED;
 
@@ -746,16 +880,16 @@ begin
         else
           accumulator := JS_UNDEFINED;
 
-        // We treat bridged pointers as interfaces for enumeration
-        if Interfaces.Supports<IEnumerable>(IInterface(Ptr), enumerable) then
+        // Use RTTI to get enumerator
+        if TRttiEnumeratorHelper.TryGetEnumerator(IInterface(Ptr), enumerator) then
         begin
-          var enum := enumerable.GetEnumerator;
           var index := 0;
           var isFirstIteration := True;
 
-          while enum.MoveNext do
+          while enumerator.MoveNext do
           begin
-            var currentValue := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
+            var current := enumerator.GetCurrent;
+            var currentValue := JSConverter.Instance.TValueToJSValue(ctx, current);
             
             if isFirstIteration and not hasInitialValue then
             begin

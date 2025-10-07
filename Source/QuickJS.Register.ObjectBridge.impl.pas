@@ -3,20 +3,18 @@ unit QuickJS.Register.ObjectBridge.impl;
 interface
 
 uses
-  System_,
   QuickJS.Register.ObjectBridgeTypes.intf,
   QuickJS.Register.ObjectBridge.intf,
-  App.PropertyDescriptor.intf,
   QuickJS.Register.intf, System.TypInfo,
   QuickJS.Register.ObjectBridgeTypes.impl,
-  System.Collections.Generic;
+  System.Generics.Collections;
 
 type
 
-  TObjectBridgeResolver = class(TBaseInterfacedObject, IObjectBridgeResolver)
+  TObjectBridgeResolver = class(TInterfacedObject, IObjectBridgeResolver)
   private
-    class var _propertyDescriptors: IDictionary<CString, IList<IObjectBridgePropertyDescriptor>>;
-    class var _methodDescriptors: IDictionary<CString, IList<IObjectBridgeMethodDescriptor>>;
+    class var _propertyDescriptors: TDictionary<string, TList<IObjectBridgePropertyDescriptor>>;
+    class var _methodDescriptors: TDictionary<string, TList<IObjectBridgeMethodDescriptor>>;
     class var _isResolving: Boolean; // Recursion guard
     
     class procedure InitializeResolvers;
@@ -37,7 +35,7 @@ implementation
 uses
   System.SysUtils,
   QuickJS.Register.impl,
-  System.Collections,
+//  System.Collections,
   System.Rtti,
   quickjs_ng;
 
@@ -51,23 +49,23 @@ end;
 
 class destructor TObjectBridgeResolver.Destroy;
 begin
-  _propertyDescriptors := nil;
-  _methodDescriptors := nil;
+  _propertyDescriptors.Free;
+  _methodDescriptors.Free;
 end;
 
 class procedure TObjectBridgeResolver.InitializeResolvers;
 begin
-  _propertyDescriptors := CDictionary<CString, IList<IObjectBridgePropertyDescriptor>>.Create;
-  _methodDescriptors := CDictionary<CString, IList<IObjectBridgeMethodDescriptor>>.Create;
+  _propertyDescriptors := TDictionary<string, TList<IObjectBridgePropertyDescriptor>>.Create;
+  _methodDescriptors := TDictionary<string, TList<IObjectBridgeMethodDescriptor>>.Create;
 end;
 
 class function TObjectBridgeResolver.TryGetPropertyDescriptor(const AObject: IRegisteredObject; const PropertyName: string): IPropertyDescriptor;
 begin
   Result := nil;
-  var lowerPropertyName: CString := CString(LowerCase(PropertyName));
+  var lowerPropertyName: string := LowerCase(PropertyName);
   
   // Look up descriptors by name in dictionary
-  var descriptorList: IList<IObjectBridgePropertyDescriptor>;
+  var descriptorList: TList<IObjectBridgePropertyDescriptor>;
   if not _propertyDescriptors.TryGetValue(lowerPropertyName, descriptorList) then
     Exit;
   
@@ -85,10 +83,10 @@ end;
 class function TObjectBridgeResolver.TryGetMethodDescriptor(const AObject: IRegisteredObject; const MethodName: string): IPropertyDescriptor;
 begin
   Result := nil;
-  var lowerMethodName: CString := CString(LowerCase(MethodName));
+  var lowerMethodName: string := LowerCase(MethodName);
 
   // Look up descriptors by name in dictionary
-  var descriptorList: IList<IObjectBridgeMethodDescriptor>;
+  var descriptorList: TList<IObjectBridgeMethodDescriptor>;
   if not _methodDescriptors.TryGetValue(lowerMethodName, descriptorList) then
     Exit;
   
@@ -105,13 +103,13 @@ end;
 
 procedure TObjectBridgeResolver.AddPropertyDescriptor(const Descriptor: IObjectBridgePropertyDescriptor);
 begin
-  var lowerPropertyName: CString := CString(LowerCase(Descriptor.PropertyName));
+  var lowerPropertyName: string := LowerCase(Descriptor.PropertyName);
   
   // Get or create the list for this property name
-  var descriptorList: IList<IObjectBridgePropertyDescriptor>;
+  var descriptorList: TList<IObjectBridgePropertyDescriptor>;
   if not _propertyDescriptors.TryGetValue(lowerPropertyName, descriptorList) then
   begin
-    descriptorList := CList<IObjectBridgePropertyDescriptor>.Create;
+    descriptorList := TList<IObjectBridgePropertyDescriptor>.Create;
     _propertyDescriptors.Add(lowerPropertyName, descriptorList);
   end;
   
@@ -120,13 +118,13 @@ end;
 
 procedure TObjectBridgeResolver.AddMethodDescriptor(const Descriptor: IObjectBridgeMethodDescriptor);
 begin
-  var lowerMethodName: CString := CString(LowerCase(Descriptor.MethodName));
+  var lowerMethodName: string := LowerCase(Descriptor.MethodName);
   
   // Get or create the list for this method name
-  var descriptorList: IList<IObjectBridgeMethodDescriptor>;
+  var descriptorList: TList<IObjectBridgeMethodDescriptor>;
   if not _methodDescriptors.TryGetValue(lowerMethodName, descriptorList) then
   begin
-    descriptorList := CList<IObjectBridgeMethodDescriptor>.Create;
+    descriptorList := TList<IObjectBridgeMethodDescriptor>.Create;
     _methodDescriptors.Add(lowerMethodName, descriptorList);
   end;
   
