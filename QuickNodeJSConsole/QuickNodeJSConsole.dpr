@@ -13,20 +13,25 @@ uses
   System.StrUtils,
   quickjs_ng,
   QuickJS.Register.intf,
-  QuickJS.Register.impl,
-  TestObjects.intf,
+  QuickJS.Register.impl
+  {$IFDEF TESTS}
+  ,TestObjects.intf,
   TestObjects.impl,
   QuickJS.Register.dn4d.impl,
-  TestObjectsDefinitionsTest.impl;
+  TestObjectsDefinitionsTest.impl
+  {$ENDIF}
+  ;
 
 type
   TQuickJSConsole = class
   private
     // Shared runtime is now managed internally by QuickJS.Register
     FContext: IJSContext;
+    {$IFDEF TESTS}
     FTestObject: ITestObject;
     FTestObject2: ITestObject2;
     FTestObject3: ITestObject3;
+    {$ENDIF}
     FJavaScriptFilePath: string;
     
     function EscapeJS(const S: string): string;
@@ -79,8 +84,11 @@ begin
     end);
   FContext := TJSRegister.CreateContext;
 
- TJSRegisterTypedObjects.Initialize(FContext);
+  {$IFDEF TESTS}
+  TJSRegisterTypedObjects.Initialize(FContext);
 
+  // Register test object bridge definitions
+  TestObjectBridgeDefinitions.RegisterWithObjectBridge(TJSRegister.ObjectBridgeResolver);
 
   // Create and register the test object
   // Use TTestObject3 which inherits from ITestObject2 and ITestObject
@@ -92,6 +100,7 @@ begin
   TJSRegister.RegisterLiveObject(FContext, 'testObj', TypeInfo(ITestObject), FTestObject);
   TJSRegister.RegisterLiveObject(FContext, 'testObj2', TypeInfo(ITestObject2), FTestObject2);
   TJSRegister.RegisterLiveObject(FContext, 'testObj3', TypeInfo(ITestObject3), FTestObject3);
+  {$ENDIF}
 end;
 
 function TQuickJSConsole.EscapeJS(const S: string): string;
