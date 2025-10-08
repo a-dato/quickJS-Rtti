@@ -30,6 +30,7 @@ type
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject) : CObject; overload;
 
     function  NextID: Int64;
+    procedure ResetID(const Value: Int64);
   public
     constructor Create;
 
@@ -107,6 +108,11 @@ function TAppFactory.NextID: Int64;
 begin
   dec(_id);
   Result := _id;
+end;
+
+procedure TAppFactory.ResetID(const Value: Int64);
+begin
+  _id := Value;
 end;
 
 end.

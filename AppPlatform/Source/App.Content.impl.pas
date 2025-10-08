@@ -20,7 +20,7 @@ type
     function CreateInstance(const Param1: CObject; const Param2: CObject; const Param3: CObject) : CObject; overload; virtual;
     function CreateInstance(const Param1: CObject; const Param2: CObject; const Param3: CObject; const Param4: CObject) : CObject; overload; virtual;
 
-    function CreateStorage: IAppStorage; virtual;
+    function CreateStorage: IStorage; virtual;
     function Data(const Filter: CObject): IList; virtual;
   public
     constructor Create(const Descriptor: ITypeDescriptor);
@@ -63,9 +63,9 @@ begin
   Result := _app.Factory.CreateInstance(_descriptor.GetType, Param1, Param2, Param3, Param4);
 end;
 
-function TContentProvider.CreateStorage: IAppStorage;
+function TContentProvider.CreateStorage: IStorage;
 begin
-  Result := TAppStorage.Create(_descriptor.GetType, _descriptor.StorageName);
+  Result := TStorage.Create(_descriptor.GetType, _descriptor.StorageName);
 end;
 
 function TContentProvider.Data(const Filter: CObject): IList;

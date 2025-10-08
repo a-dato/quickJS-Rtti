@@ -279,7 +279,7 @@ type
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
 
   public
-    constructor Create(AInfo: PTypeInfo; const RttiProp: TRttiMember);
+    constructor Create(AInfo: PTypeInfo; const RttiProp: TRttiMember); reintroduce;
   end;
 
   TRttiMethodPropertyDescriptor = class(TPropertyDescriptor, IMethodsPropertyDescriptor)
@@ -293,7 +293,7 @@ type
 
     function  SelectMethodMatchArguments(ctx: JSContext; argc: Integer; argv: PJSValueConst): TRttiMethod;
   public
-    constructor Create(AInfo: PTypeInfo; const RttiMethods: TArray<TRttiMethod>; IsInterface: Boolean);
+    constructor Create(AInfo: PTypeInfo; const RttiMethods: TArray<TRttiMethod>; IsInterface: Boolean); reintroduce;
   end;
 
   TRttiInterfacePropertyDescriptor = class(TPropertyDescriptor)
@@ -308,7 +308,7 @@ type
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
 
   public
-    constructor Create(AInfo: PTypeInfo; const RttiGetter: TRttiMethod; const RttiSetter: TRttiMethod);
+    constructor Create(AInfo: PTypeInfo; const RttiGetter: TRttiMethod; const RttiSetter: TRttiMethod); reintroduce;
   end;
 
   TRttiIndexedInterfacePropertyDescriptor = class(TRttiInterfacePropertyDescriptor)
@@ -325,7 +325,7 @@ type
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
 
   public
-    constructor Create(AInfo: PTypeInfo);
+    constructor Create(AInfo: PTypeInfo); reintroduce;
   end;
 
   TRttiIteratorDescriptor = class(TPropertyDescriptor)
@@ -346,7 +346,7 @@ type
     function  get_MemberType: TMemberType; override;
 
   public
-    constructor Create(const PropertyName: string);
+    constructor Create(const PropertyName: string); reintroduce;
   end;
 
   TRegisteredObject = class(TInterfacedObject, IRegisteredObject)
@@ -420,7 +420,7 @@ function AtomToString(ctx: JSContext; Atom: JSAtom) : string;
 begin
   var jv := JS_AtomToString(ctx, Atom);
   var ansistr := JS_ToCString(ctx, jv);
-  Result := ansistr;
+  Result := string(ansistr);
   JS_FreeCString(ctx, ansistr);
   JS_FreeValue(ctx, jv);
 end;
@@ -512,6 +512,10 @@ end;
 
 function TJSObject.InternalInvoke(const Func: AnsiString; argc: Integer; argv: PJSValueConstArr): JSValue;
 begin
+  {$IFDEF DEBUG}
+  var obj_descr := TJSRegister.Describe(_ctx, _value);
+  {$ENDIF}
+
   Result := JS_GetPropertyStr(_ctx, _value, PAnsiChar(Func));
   TJSRuntime.Check(_ctx, Result);
   Result := TJSRuntime.WaitForJobs(_ctx, Result);
@@ -520,9 +524,9 @@ begin
   // Property returns a function, call function to get actual value
   if JS_IsFunction(_ctx, Result) then
   begin
-    var tmp := Result;
-    Result := InternalCall(tmp, _value, argc, argv);
-    JS_FreeValue(_ctx, tmp);
+    var tmp_func := Result;
+    Result := InternalCall(_value, tmp_func, argc, argv);
+    JS_FreeValue(_ctx, tmp_func);
     if not TJSRuntime.Check(_ctx) then Exit;
   end
   // Call on property with sub-properties
@@ -534,8 +538,8 @@ begin
     var prop_name := JSConverter.Instance.JSValueToTValue(_ctx, argv[0], TypeInfo(string));
     if not prop_name.IsEmpty then
     begin
-      var s: AnsiString := prop_name.ToString;
-      Result := JS_GetPropertyStr(_ctx, js_obj, PAnsiChar(s));
+      var prop_name_ansi: AnsiString := AnsiString(prop_name.ToString);
+      Result := JS_GetPropertyStr(_ctx, js_obj, PAnsiChar(prop_name_ansi));
       TJSRuntime.Check(_ctx, Result);
       Result := TJSRuntime.WaitForJobs(_ctx, Result);
       TJSRuntime.Check(_ctx, Result);
@@ -935,14 +939,14 @@ var
           if isObject then
           begin
             if not Supports(TObject(ptr), IJSExtendableObject, ext) then
-              Exit;
+              Exit(False);
           end
           else // Interface
           begin
             var v: TValue;
             TValue.Make(@ptr, reg.GetTypeInfo, v);
             if not Supports(v.AsInterface, IJSExtendableObject, ext) then
-              Exit;
+              Exit(False);
           end;
 
           if ext.define_own_property(Ctx, PropertyName) then
@@ -968,7 +972,7 @@ begin
   var obj_type: string;
   var r: IRegisteredObject;
   if FRegisteredObjectsByClassID.TryGetValue(GetClassID(obj), r) then
-    obj_type := r.GetTypeInfo.Name;
+    obj_type := string(r.GetTypeInfo.Name);
   var ptr := TJSRegister.GetObjectFromJSValue(obj, r.GetTypeInfo.Kind <> tkInterface);
   {$ENDIF}
 
@@ -982,8 +986,8 @@ begin
       Exit(1);
     end;
 
-    var item_index: Integer;
-    if (member_name[1] in ['0'..'9']) then
+    var item_index: Integer := -1;
+    if CharInSet(member_name[1], ['0'..'9']) then
     begin
       item_index := StrToInt(member_name);
       member_name := 'Array.get_Item';
@@ -1239,12 +1243,30 @@ type
   JSPropertyEnumArr  = array[0..(MaxInt div SizeOf(JSPropertyEnum))-1] of JSPropertyEnum;
   PJSPropertyEnumArr = ^JSPropertyEnumArr;
 
+  function GetClassName(c: JSValue) : string;
+  begin
+    var n := JS_GetPropertyStr(ctx, c, 'name');
+    var name := JS_ToCString(ctx, n);
+    Result := string(name);
+    JS_FreeCString(ctx, name);
+    JS_FreeValue(ctx, n);
+  end;
+
 begin
   var proto: JSValue;
+
   if JS_IsConstructor(ctx, Value) then
-    proto := JS_GetPropertyStr(ctx, Value, 'prototype')
+  begin
+    proto := JS_GetPropertyStr(ctx, Value, 'prototype');
+    Result := GetClassName(Value) + ': ';
+  end
   else if JS_IsObject(Value) then
+  begin
+    var c := JS_GetPropertyStr(ctx, Value, 'constructor');
+    Result := GetClassName(c) + ': ';
+    JS_FreeValue(ctx, c);
     proto := JS_GetPrototype(ctx, Value);
+  end;
 
   var p_enum: PJSPropertyEnum := nil;
   var p_len: UInt32;
@@ -1255,17 +1277,10 @@ begin
     for var i := 0 to p_len -1 do
     begin
       var name := AtomToString(ctx, PJSPropertyEnumArr(p_enum)[i].atom);
-      if Result = '' then
-        Result := name else
-        Result := Result + ', ' + name;
 
-//      var atom := PJSPropertyEnumArr(p_enum)[i].atom;
-//      var name := JS_AtomToCString(ctx, atom);
-//      if Result = '' then
-//        Result := name else
-//        Result := Result + ', ' + name;
-//      JS_FreeCString(ctx, name);
-//      JS_FreeAtom(ctx, atom);
+      if i = 0 then
+        Result := Result + name else
+        Result := Result + ', ' + name;
     end;
   end;
 
@@ -1292,7 +1307,7 @@ var
   jsctx: JSContext;
 
 begin
-  var s: AnsiString := ClassName;
+  var s: AnsiString := AnsiString(ClassName);
   JClass.class_name := PAnsiChar(s);
   JClass.finalizer := @CFinalize;
   JClass.gc_mark := nil;
@@ -1467,7 +1482,7 @@ begin
       ptr := TObjectReference.Create(TObject(AObject));
 
     JS_SetOpaque(jsval, ptr);
-    var s: AnsiString := ObjectName;
+    var s: AnsiString := AnsiString(ObjectName);
     JS_SetPropertyStr(ctx, global, PAnsiChar(s), jsval);
     JS_FreeValue(ctx, global);
   finally
@@ -1483,7 +1498,7 @@ begin
 
     if not FRegisteredObjectsByType.TryGetValue(TypeInfo, reg) then
     begin
-      TJSRegister.RegisterObject(ctx, TypeInfo.Name, TypeInfo);
+      TJSRegister.RegisterObject(ctx, string(TypeInfo.Name), TypeInfo);
       reg := FRegisteredObjectsByType[TypeInfo];
     end;
 
@@ -1494,7 +1509,7 @@ begin
     // Bump ref count required
     AInterface._AddRef;
     JS_SetOpaque(jsval, Pointer(AInterface));
-    var s: AnsiString := ObjectName;
+    var s: AnsiString := AnsiString(ObjectName);
     JS_SetPropertyStr(jsctx, global, PAnsiChar(s), jsval);
     JS_FreeValue(jsctx, global);
   finally
@@ -1763,7 +1778,7 @@ begin
       else if (getter <> nil) or (setter <> nil) then
         Result := TRttiInterfacePropertyDescriptor.Create(FTypeInfo, getter, setter);
     end
-    else if FTypeInfo.Kind = tkRecord then
+    else if FTypeInfo.Kind in [tkRecord, tkClass] then
     begin
       var field := rttiType.GetField(AName);
       if field <> nil then
@@ -1855,7 +1870,7 @@ end;
 
 function TRegisteredObject.get_ObjectSupportsIndexing: Boolean;
 begin
-  Result := Pos('List', FTypeInfo.Name) <> 0;
+  Result := Pos('List', string(FTypeInfo.Name)) <> 0;
 end;
 
 procedure TRegisteredObject.set_ObjectSupportsExtension(const Value: TObjectSupportsExtension);

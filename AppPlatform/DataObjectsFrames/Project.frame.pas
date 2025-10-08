@@ -9,11 +9,10 @@ uses
   FMX.Controls.Presentation, FMX.Layouts, FMX.ScrollControl.Impl,
   FMX.ScrollControl.WithRows.Impl, FMX.ScrollControl.WithCells.Impl,
   FMX.ScrollControl.WithEditableCells.Impl, FMX.ScrollControl.DataControl.Impl,
-  FMX.ScrollControl.Events,
-  app.EditorManager.intf;
+  FMX.ScrollControl.Events;
 
 type
-  TProjectFrame = class(TFrame, IEditorManager)
+  TProjectFrame = class(TFrame)
     IProject_Model: TDataControl;
     Layout1: TLayout;
     Label1: TLabel;
@@ -38,15 +37,13 @@ type
     Label7: TLabel;
     Label8: TLabel;
     IProject_SFAccount_0: TComboBox;
+    Button2: TButton;
     procedure acOkExecute(Sender: TObject);
-    procedure IProject_ModelCellFormatting(const Sender: TObject; e:
-        DCCellFormattingEventArgs);
+    procedure Button2Click(Sender: TObject);
   private
-    _EditorManager: IEditorManager;
+
   public
     constructor Create(AOwner: TComponent); override;
-
-    property EditorManager: IEditorManager read _EditorManager implements IEditorManager;
   end;
 
 implementation
@@ -64,18 +61,12 @@ end;
 constructor TProjectFrame.Create(AOwner: TComponent);
 begin
   inherited;
-  // _EditorManager := TEditorManager.Create(lyEditors);
 end;
 
-procedure TProjectFrame.IProject_ModelCellFormatting(const Sender: TObject; e: DCCellFormattingEventArgs);
+procedure TProjectFrame.Button2Click(Sender: TObject);
 begin
-//  var js_obj: JSObjectReference;
-//
-//  if e.Value.TryGetValue<JSObjectReference>(js_obj) then
-//  begin
-//    e.Value := js_obj.Invoke<CString>('Name');
-//    e.FormattingApplied := True;
-//  end;
+  for var s in IProject_Model.SelectedItems do
+    ShowMessage(s.ToString);
 end;
 
 end.

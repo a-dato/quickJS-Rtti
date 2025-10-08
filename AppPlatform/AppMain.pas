@@ -39,6 +39,7 @@ type
     TestFunc: TButton;
     TestFunc2: TButton;
     Button6: TButton;
+    Button7: TButton;
     procedure acExecuteExecute(Sender: TObject);
     procedure btnCustomerClick(Sender: TObject);
     procedure btnExecResultClick(Sender: TObject);
@@ -47,6 +48,7 @@ type
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
     procedure Button6Click(Sender: TObject);
+    procedure Button7Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure TestFunc2Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
@@ -156,7 +158,7 @@ uses
   ADato.ObjectModel.TrackInterfaces,
   App.Factory.impl,
   System.TypInfo,
-  QuickJS.VirtualMethod.impl;
+  QuickJS.VirtualMethod.impl, App.Storage.intf, App.Storage.impl;
 
 {$R *.fmx}
 
@@ -188,7 +190,7 @@ begin
   _app.Windows.CreateWindow(Self, TProject.Type).
     Build.
       Bind(_app.Storage[TProject.TypeDescriptor.StorageName]).
-        Show;
+        Show(nil);
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
@@ -220,13 +222,25 @@ end;
 
 procedure TForm1.Button3Click(Sender: TObject);
 begin
-  var t := &Type.From<ITestObject>;
+  var tp := &Type.From<IProject>;
 
-  for var p in t.GetProperties do
-    ShowMessage(p.Name);
+  var cust_prop := tp.PropertyByName('Customers');
 
-  for var m in t.GetMethods do
-    ShowMessage(m.Name);
+  var project := _app.Factory.CreateInstance(tp);
+
+  var o := cust_prop.GetValue(project, []);
+
+  var customers: IList;
+  if not o.TryGetValue<IList>(customers) then
+  begin
+    customers := TStorage.Create(_app.Config.TypeByName('Customer'), 'Customers');
+    cust_prop.SetValue(project, customers, []);
+  end;
+
+  var c := _app.Storage['Customers'][0];
+  customers.Add(c);
+
+  ShowMessage(customers.Count.ToString);
 end;
 
 procedure TForm1.Button4Click(Sender: TObject);
@@ -261,6 +275,22 @@ begin
   var v := TValue.From<CObject>(i64);
   _test.Test(v);
   _test.ID := v;
+end;
+
+procedure TForm1.Button7Click(Sender: TObject);
+begin
+  var c := _app.Storage['Customers'][0];
+  var t := c.GetType;
+  var prop := t.PropertyByName('Address');
+
+  var a := prop.GetValue(c, []);
+//  for var p in props do
+//    ShowMessage(p.Name);
+
+//  var customerType := _app.Config.TypeByName('Customer');
+//
+//  var props := customerType.GetProperties;
+//
 end;
 
 function TForm1.CreateTestFunc: TTestFunc;
@@ -342,6 +372,8 @@ begin
     TJSRegister.RegisterObject(_context, 'IOnItemChangedSupport', TypeInfo(IOnItemChangedSupport), nil);
     TJSRegister.RegisterObject(_context, 'IUpdatableObject', TypeInfo(IUpdatableObject), nil);
     TJSRegister.RegisterObject(_context, 'IProject', TypeInfo(IProject), nil);
+    TJSRegister.RegisterObject(_context, 'IStorage', TypeInfo(IStorage), nil);
+    TJSRegister.RegisterObject(_context, 'IStorageSupport', TypeInfo(IStorageSupport), nil);
 
     TJSRegister.RegisterLiveObject(_context, 'app', TypeInfo(IAppObject), _app);
 
@@ -468,10 +500,17 @@ end;
 
 function TTestObject.Test(const Value: CObject): CObject;
 begin
-  var sl := TStringList.Create;
-  sl.Text := Value.ToString;
-  sl.SaveToFile('d:\Temp\Tasks.json');
-  sl.Free;
+  var t := Value.GetType;
+  var prop := t.PropertyByName('Address');
+  var o := prop.GetValue(Value, []);
+
+  var s: string := o.ToString;
+
+
+//  var sl := TStringList.Create;
+//  sl.Text := Value.ToString;
+//  sl.SaveToFile('d:\Temp\Tasks.json');
+//  sl.Free;
 end;
 
 function TTestObject.Test2(const Value: IProject): IInterface;

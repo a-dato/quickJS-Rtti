@@ -10,6 +10,7 @@ uses
   App.TypeDescriptor.intf,
   App.TypeDescriptor.impl,
   App.Content.intf,
+  App.Storage.intf,
   ADato.ObjectModel.List.intf,
   App.Content.impl;
 
@@ -24,6 +25,7 @@ type
     _ID: CObject;
     _Name: string;
     _Child: IProject;
+    _storageSupport: IStorageSupport;
 
     _PropertyValue: Dictionary<_PropertyInfo, CObject>;
 
@@ -56,14 +58,14 @@ type
   ProjectProvider = class(TContentProvider)
   protected
     function CreateInstance: CObject; override;
-    function Data(const Filter: CObject): IList;
+    function Data(const Filter: CObject): IList; override;
   end;
 
 implementation
 
 uses
   ADato.ObjectModel.List.Tracking.impl,
-  System.SysUtils, System.Rtti, App.intf;
+  System.SysUtils, System.Rtti, App.intf, App.Storage.impl;
 
 
 { TProject }

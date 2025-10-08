@@ -5,19 +5,22 @@ interface
 uses
   System_,
   App.Windows.intf,
-  FMX.Forms;
+  App.Component.impl,
+  FMX.Forms, System.UITypes;
 
 type
-  WindowFrame = class(TBaseInterfacedObject, IWindowFrame)
+  TWindowFrame = class(TComponent, IWindowFrame)
   protected
     _content: CObject;
     _handle: TForm;
+    _onClose: TWindowClose;
 
     function  get_Content: CObject;
     procedure set_Content(const Value: CObject);
-    function  get_Owner: CObject;
 
-    procedure Show;
+    procedure Show(OnClose: TWindowClose);
+
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
 
   public
     constructor Create(AHandle: Pointer);
@@ -28,23 +31,17 @@ implementation
 
 { WindowFrame }
 
-constructor WindowFrame.Create(AHandle: Pointer);
+constructor TWindowFrame.Create(AHandle: Pointer);
 begin
   _handle := AHandle;
 end;
 
-function WindowFrame.get_Content: CObject;
+function TWindowFrame.get_Content: CObject;
 begin
   Result := _content;
-
 end;
 
-function WindowFrame.get_Owner: CObject;
-begin
-  Result := _handle.Owner;
-end;
-
-procedure WindowFrame.set_Content(const Value: CObject);
+procedure TWindowFrame.set_Content(const Value: CObject);
 begin
   _content := Value;
 
@@ -53,8 +50,16 @@ begin
     _handle.AddObject(fr);
 end;
 
-procedure WindowFrame.Show;
+procedure TWindowFrame.FormClose(Sender: TObject; var Action: TCloseAction);
 begin
+  if Assigned(_onClose) then
+    _onClose(nil);
+end;
+
+procedure TWindowFrame.Show(OnClose: TWindowClose);
+begin
+  _onClose := OnClose;
+  _handle.OnClose := FormClose;
   _handle.Show;
 end;
 

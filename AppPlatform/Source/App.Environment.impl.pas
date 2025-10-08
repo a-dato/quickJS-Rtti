@@ -22,6 +22,9 @@ type
     class var _FormClass: TFormClass;
 
   protected
+    function get_Application: IApplication;
+    function get_MainForm: IWindow;
+
     function get_TickCount: Integer;
 
     function CreateWindowFrame(const AOwner: CObject; const AType: &Type) : IWindowFrame;
@@ -52,7 +55,7 @@ type
     procedure BindChildren(const Children: TFmxChildrenList;
       const AModel: IObjectListModel;
       const AType: &Type; const TypeDescriptor: ITypeDescriptor);
-    procedure Bind(const AContent: CObject; const AType: &Type; const Storage: IAppStorage);
+    procedure Bind(const AContent: CObject; const AType: &Type; const Storage: IStorage);
 
     function WrapProperty(const AProp: _PropertyInfo) : _PropertyInfo; virtual;
   public
@@ -89,7 +92,17 @@ begin
     raise ArgumentException.Create('AOwner must be of type TComponent');
 
   var f := FormClass.Create(cmp);
-  Result := WindowFrame.Create(f);
+  Result := TWindowFrame.Create(f);
+end;
+
+function Environment.get_Application: IApplication;
+begin
+
+end;
+
+function Environment.get_MainForm: IWindow;
+begin
+
 end;
 
 function Environment.get_TickCount: Integer;
@@ -175,7 +188,7 @@ begin
     Result := AProp;
 end;
 
-procedure TFrameBinder.Bind(const AContent: CObject; const AType: &Type; const Storage: IAppStorage);
+procedure TFrameBinder.Bind(const AContent: CObject; const AType: &Type; const Storage: IStorage);
 begin
   var ctrl: TControl;
   if AContent.TryAsType<TControl>(ctrl) then

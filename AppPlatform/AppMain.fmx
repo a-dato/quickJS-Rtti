@@ -49,7 +49,7 @@ object Form1: TForm1
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
       TabOrder = 3
-      Text = 'Projects'
+      Text = 'Customers'
       TextSettings.Trimming = None
       OnClick = Button3Click
     end
@@ -73,8 +73,8 @@ object Form1: TForm1
       OnClick = Button5Click
     end
     object btnExecResult: TButton
-      Position.X = 355.000000000000000000
-      Position.Y = 8.000000000000000000
+      Position.X = 273.000000000000000000
+      Position.Y = 35.000000000000000000
       TabOrder = 6
       Text = 'Exec+result'
       TextSettings.Trimming = None
@@ -107,6 +107,17 @@ object Form1: TForm1
       TextSettings.Trimming = None
       OnClick = Button6Click
     end
+    object Button7: TButton
+      Position.X = 440.000000000000000000
+      Position.Y = 38.000000000000000000
+      Size.Width = 90.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 10
+      Text = 'Customer props'
+      TextSettings.Trimming = None
+      OnClick = Button7Click
+    end
   end
   object mmCode: TMemo
     Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
@@ -114,7 +125,7 @@ object Form1: TForm1
     Lines.Strings = (
       
         'let storage = app.AddStorage(CustomerType, CustomerType.StorageN' +
-        'ame);'
+        'ame());'
       'let data = CustomerType.Instance.Provider.Data();'
       'storage.Attach(data);'
       ''
@@ -201,8 +212,8 @@ object Form1: TForm1
     Viewport.Height = 368.000000000000000000
   end
   object ActionList1: TActionList
-    Left = 328
-    Top = 97
+    Left = 376
+    Top = 193
     object acExecute: TAction
       Text = 'Execute'
       ShortCut = 120
@@ -211,7 +222,7 @@ object Form1: TForm1
   end
   object NetHTTPClient1: TNetHTTPClient
     UserAgent = 'Embarcadero URI Client/1.0'
-    Left = 440
-    Top = 113
+    Left = 480
+    Top = 193
   end
 end

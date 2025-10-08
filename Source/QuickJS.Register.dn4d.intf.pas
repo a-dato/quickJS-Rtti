@@ -24,6 +24,7 @@ type
 
   TJSVirtualInterface = class(TVirtualInterface, IJSObject)
   var
+    FTypeInfo: PTypeInfo;
     FObj: IJSObject;
     FImplementingInterfaces: List<TInterfaceRef>;
 
@@ -31,7 +32,7 @@ type
     procedure Invoke(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue);
 
   public
-    constructor Create(PIID: PTypeInfo; const Obj: IJSObject); reintroduce;
+    constructor Create(TypeInfo: PTypeInfo; const Obj: IJSObject); reintroduce;
     destructor Destroy; override;
     function   QueryInterface(const IID: TGUID; out Obj): HResult; override;
 
@@ -65,9 +66,10 @@ begin
 end;
 
 { TJSVirtualInterface }
-constructor TJSVirtualInterface.Create(PIID: PTypeInfo; const Obj: IJSObject);
+constructor TJSVirtualInterface.Create(TypeInfo: PTypeInfo; const Obj: IJSObject);
 begin
-  inherited Create(PIID, Invoke);
+  inherited Create(TypeInfo, Invoke);
+  FTypeInfo := TypeInfo;
   FImplementingInterfaces := CList<TInterfaceRef>.Create(0);
   FObj := Obj;
 end;
@@ -102,11 +104,17 @@ begin
   end else
     name := Method.Name;
 
-  var rt: PTypeInfo := nil;
-  if Method.ReturnType <> nil then
-    rt := Method.ReturnType.Handle;
+  if name = 'GetType' then
+    Result := TValue.From<&Type>(&Type.Create(FTypeInfo))
 
-  Result := FObj.Invoke(name, Copy(Args, 1), rt);
+  else
+  begin
+    var rt: PTypeInfo := nil;
+    if Method.ReturnType <> nil then
+      rt := Method.ReturnType.Handle;
+
+    Result := FObj.Invoke(name, Copy(Args, 1), rt);
+  end;
 end;
 
 function TJSVirtualInterface.QueryInterface(const IID: TGUID; out Obj): HResult;

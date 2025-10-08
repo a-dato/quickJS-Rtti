@@ -15,8 +15,8 @@ object ObjectDesignerForm: TObjectDesignerForm
     Size.PlatformDefault = False
     TabOrder = 0
     object Button1: TButton
-      Position.X = 312.000000000000000000
-      Position.Y = 8.000000000000000000
+      Position.X = 185.000000000000000000
+      Position.Y = 11.000000000000000000
       Size.Width = 120.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
@@ -26,8 +26,8 @@ object ObjectDesignerForm: TObjectDesignerForm
       OnClick = Button1Click
     end
     object Button2: TButton
-      Position.X = 440.000000000000000000
-      Position.Y = 8.000000000000000000
+      Position.X = 512.000000000000000000
+      Position.Y = 11.000000000000000000
       Size.Width = 169.000000000000000000
       Size.Height = 22.000000000000000000
       Size.PlatformDefault = False
@@ -35,6 +35,17 @@ object ObjectDesignerForm: TObjectDesignerForm
       Text = 'Salesforce account'
       TextSettings.Trimming = None
       OnClick = Button2Click
+    end
+    object Button3: TButton
+      Position.X = 313.000000000000000000
+      Position.Y = 11.000000000000000000
+      Size.Width = 97.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      Text = 'Add Customers'
+      TextSettings.Trimming = None
+      OnClick = Button3Click
     end
   end
   object lyTypes: TLayout
@@ -57,6 +68,7 @@ object ObjectDesignerForm: TObjectDesignerForm
       HeaderHeight = 24.000000000000000000
       AutoExtraColumnSizeMax = -1.000000000000000000
       CellTopBottomPadding = 5.000000000000000000
+      CellLeftRightPadding = 5.000000000000000000
       CellFormatting = ObjectTypesCellFormatting
       CellChanged = ObjectTypesCellChanged
       Columns_ = 
@@ -67,12 +79,13 @@ object ObjectDesignerForm: TObjectDesignerForm
         '><Visualisation><Visible>True</Visible><Frozen>False</Frozen><Re' +
         'adOnly>False</ReadOnly><Selectable>True</Selectable><AllowResize' +
         '>False</AllowResize><AllowHide>False</AllowHide><HideWhenEmpty>F' +
-        'alse</HideWhenEmpty></Visualisation><SortAndFilter><Sort>None</S' +
-        'ort><ShowSortMenu>False</ShowSortMenu><ShowFilterMenu>False</Sho' +
-        'wFilterMenu></SortAndFilter><SubControlSettings><SubInfoControlC' +
-        'lass>Custom</SubInfoControlClass></SubControlSettings><Hierarchy' +
-        '><ShowHierarchy>False</ShowHierarchy><Indent>0</Indent></Hierarc' +
-        'hy></Item></Columns>'#13#10
+        'alse</HideWhenEmpty><HideGrid>False</HideGrid><IgnoreHeightByRow' +
+        'Calculation>False</IgnoreHeightByRowCalculation></Visualisation>' +
+        '<SortAndFilter><Sort>None</Sort><ShowSortMenu>False</ShowSortMen' +
+        'u><ShowFilterMenu>False</ShowFilterMenu></SortAndFilter><SubCont' +
+        'rolSettings><SubInfoControlClass>Custom</SubInfoControlClass></S' +
+        'ubControlSettings><Hierarchy><ShowHierarchy>False</ShowHierarchy' +
+        '><Indent>0</Indent></Hierarchy></Item></Columns>'#13#10
     end
     object Label1: TLabel
       Align = Top
@@ -101,6 +114,7 @@ object ObjectDesignerForm: TObjectDesignerForm
       HeaderHeight = 24.000000000000000000
       AutoExtraColumnSizeMax = -1.000000000000000000
       CellTopBottomPadding = 5.000000000000000000
+      CellLeftRightPadding = 5.000000000000000000
     end
     object Label2: TLabel
       Align = Top

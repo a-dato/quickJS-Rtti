@@ -13,7 +13,7 @@ type
 
   {$M+}
   IContentBinder = interface(IBaseInterface)
-    procedure Bind(const AContent: CObject; const AType: &Type; const Storage: IAppStorage);
+    procedure Bind(const AContent: CObject; const AType: &Type; const Storage: IStorage);
   end;
 
   {$M+}
@@ -24,7 +24,7 @@ type
     function CreateInstance(const Param1: CObject; const Param2: CObject; const Param3: CObject) : CObject; overload;
     function CreateInstance(const Param1: CObject; const Param2: CObject; const Param3: CObject; const Param4: CObject) : CObject; overload;
 
-    function CreateStorage: IAppStorage;
+    function CreateStorage: IStorage;
     function Data(const Filter: CObject): IList;
   end;
 

@@ -1,6 +1,46 @@
+let c = new Customer();
+let t = c.GetType();
+let props = t.GetProperties();
+console.log(props[0].Name);
+
+*****
+
+ProjectType.AddProp('Customers', Customer);
+let p = app.Factory.CreateInstance(IProject); 
+p.Customers.Add(Customers[0]);
+
+****
+
+// Project selection window
+let storage = app.Storage['Projects'];
+
+const w = app.Windows.CreateWindow(app.Environment.Application, IProject);
+w.Build();
+w.Bind(storage);
+w.Show((window) => {console.log('OnClose')});
+
+console.log(w.Frame.Content);
+
+
+//
+// Customer
+//
+let storage = app.AddStorage(CustomerType, CustomerType.StorageName);
+let data = CustomerType.Instance.Provider.Data();
+storage.Attach(data);
+
+const w = app.Windows.CreateWindow(null, Customer);
+w.Build();
+w.Bind(storage);
+w.Show();
+
+
+//
+// Project
+//
 let project = app.Factory.CreateInstance(IProject, app.AsType(IScheduleApplication));
-project.ID = app.Factory.NextID();
-project.Description = 'New project';
+project.ID = -100; //app.Factory.NextID();
+project.Description = 'QJS project';
 project.LUID = 'Q01';
 let st = app.Storage['Projects'];
 st.Add(project);
@@ -9,6 +49,8 @@ project.AsType(IProjectLoader).ForceOpen();
 let t = app.Factory.CreateInstance(ITask, app.Factory.NextID(), project);
 let ts = project.Tasks;
 ts.Add(t);
+
+project.AsType(IProjectLoader).ReloadCaptures(true);
 
 // TestObject
 class TestObject_ {

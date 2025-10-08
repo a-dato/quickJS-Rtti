@@ -1,4 +1,4 @@
-import {visible,editor,status} from './lynx_app.js';
+import {visible,editor,status} from './lynx.js';
 
 export class SFAccount {
   constructor(id, name) {

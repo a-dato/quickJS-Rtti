@@ -1,19 +1,16 @@
-import {visible,editor,status,LynxObject,LynxType,LynxProvider} from './lynx_app.js';
+import {TypeCode, ITypeDescriptor_} from './app.js';
+import {visible,editor,status,LynxObject,LynxType,LynxProvider} from './lynx.js';
 
 /*
  * Address type
 */
-export class Address {
+export class Address extends LynxObject {
   constructor(id, street, zip) {
-		this._id = id;
+		super(id);
     this._Street = street;
     this._Zip = zip;
   }
 	
-  get ID() {
-   return this._id;
-  }
-
   get Street() {
    return this._Street;
   }
@@ -28,7 +25,15 @@ export class Address {
 
   set Zip(value) {
    this._Zip = value;
-  }	
+  }
+	
+	ToString(format) {
+		let frmt = AddressType.Instance?.PropertyDescriptor?.Address?.Formatter;
+		if(frmt != undefined)
+			return frmt.Format(null, this, format);
+		else
+			return this._Street;
+	}
 }
 
 export class AddressType {
@@ -52,7 +57,6 @@ export class AddressType {
 				// IFormatter
 				Formatter: {
 					Format: (ctx, item, format) => { 
-						console.log('Address.Format');				
 						if(item != null)
 							return item.Street;
 					},
@@ -177,12 +181,16 @@ export class Customer extends LynxObject {
 		this._Status = status;
 	}
   
-	ToString() {
-		return this._Name;
+	ToString(format) {
+		let frmt = CustomerType.Instance?.PropertyDescriptor?.Customer?.Formatter;
+		if(frmt != undefined)
+			return frmt.Format(null, this, format);
+		else
+			return this._Street;
 	}
 }
 
-export class CustomerType extends LynxType {
+export class CustomerType extends ITypeDescriptor_ {
 	static Instance = null;
 	
 	static register() {
@@ -198,7 +206,7 @@ export class CustomerType extends LynxType {
 		this.Builder = new JSFrameBuilder();	// IContentBuilder
 		this.Provider = new CustomerProvider();	// IContentProvider
 		this.PropertyDescriptor = {
-			// object property descriptor
+			// IPropertyDescriptor
 			Customer: {
 				EditorType: editor.Combo,
 				Label: 'Customer',
@@ -238,22 +246,23 @@ export class CustomerType extends LynxType {
 				},
 				Picklist: {
 					Items: (filter) => { 
-						// return this.Provider.Data(filter) 
-						return app.Storage[CustomerType.StorageName];
+						return app.Storage[CustomerType.StorageName()];
 					}
 				}
 			},
 			ID: {
-				Type: BigInt,
+				Type: TypeCode.Int64,
 				Visible: false
 			},
 			Address: {
 				Type: Address
 			},
 			Name: {
+				Type: TypeCode.string,
 				EditorType: editor.Edit
 			},
 			Status: {
+				Type: TypeCode.Int32,
 				EditorType: editor.Combo,
 				// IFormatter
 				Formatter: {
@@ -273,7 +282,7 @@ export class CustomerType extends LynxType {
 	}
 	
 	static StorageName() {
-		return 'Customer';
+		return 'Customers';
 	}
 }
 

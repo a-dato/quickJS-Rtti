@@ -120,7 +120,9 @@ end;
 procedure TVirtualMethodImplementation.RawCallback(UserData: Pointer; const Args: TArray<TValue>; out Result: TValue);
 begin
   var m := TImplInfo(UserData).FMethod;
-  FCallback.Call(Copy(Args, 1), m.ReturnType.Handle)
+  if m.ReturnType <> nil then
+    FCallback.Call(Copy(Args, 1), m.ReturnType.Handle) else
+    FCallback.Call(Copy(Args, 1), nil);
 end;
 
 procedure TVirtualMethodImplementation.ErrorProc;

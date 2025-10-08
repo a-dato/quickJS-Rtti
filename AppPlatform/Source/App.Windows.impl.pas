@@ -6,24 +6,26 @@ uses
   System_,
   System.Collections.Generic,
   App.Intf,
+  App.Component.impl,
   App.Windows.intf,
   ADato.ObjectModel.List.intf,
   App.TypeDescriptor.intf,
-  App.Storage.intf;
+  App.Storage.intf,
+  App.Content.intf;
 
 type
-  Window = class(TBaseInterfacedObject, IWindow)
+  Window = class(TComponent, IWindow)
   protected
     [weak] _app: IAppObject;
     _Frame: IWindowFrame;
     _Type: &Type;
 
     function get_Frame: IWindowFrame;
-    function get_Name: CString;
 
-    function  Build: IWindow;
-    function  Bind(const Storage: IAppStorage) : IWindow;
-    function  Show : IWindow;
+    function  Build: IWindow; overload;
+    function  Build(const Builder: IContentBuilder): IWindow; overload;
+    function  Bind(const Storage: IStorage) : IWindow;
+    function  Show(OnClose: TWindowClose) : IWindow;
 
   public
     constructor Create(const App: IAppObject; const Frame: IWindowFrame; const AType: &Type);
@@ -52,7 +54,7 @@ end;
 
 { Window }
 
-function Window.Bind(const Storage: IAppStorage): IWindow;
+function Window.Bind(const Storage: IStorage): IWindow;
 begin
   var c := _frame.Content;
   _app.Config.TypeDescriptor(_Type).Binder.Bind(c, _Type, Storage);
@@ -60,6 +62,11 @@ begin
 end;
 
 function Window.Build: IWindow;
+begin
+  Result := Build(_app.Config.TypeDescriptor(_Type).Builder);
+end;
+
+function Window.Build(const Builder: IContentBuilder): IWindow;
 begin
   _frame.Content := _app.Config.TypeDescriptor(_Type).Builder.Build(_frame.Owner);
   _frame.Content.AsType<TControl>.Align := TAlignLayout.Client;
@@ -75,17 +82,12 @@ end;
 
 function Window.get_Frame: IWindowFrame;
 begin
-
+  Result := _frame;
 end;
 
-function Window.get_Name: CString;
+function Window.Show(OnClose: TWindowClose): IWindow;
 begin
-
-end;
-
-function Window.Show: IWindow;
-begin
-  _Frame.Show;
+  _Frame.Show(OnClose);
   Result := Self;
 end;
 
