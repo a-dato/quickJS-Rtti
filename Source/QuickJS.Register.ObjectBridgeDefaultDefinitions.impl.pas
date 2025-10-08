@@ -75,15 +75,18 @@ begin
   if Intf = nil then Exit;
   
   var ctx := TRttiContext.Create;
-  var rttiType := ctx.GetType((Intf as TObject).ClassType);
+  
+  // Get the actual object implementing the interface
+  var obj := Intf as TObject;
+  var rttiType := ctx.GetType(obj.ClassType);
   if rttiType = nil then Exit;
   
   // Find GetEnumerator method
   var getEnumMethod := rttiType.GetMethod('GetEnumerator');
   if getEnumMethod = nil then Exit;
   
-  // Call GetEnumerator
-  Helper.EnumeratorValue := getEnumMethod.Invoke(TValue.From(Intf), []);
+  // Call GetEnumerator on the object (not the interface TValue)
+  Helper.EnumeratorValue := getEnumMethod.Invoke(obj, []);
   if Helper.EnumeratorValue.IsEmpty then Exit;
   
   // Get enumerator type
