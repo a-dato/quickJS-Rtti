@@ -23,14 +23,14 @@ type
 implementation
 
 uses
-  QuickJS.Register.impl; // for JSConverter
+  QuickJS.Register.impl, System.Generics.Defaults; // for JSConverter
 
 type
   // RTTI-based enumerator wrapper to avoid DN4D System.Collections dependency
   TRttiEnumeratorHelper = record
     EnumeratorValue: TValue;
     MoveNextMethod: TRttiMethod;
-    CurrentProperty: TRttiProperty;
+    CurrentMethod: TRttiMethod;
     
     function MoveNext: Boolean;
     function GetCurrent: TValue;
@@ -63,8 +63,8 @@ end;
 
 function TRttiEnumeratorHelper.GetCurrent: TValue;
 begin
-  if CurrentProperty <> nil then
-    Result := CurrentProperty.GetValue(EnumeratorValue.AsObject)
+  if CurrentMethod <> nil then
+    Result := CurrentMethod.Invoke(EnumeratorValue, [])
   else
     Result := TValue.Empty;
 end;
@@ -95,9 +95,9 @@ begin
   
   // Find MoveNext and Current
   Helper.MoveNextMethod := enumType.GetMethod('MoveNext');
-  Helper.CurrentProperty := enumType.GetProperty('Current');
+  Helper.CurrentMethod := enumType.GetMethod('get_Current');
   
-  Result := (Helper.MoveNextMethod <> nil) and (Helper.CurrentProperty <> nil);
+  Result := (Helper.MoveNextMethod <> nil) and (Helper.CurrentMethod <> nil);
 end;
 
 function TRttiListHelper.GetCount: Integer;
@@ -356,82 +356,71 @@ begin
         listHelper: TRttiListHelper;
         compareFunc: JSValue;
         hasCompareFunc: Boolean;
+        count, i: Integer;
+        items: TArray<TValue>;
+        cmp: IComparer<TValue>;
       begin
         Result := JS_UNDEFINED;
 
-        // Only handle list-like interfaces for sorting
         if not TRttiListHelper.TryGetListHelper(IInterface(Ptr), listHelper) then Exit;
 
         hasCompareFunc := (argc >= 1) and JS_IsFunction(ctx, PJSValueConstArr(argv)[0]);
         if hasCompareFunc then
           compareFunc := PJSValueConstArr(argv)[0];
 
-        var count := listHelper.GetCount;
+        count := listHelper.GetCount;
         if count <= 1 then
         begin
           Result := JSConverter.Instance.TValueToJSValue(ctx, TValue.From<IInterface>(IInterface(Ptr)));
           Exit;
         end;
 
-        // Simple bubble sort implementation (can be optimized later)
-        for var i := 0 to count - 2 do
-        begin
-          for var j := 0 to count - 2 - i do
+        // Copy list items to a dynamic array
+        SetLength(items, count);
+        for i := 0 to count - 1 do
+          items[i] := listHelper.GetItem(i);
+
+        // Build comparer
+        cmp := TComparer<TValue>.Construct(
+          function(const A, B: TValue): Integer
+          var
+            // For JS comparator path
+            item1, item2, compareResult: JSValue;
+            compareInt: Int32;
+            call_argv: array[0..1] of JSValueConst;
+            // For default comparator path
+            s1, s2: string;
           begin
-            var shouldSwap := False;
-            
             if hasCompareFunc then
             begin
-              // Use custom comparison function
-              var itemVal1 := listHelper.GetItem(j);
-              var itemVal2 := listHelper.GetItem(j + 1);
-              var item1 := JSConverter.Instance.TValueToJSValue(ctx, itemVal1);
-              var item2 := JSConverter.Instance.TValueToJSValue(ctx, itemVal2);
-              
-              var call_argv: array of JSValueConst;
-              SetLength(call_argv, 2);
+              item1 := JSConverter.Instance.TValueToJSValue(ctx, A);
+              item2 := JSConverter.Instance.TValueToJSValue(ctx, B);
               call_argv[0] := item1;
               call_argv[1] := item2;
-              
-              var compareResult := JS_Call(ctx, compareFunc, JS_Null, 2, PJSValueConstArr(call_argv));
-              var compareInt: Integer;
+              compareResult := JS_Call(ctx, compareFunc, JS_Null, 2, @call_argv[0]);
               JS_ToInt32(ctx, @compareInt, compareResult);
-              
-              shouldSwap := compareInt > 0;
-              
+
               JS_FreeValue(ctx, item1);
               JS_FreeValue(ctx, item2);
               JS_FreeValue(ctx, compareResult);
-            end
-            else
-            begin
-              // Default string comparison
-              var val1 := listHelper.GetItem(j);
-              var val2 := listHelper.GetItem(j + 1);
-              
-              // Convert to strings for comparison
-              var str1: string := '';
-              var str2: string := '';
-              
-              if not val1.IsEmpty then
-                str1 := val1.ToString;
-              if not val2.IsEmpty then
-                str2 := val2.ToString;
-                
-              shouldSwap := Length(str1) > Length(str2);
+              Exit(compareInt); // JS comparator should return <0 / 0 / >0
             end;
-            
-            if shouldSwap then
-            begin
-              // Swap elements
-              var temp := listHelper.GetItem(j);
-              listHelper.SetItem(j, listHelper.GetItem(j + 1));
-              listHelper.SetItem(j + 1, temp);
-            end;
-          end;
-        end;
 
-        // Return the sorted list (same reference)
+            // Default: sort by string length (ascending)
+            if not A.IsEmpty then s1 := A.ToString else s1 := '';
+            if not B.IsEmpty then s2 := B.ToString else s2 := '';
+            Result := Length(s1) - Length(s2);
+          end
+        );
+
+        // Built-in sort
+        TArray.Sort<TValue>(items, cmp);
+
+        // Write back to the list
+        for i := 0 to count - 1 do
+          listHelper.SetItem(i, items[i]);
+
+        // Return same list reference
         Result := JSConverter.Instance.TValueToJSValue(ctx, TValue.From<IInterface>(IInterface(Ptr)));
       end
     )
