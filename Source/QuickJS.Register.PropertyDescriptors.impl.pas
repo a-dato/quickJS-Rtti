@@ -44,7 +44,7 @@ type
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
 
   public
-    constructor Create(AInfo: PTypeInfo; const RttiProp: TRttiMember);
+    constructor Create(AInfo: PTypeInfo; const RttiProp: TRttiMember); reintroduce;
   end;
 
   TRttiMethodPropertyDescriptor = class(TPropertyDescriptor, IMethodsPropertyDescriptor)
@@ -58,7 +58,7 @@ type
 
     function  SelectMethodMatchArguments(ctx: JSContext; argc: Integer; argv: PJSValueConst): TRttiMethod;
   public
-    constructor Create(AInfo: PTypeInfo; const RttiMethods: TArray<TRttiMethod>; IsInterface: Boolean);
+    constructor Create(AInfo: PTypeInfo; const RttiMethods: TArray<TRttiMethod>; IsInterface: Boolean); reintroduce;
   end;
 
   TRttiInterfacePropertyDescriptor = class(TPropertyDescriptor)
@@ -73,7 +73,7 @@ type
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
 
   public
-    constructor Create(AInfo: PTypeInfo; const RttiGetter: TRttiMethod; const RttiSetter: TRttiMethod);
+    constructor Create(AInfo: PTypeInfo; const RttiGetter: TRttiMethod; const RttiSetter: TRttiMethod); reintroduce;
   end;
 
   TRttiIndexedInterfacePropertyDescriptor = class(TRttiInterfacePropertyDescriptor)
@@ -90,7 +90,7 @@ type
     procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
 
   public
-    constructor Create(AInfo: PTypeInfo);
+    constructor Create(AInfo: PTypeInfo); reintroduce;
   end;
 
   TRttiIteratorDescriptor = class(TPropertyDescriptor)
@@ -111,7 +111,7 @@ type
     function  get_MemberType: TMemberType; override;
 
   public
-    constructor Create(const PropertyName: string);
+    constructor Create(const PropertyName: string); reintroduce;
   end;
 
 implementation
