@@ -11,7 +11,7 @@ uses
   App.Base.intf,
   App.intf,
   App.Config.intf,
-  App.Storage.intf,
+  App.Storage.impl,
   App.Windows.intf,
   App.Environment.intf,
   ADato.ObjectModel.List.intf,
@@ -19,12 +19,11 @@ uses
   App.Factory.intf;
 
 type
-  TAppObject = class(TBaseInterfacedObject, IAppObject, IConverterSupport, IJSExtendableObject)
+  TAppObject = class(TStorageSupport, IAppObject, IConverterSupport, IJSExtendableObject)
   protected
     _Config: IAppConfig;
     _Environment: IEnvironment;
     _Windows: IWindows;
-    _storage: Dictionary<string, IAppStorage>;
     _typeConverter: ITypeConverter;
     _extendabePropertyValues: Dictionary<string, JSValue>;
 
@@ -34,14 +33,7 @@ type
     function get_Config: IAppConfig;
     function get_Environment: IEnvironment;
     function get_Factory: IAppFactory;
-    function get_Storage(const Name: string): IAppStorage;
     function get_Windows: IWindows;
-
-    procedure AddStorage(const Storage : IAppStorage); overload;
-    function  AddStorage(const DataType: &Type; const Name: string) : IAppStorage; overload;
-    function  HasStorage(const Name: string): Boolean;
-    function  TryGetStorage(const Name: string; out Value: IAppStorage) : Boolean;
-    function  RemoveStorage(const Name: string) : Boolean;
 
     // IConverterSupport
     function  get_Converter: ITypeConverter;
@@ -64,18 +56,18 @@ uses
   App.TypeDescriptor.intf,
   App.Config.impl,
   App.Windows.impl,
-  App.Storage.impl,
   App.Factory.impl;
 { TAppObject }
 
 constructor TAppObject.Create(const Environment: IEnvironment);
 begin
+  inherited Create;
+
   TAppFactory.Instance := TAppFactory.Create;
 
   _Environment := Environment;
   _Config := TAppConfig.Create;
   _Windows := Windows.Create;
-  _storage := CDictionary<string, IAppStorage>.Create;
   _extendabePropertyValues := CDictionary<string, JSValue>.Create;
 end;
 
@@ -83,18 +75,6 @@ function TAppObject.AsType(const AType: &Type) : CObject;
 begin
   if (_typeConverter = nil) or not _typeConverter.TryAsType(AType, Result) then
     Result := inherited;
-end;
-
-procedure TAppObject.AddStorage(const Storage: IAppStorage);
-begin
-  _storage[Storage.Name] := Storage;
-end;
-
-function TAppObject.AddStorage(const DataType: &Type; const Name: string) : IAppStorage;
-begin
-  var storage: IAppStorage := TAppStorage.Create(DataType, Name);
-  _storage[Name] := storage;
-  Result := storage;
 end;
 
 function TAppObject.define_own_property(Ctx: JSContext; const Name: string): Boolean;
@@ -130,25 +110,9 @@ begin
   Result := TAppFactory.Instance;
 end;
 
-function TAppObject.get_Storage(const Name: string): IAppStorage;
-begin
-  if not _storage.TryGetValue(Name, Result) then
-    raise ArgumentException.Create(CString.Format('Storage ''{0}'' does not exist', Name));
-end;
-
 function TAppObject.get_Windows: IWindows;
 begin
   Result := _Windows;
-end;
-
-function TAppObject.HasStorage(const Name: string): Boolean;
-begin
-  Result := _storage.ContainsKey(Name);
-end;
-
-function TAppObject.RemoveStorage(const Name: string): Boolean;
-begin
-  Result := _storage.Remove(Name);
 end;
 
 procedure TAppObject.SetValue(Ctx: JSContext; const Name: string; Value: JSValue);
@@ -165,11 +129,6 @@ end;
 procedure TAppObject.set_Converter(const Value: ITypeConverter);
 begin
   _typeConverter := Value;
-end;
-
-function TAppObject.TryGetStorage(const Name: string; out Value: IAppStorage): Boolean;
-begin
-  Result := _storage.TryGetValue(Name, Value);
 end;
 
 end.

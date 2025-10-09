@@ -24,10 +24,10 @@ type
     Splitter1: TSplitter;
     lyProperties: TLayout;
     Label2: TLabel;
-    Layout2: TLayout;
-    Label3: TLabel;
+    Button3: TButton;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
     procedure ObjectTypesCellChanged(const Sender: TObject; e: DCCellChangedEventArgs);
     procedure ObjectTypesCellFormatting(const Sender: TObject; e: DCCellFormattingEventArgs);
   private
@@ -79,6 +79,16 @@ procedure TObjectDesignerForm.Button2Click(Sender: TObject);
 begin
   var sfAccountType := _app.Config.TypeByName('SFAccount');
   _app.Config.AddProperty(_selected, 'SFAccount', 'Salesforce', sfAccountType, GetDescriptor(sfAccountType));
+end;
+
+procedure TObjectDesignerForm.Button3Click(Sender: TObject);
+begin
+  var customerType := _app.Config.TypeByName('Customer');
+
+  // IList<customerType>
+
+  // _app.Config.AddProperty(_selected, 'Customers', 'Customers', &Type.From<IList>, GetDescriptor(customerType));
+  _app.Config.AddProperty(_selected, 'Customers', 'Customers', &Type.From<IList>, nil);
 end;
 
 { TObjectDesignerForm }

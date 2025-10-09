@@ -15,6 +15,16 @@ uses
   QuickJS.Register.PropertyDescriptors.impl;
 
 type
+  TJSBaseObject = class(TJSObject, IBaseInterface)
+  protected
+    function AsType(const Value: &Type) : CObject;
+    procedure Dispose;
+    function GetObject: TObject;
+    function GetType: &Type;
+    function Equals(const other: CObject): Boolean;
+    function ToString: CString;
+  end;
+
   TJSRegisterTypedObjects = class(TJSRegister)
   const
     tkJSType = TTypeKind(Ord(tkMRecord) + 1);
@@ -135,6 +145,48 @@ implementation
 
 uses
   System.SysUtils, System.Math;
+
+function TJSBaseObject.AsType(const Value: &Type) : CObject;
+begin
+  var ii: IInterface;
+  if Value.IsInterfaceType and (QueryInterface(Value.Guid, ii) = S_OK) then
+  begin
+    var v: TValue;
+    TValue.Make(@ii, Value.GetTypeInfo, v);
+    Result := CObject.From<TValue>(v);
+    Exit;
+  end;
+
+  raise InvalidCastException.Create('cast to: ''' +  Value.Name + ''' failed');
+end;
+
+procedure TJSBaseObject.Dispose;
+begin
+
+end;
+
+function TJSBaseObject.GetObject: TObject;
+begin
+  Result := Self;
+end;
+
+function TJSBaseObject.GetType: &Type;
+begin
+  var ctr := JS_GetPropertyStr(_ctx, _value, 'constructor');
+  Result := TJSTypedConverter.GetTypeFromJSObject(_ctx, ctr);
+  JS_FreeValue(_ctx, ctr);
+  // Result := &Type.Create(Self.ClassInfo);
+end;
+
+function TJSBaseObject.Equals(const other: CObject): Boolean;
+begin
+  Result := (other <> nil) and (GetHashCode = other.GetHashCode);
+end;
+
+function TJSBaseObject.ToString: CString;
+begin
+  Invoke('toString', nil, TypeInfo(CString)).TryAsType<CString>(Result);
+end;
 
 { TJSRegisterTypedObjects }
 
@@ -400,13 +452,6 @@ begin
       Result := v;
     end
 
-//    else if JS_IsBigFloat(Value) then
-//    begin
-//      var v: Double;
-//      JS_ToFloat64(ctx, @v, Value);
-//      Result := v;
-//    end
-
     else if JS_IsObject(Value) then
     begin
       var ptr := TJSRegister.GetObjectFromJSValue(Value, False {Is NOT object type?});
@@ -414,7 +459,7 @@ begin
       if ptr <> nil {Object points to a Delphi object} then
         TValue.Make(@ptr, Target, Result) else
         // Result := TValue.From<JSObjectReference>(JSObjectReference.Create(ctx, Value));
-        Result := TValue.From<IJSObject>(TJSObject.Create(ctx, Value));
+        Result := TValue.From<IJSObject>(TJSBaseObject.Create(ctx, Value));
     end;
 
     Exit;
@@ -450,7 +495,7 @@ begin
       end
       else
       begin
-        var obj_ref: IJSObject := TJSObject.Create(ctx, Value);
+        var obj_ref: IJSObject := TJSBaseObject.Create(ctx, Value);
 
         if Target = TypeInfo(IJSObject) then
           Result := TValue.From<IJSObject>(obj_ref) else
@@ -532,7 +577,7 @@ begin
             TValue.Make(obj.Ptr, obj.Reg.GetTypeInfo, v);
           Result := TValue.From<CObject>(CObject.From<TValue>(v));
         end else
-          Result := TValue.From<CObject>(CObject.From<IJSObject>(TJSObject.Create(ctx, Value)));
+          Result := TValue.From<CObject>(CObject.From<IJSObject>(TJSBaseObject.Create(ctx, Value)));
           // Result := TValue.From<CObject>(CObject.From<JSObjectReference>(JSObjectReference.Create(ctx, Value)));
       end else
         Result := TValue.From<CObject>(CObject.Create(nil))
@@ -571,6 +616,12 @@ begin
 
       Result := TValue.From<CDateTime>(cd);
     end
+    else if Target = TypeInfo(CTimeSpan) then
+    begin
+      var v: Int64;
+      JS_ToBigInt64(ctx, @v, Value);
+      Result := TValue.From<CTimeSpan>(CTimeSpan.Create(v));
+    end
     else if Target = TypeInfo(&Type) then
       Result := TValue.From<&Type>(GetTypeFromJSObject(ctx, Value))
     else
@@ -593,17 +644,8 @@ end;
 
 function TJSTypedConverter.TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue;
 begin
-//  if Value.Kind = tkInterface then
-//  begin
-//    var obj_ref: JSObjectReference;
-//    if Value.TryAsType<JSObjectReference>(obj_ref) then
-//      Exit(JS_DupValue(ctx, obj_ref.Value));
-//  end else
   if Value.Kind = tkRecord then
   begin
-//    if Value.TypeInfo = TypeInfo(JSObjectReference) then
-//      Exit(JS_DupValue(ctx, JSObjectReference(Value.GetReferenceToRawData^).Value));
-
     if Value.TypeInfo = TypeInfo(CObject) then
       Exit(TValueToJSValue(ctx, CObject(Value.GetReferenceToRawData^).AsType<TValue>));
 
@@ -623,6 +665,10 @@ begin
       Exit(TJSRegister.JS_NewDate(ctx, u_milis));
     end;
 
+    // TimeSpan are handled as Int64
+    if Value.TypeInfo = TypeInfo(CTimeSpan) then
+      Exit(JS_NewBigInt64(ctx, CTimeSpan(Value.GetReferenceToRawData^).Ticks));
+
     if Value.TypeInfo = TypeInfo(&Type) then
     begin
       var reg: IRegisteredObject;
@@ -635,10 +681,6 @@ begin
     var ref: IJSObject;
     if Interfaces.Supports<IJSObject>(Value.AsInterface, ref) then
       Exit(JS_DupValue(ref.Ctx, ref.Value));
-
-//    var ref: IJSObjectReference;
-//    if Interfaces.Supports<IJSObjectReference>(Value.AsInterface, ref) then
-//      Exit(JS_DupValue(ref.GetReference.Ctx, ref.GetReference.Value));
   end;
 
   Result := inherited;

@@ -5,19 +5,25 @@ interface
 uses
   System_,
   System.Collections.Generic,
-  ADato.ObjectModel.List.intf, App.Storage.intf;
+  App.Component.intf,
+  App.Storage.intf,
+  App.Content.intf;
 
 type
   {$M+}
-  IWindowFrame = interface(IBaseInterface)
+  IWindow = interface;
+
+  TWindowClose = reference to procedure(const Window: IWindow);
+
+  {$M+}
+  IWindowFrame = interface(IComponent)
 
     function  get_Content: CObject;
     procedure set_Content(const Value: CObject);
-    function  get_Owner: CObject;
-    procedure Show;
+
+    procedure Show(OnClose: TWindowClose);
 
     property Content: CObject read get_Content write set_Content;
-    property Owner: CObject read get_Owner;
   end;
 
   {$M+}
@@ -29,17 +35,16 @@ type
   end;
 
   {$M+}
-  IWindow = interface(IBaseInterface)
+  IWindow = interface(IComponent)
 
-    function get_Frame: IWindowFrame;
-    function get_Name: CString;
+    function  get_Frame: IWindowFrame;
 
-    function  Build: IWindow;
-    function  Bind(const Storage: IAppStorage): IWindow;
-    function  Show: IWindow;
+    function  Build: IWindow; overload;
+    function  Build(const Builder: IContentBuilder): IWindow; overload;
+    function  Bind(const Storage: IStorage): IWindow;
+    function  Show(OnClose: TWindowClose): IWindow;
 
     property Frame: IWindowFrame read get_Frame;
-    property Name: CString read get_Name;
   end;
 
   IWindows = interface(List<IWindow>)

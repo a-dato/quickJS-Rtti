@@ -30,6 +30,7 @@ type
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject) : CObject; overload;
 
     function  NextID: Int64;
+    procedure ResetID(const Value: Int64);
   end;
 
 implementation

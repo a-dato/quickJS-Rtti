@@ -12,7 +12,7 @@ uses
   FMX.ScrollControl.DataControl.Impl;
 
 type
-  TCustomerFrame = class(TFrame, IEditorManager)
+  TCustomerFrame = class(TFrame)
     Layout1: TLayout;
     Label1: TLabel;
     Splitter1: TSplitter;
@@ -34,12 +34,9 @@ type
 
     procedure acOkExecute(Sender: TObject);
   private
-    _EditorManager: IEditorManager;
     { Private declarations }
   public
     constructor Create(AOwner: TComponent); override;
-
-    property EditorManager: IEditorManager read _EditorManager implements IEditorManager;
   end;
 
 implementation
@@ -57,7 +54,6 @@ end;
 constructor TCustomerFrame.Create(AOwner: TComponent);
 begin
   inherited;
-  _EditorManager := TEditorManager.Create(lyEditors);
 end;
 
 end.

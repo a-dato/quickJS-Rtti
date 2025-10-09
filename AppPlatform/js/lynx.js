@@ -1,3 +1,5 @@
+import {Type_, PropertyInfo_, IBaseInterface_} from './app.js';
+
 export const visible = {
   hidden: 0,
   visible: 1
@@ -53,43 +55,35 @@ export const access_right = {
   CanAddTaskDependencies: 524288
 }
 
+export const UpdateFlag = {
+	ApplyUpdate: 0,
+	IgnoreUpdate: 1
+}
+
+export const InsertPosition = {
+  None: 0,
+	Before: 1,
+	After: 2,
+	Child: 3,
+	ChildFirst: 4
+}
+
 export function hoursToTimeSpan(hours)
 {
-	return hours*36000000000;
+	return BigInt(hours*36000000000);
+}
+
+export function bigmultiply(i64, f) {
+	// Choose a scale to preserve decimals (e.g. 106 for 6 decimal places)
+	let scale = 1_000n;
+	let scaledFactor = BigInt(Math.round(f * Number(scale)));
+	return BigInt((i64 * scaledFactor) / scale);
 }
 
 class AddingNew {
 	CreateInstance() {
 		console.log('CreateInstance()');
 		return 'test';
-	}
-}
-
-export class IBaseInterface_ {
-  GetHashCode() {
-		return this;
-	}
-
-  Equals(other) {
-		return this == other;
-	}
-	
-	GetType() {
-		return this.constructor;
-	}
-
-	ToString() {
-		return this.constructor.name;
-	}
-
-	toString() {
-		return this.ToString();
-	}
-	
-	QueryInterface(type) {
-		if(type === IBaseInterface || type === IInterfaceWithID || type === ICloneable) {
-			return this;
-		}
 	}
 }
 
@@ -141,4 +135,13 @@ export class LynxType extends IBaseInterface_ {
 }
 
 export class LynxProvider extends IBaseInterface_ {
+}
+
+class ILynxDialog
+{
+}
+
+export class LynxDialog extends ILynxDialog
+{
+
 }
