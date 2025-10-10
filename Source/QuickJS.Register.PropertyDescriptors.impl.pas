@@ -61,7 +61,7 @@ type
     constructor Create(AInfo: PTypeInfo; const RttiMethods: TArray<TRttiMethod>; IsInterface: Boolean); reintroduce;
   end;
 
-  TRttiInterfacePropertyDescriptor = class(TPropertyDescriptor)
+  TRttiAccessorPropertyDescriptor = class(TPropertyDescriptor)
   protected
     FGetter: TRttiMethod;
     FSetter: TRttiMethod;
@@ -76,7 +76,7 @@ type
     constructor Create(AInfo: PTypeInfo; const RttiGetter: TRttiMethod; const RttiSetter: TRttiMethod); reintroduce;
   end;
 
-  TRttiIndexedInterfacePropertyDescriptor = class(TRttiInterfacePropertyDescriptor)
+  TRttiIndexedAccessorPropertyDescriptor = class(TRttiAccessorPropertyDescriptor)
   protected
     function  get_MemberType: TMemberType; override;
   end;
@@ -227,40 +227,63 @@ begin
   Result := FMethods;
 end;
 
-{ TRttiInterfacePropertyDescriptor }
+{ TRttiAccessorPropertyDescriptor }
 
-constructor TRttiInterfacePropertyDescriptor.Create(AInfo: PTypeInfo; const RttiGetter: TRttiMethod; const RttiSetter: TRttiMethod);
+constructor TRttiAccessorPropertyDescriptor.Create(AInfo: PTypeInfo; const RttiGetter: TRttiMethod; const RttiSetter: TRttiMethod);
 begin
   inherited Create(AInfo);
   FGetter := RttiGetter;
   FSetter := RttiSetter;
 end;
 
-function TRttiInterfacePropertyDescriptor.GetValue(const Ptr: Pointer; const Index: array of TValue): TValue;
+function TRttiAccessorPropertyDescriptor.GetValue(const Ptr: Pointer; const Index: array of TValue): TValue;
 begin
   if FGetter <> nil then
   begin
-    var vt := TValue.From<IInterface>(IInterface(ptr));
+    var vt: TValue;
+    
+    case FTypeInfo.Kind of
+      tkInterface:
+        vt := TValue.From<IInterface>(IInterface(ptr));
+      tkRecord:
+        TValue.Make(Ptr, FTypeInfo, vt);
+      tkClass:
+        TValue.Make(@Ptr, FTypeInfo, vt);
+    else
+      raise Exception.Create('Unsupported type kind for accessor property');
+    end;
+    
     Result := FGetter.Invoke(vt, Index);
   end else
     raise Exception.Create('Property cannot be read');
 end;
 
-function TRttiInterfacePropertyDescriptor.get_MemberType: TMemberType;
+function TRttiAccessorPropertyDescriptor.get_MemberType: TMemberType;
 begin
   Result := TMemberType.Property;
 end;
 
-function TRttiInterfacePropertyDescriptor.get_PropertyType: PTypeInfo;
+function TRttiAccessorPropertyDescriptor.get_PropertyType: PTypeInfo;
 begin
   Result := FGetter.ReturnType.Handle;
 end;
 
-procedure TRttiInterfacePropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
+procedure TRttiAccessorPropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
 begin
   if FSetter <> nil then
   begin
-    var vt := TValue.From<IInterface>(IInterface(ptr));
+    var vt: TValue;
+    
+    case FTypeInfo.Kind of
+      tkInterface:
+        vt := TValue.From<IInterface>(IInterface(ptr));
+      tkRecord:
+        TValue.Make(Ptr, FTypeInfo, vt);
+      tkClass:
+        TValue.Make(@Ptr, FTypeInfo, vt);
+    else
+      raise Exception.Create('Unsupported type kind for accessor property');
+    end;
 
     var args: array of TValue;
     SetLength(args, 1);
@@ -271,9 +294,9 @@ begin
     raise Exception.Create('Property cannot be set');
 end;
 
-{ TRttiIndexedInterfacePropertyDescriptor }
+{ TRttiIndexedAccessorPropertyDescriptor }
 
-function TRttiIndexedInterfacePropertyDescriptor.get_MemberType: TMemberType;
+function TRttiIndexedAccessorPropertyDescriptor.get_MemberType: TMemberType;
 begin
   Result := TMemberType.IndexedProperty;
 end;

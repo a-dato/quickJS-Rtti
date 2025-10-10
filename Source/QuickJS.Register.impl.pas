@@ -1773,21 +1773,37 @@ begin
 
   if TMemberType.Property in MemberTypes then
   begin
-    if FTypeInfo.Kind = tkInterface then
+    if FTypeInfo.Kind in [tkInterface, tkRecord, tkClass] then
     begin
+      // First check for accessor methods (get_/set_)
       var getter := rttiType.GetMethod('get_' + AName);
       var setter := rttiType.GetMethod('set_' + AName);
 
       if ((getter <> nil) and (Length(getter.GetParameters) > 0)) or ((setter <> nil) and (Length(setter.GetParameters) > 1)) then
-        Result := TRttiIndexedInterfacePropertyDescriptor.Create(FTypeInfo, getter, setter)
+      begin
+        Result := TRttiIndexedAccessorPropertyDescriptor.Create(FTypeInfo, getter, setter);
+        Exit;
+      end
       else if (getter <> nil) or (setter <> nil) then
-        Result := TRttiInterfacePropertyDescriptor.Create(FTypeInfo, getter, setter);
-    end
-    else if FTypeInfo.Kind in [tkRecord, tkClass] then
-    begin
-      var field := rttiType.GetField(AName);
-      if field <> nil then
-        Result := TRttiStandardPropertyDescriptor.Create(FTypeInfo, field);
+      begin
+        Result := TRttiAccessorPropertyDescriptor.Create(FTypeInfo, getter, setter);
+        Exit;
+      end;
+      
+      // If no accessor methods found, check for regular properties (for tkRecord and tkClass)
+      if FTypeInfo.Kind in [tkRecord, tkClass] then
+      begin
+        var prop := rttiType.GetProperty(AName);
+        if prop <> nil then
+        begin
+          Result := TRttiStandardPropertyDescriptor.Create(FTypeInfo, prop);
+          Exit;
+        end;
+
+        var field := rttiType.GetField(AName);
+        if field <> nil then
+          Result := TRttiStandardPropertyDescriptor.Create(FTypeInfo, field);
+      end;
     end
     else
     begin
@@ -2466,8 +2482,9 @@ end;
 constructor TJSContext.Create(const Runtime: IJSRuntime);
 begin
   _runtime := Runtime;
-  Initialize;
+  _ctx := JS_NewContext(_runtime.rt);
   TJSRuntime.RegisterContext(_ctx, IJSContext(Self));
+  Initialize;
 end;
 
 function TJSContext.eval_internal(Buf: PAnsiChar; buf_len: Integer; FileName: PAnsiChar; eval_flags: Integer): Integer;
@@ -2598,12 +2615,17 @@ const
 
   add_fetch: PAnsiChar =
     'import fetch from ''./fetch.js'';'#10+
-    'globalThis.fetch = fetch;'#10;
+//    'import { DateTime, Duration, Interval, Settings } from ''./luxon.js'';'#10+
+
+    'globalThis.fetch = fetch;'#10
+//    + 'globalThis.DateTime = DateTime;'#10+
+//    'globalThis.Duration = Duration;'#10+
+//    'globalThis.Interval = Interval;'#10+
+//    'globalThis.Settings = Settings;'#10
+;
 
 begin
   js_std_init_handlers(_runtime.rt);
-
-  _ctx := JS_NewContext(_runtime.rt);
 
   // ES6 Module loader.
   JS_SetModuleLoaderFunc(_runtime.rt, nil, @js_module_loader, nil);

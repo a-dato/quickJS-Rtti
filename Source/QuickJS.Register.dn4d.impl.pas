@@ -665,9 +665,6 @@ begin
       Exit(TJSRegister.JS_NewDate(ctx, u_milis));
     end;
 
-    // TimeSpan are handled as Int64
-    if Value.TypeInfo = TypeInfo(CTimeSpan) then
-      Exit(JS_NewBigInt64(ctx, CTimeSpan(Value.GetReferenceToRawData^).Ticks));
 
     if Value.TypeInfo = TypeInfo(&Type) then
     begin
