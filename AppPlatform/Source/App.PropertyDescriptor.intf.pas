@@ -9,8 +9,6 @@ uses
 
 type
   EditorType = (Text, Edit, Date, Time, DateTime, Check, Memo, Number, Combo, ComboEdit, Tags, Color, CustomEditor);
-  DescriptorFlag = (CanMarshall);
-  DescriptorFlags = set of DescriptorFlag;
 
   {$M+}
   IPicklist = interface(IBaseInterface)
@@ -47,9 +45,10 @@ type
   IPropertyDescriptor = interface(IBaseInterface)
     ['{95C029CF-190D-4844-A601-1B4806AF16A1}']
     function  get_EqualityComparer: IEqualityComparer;
-    function  get_Flags: DescriptorFlags;
+    // function  get_Flags: DescriptorFlags;
     function  get_Formatter: IFormatter;
     procedure set_Formatter(const Value: IFormatter);
+    function  get_IsCollectionProperty: Boolean;
     function  get_Marshaller: IMarshaller;
     procedure set_Marshaller(const Value: IMarshaller);
     function  get_Notify: INotify;
@@ -63,12 +62,16 @@ type
 
     property EditorType: EditorType read get_EditorType write set_EditorType;
     property EqualityComparer: IEqualityComparer read get_EqualityComparer;
-    property Flags: DescriptorFlags read get_Flags;
+    property IsCollectionProperty: Boolean read get_IsCollectionProperty;
     property Formatter: IFormatter read get_Formatter write set_Formatter;
     property Marshaller: IMarshaller read get_Marshaller write set_Marshaller;
     property Notify: INotify read get_Notify write set_Notify;
     property Picklist: IPicklist read get_Picklist write set_Picklist;
     property Visible: Boolean read get_Visible write set_Visible;
+  end;
+
+  ICollectionPropertyDescriptor = interface(IBaseInterface)
+
   end;
 
 implementation

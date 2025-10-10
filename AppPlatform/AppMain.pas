@@ -226,15 +226,17 @@ begin
 
   var cust_prop := tp.PropertyByName('Customers');
 
-  var project := _app.Factory.CreateInstance(tp);
+  var project := _app.Storage['Projects'][0];
 
   var o := cust_prop.GetValue(project, []);
 
   var customers: IList;
   if not o.TryGetValue<IList>(customers) then
   begin
-    customers := TStorage.Create(_app.Config.TypeByName('Customer'), 'Customers');
-    cust_prop.SetValue(project, customers, []);
+    var storage: IStorage := TStorage.Create(_app.Config.TypeByName('Customer'), 'Customers');
+    storage.Attach(CList<CObject>.Create);
+    customers := storage;
+    cust_prop.SetValue(project, CObject.From<IList>(customers), []);
   end;
 
   var c := _app.Storage['Customers'][0];

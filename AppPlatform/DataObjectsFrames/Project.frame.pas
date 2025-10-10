@@ -19,7 +19,7 @@ type
     IProject_Name_1: TLabel;
     Splitter1: TSplitter;
     TabPages: TTabControl;
-    tbCustomfields: TTabItem;
+    Customers: TTabItem;
     tbGeneral: TTabItem;
     Label2: TLabel;
     IProject_Name_2: TEdit;
