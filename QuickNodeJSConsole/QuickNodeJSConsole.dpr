@@ -18,7 +18,8 @@ uses
   ,TestObjects.intf,
   TestObjects.impl,
   QuickJS.Register.dn4d.impl,
-  TestObjectsDefinitionsTest.impl
+  TestObjectsDefinitionsTest.impl,
+  System_
   {$ENDIF}
   ;
 
@@ -85,10 +86,16 @@ begin
   FContext := TJSRegister.CreateContext;
 
   {$IFDEF TESTS}
+
+  var testExampleCTimeSpan := CTimeSpan.Create(1, 0, 0);
+
   TJSRegisterTypedObjects.Initialize(FContext);
 
   // Register test object bridge definitions
   TestObjectBridgeDefinitions.RegisterWithObjectBridge(TJSRegister.ObjectBridgeResolver);
+
+  // Register TimeInterval record so it can be constructed in JS
+  TJSRegister.RegisterObject('TimeInterval', TypeInfo(TimeInterval));
 
   // Create and register the test object
   // Use TTestObject3 which inherits from ITestObject2 and ITestObject

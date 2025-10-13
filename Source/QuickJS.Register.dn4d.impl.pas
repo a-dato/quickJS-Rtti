@@ -196,6 +196,8 @@ begin
   TJSRegister.Instance := TJSRegisterTypedObjects.Create;
 
   TJSRegister.RegisterObject('JSIEnumerableIterator', TypeInfo(TJSIEnumerableIterator));
+  // Register CTimeSpan record so it can be constructed in JS
+  TJSRegister.RegisterObject('TimeSpan', TypeInfo(CTimeSpan));
 end;
 
 function TJSRegisterTypedObjects.CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject;

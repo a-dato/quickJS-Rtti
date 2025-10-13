@@ -113,7 +113,8 @@ begin
     _propertyDescriptors.Add(lowerPropertyName, descriptorList);
   end;
   
-  descriptorList.Add(Descriptor);
+  // Insert at the beginning so later registrations take priority
+  descriptorList.Insert(0, Descriptor);
 end;
 
 procedure TObjectBridgeResolver.AddMethodDescriptor(const Descriptor: IObjectBridgeMethodDescriptor);
@@ -128,7 +129,8 @@ begin
     _methodDescriptors.Add(lowerMethodName, descriptorList);
   end;
   
-  descriptorList.Add(Descriptor);
+  // Insert at the beginning so later registrations take priority
+  descriptorList.Insert(0, Descriptor);
 end;
 
 function TObjectBridgeResolver.OnGetMemberByName(const AObject: IRegisteredObject; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean): IPropertyDescriptor;

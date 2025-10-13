@@ -1656,18 +1656,29 @@ begin
 
   if Result <> nil then
   begin
-    if not get_IsInterface then
+    if get_IsInterface then
+      Exit;
+      
+    // For records, wrap in TRecordReference
+    if FTypeInfo.Kind = tkRecord then
     begin
-      var ii: IInterface;
-      if Supports(TObject(Result), IInterface, ii) then
-        ii._AddRef;
+      var rec_val: TValue;
+      TValue.Make(Result, FTypeInfo, rec_val);
+      Result := TRecordReference.Create(rec_val);
+      Exit;
     end;
+    
+    // For classes
+    var ii: IInterface;
+    if Supports(TObject(Result), IInterface, ii) then
+      ii._AddRef;
   end
   else
   begin
     var rttiType := TRttiContext.Create.GetType(FTypeInfo);
     var rtti_method: TRttiMethod := nil;
 
+    // For records, look for constructor (Create) methods
     for var method in rttiType.GetMethods do
     begin
       if method.IsConstructor and (Length(method.GetParameters) = argc) then
@@ -1693,11 +1704,35 @@ begin
       end;
     end;
 
-    Result := rtti_method.Invoke(PTypeInfo(FTypeInfo)^.TypeData.ClassType, arr).AsObject;
+    if FTypeInfo.Kind = tkRecord then
+    begin
+      // For records, create uninitialized record and invoke constructor
+      var rec_ptr: Pointer;
+      GetMem(rec_ptr, FTypeInfo.TypeData.RecSize);
+      try
+        FillChar(rec_ptr^, FTypeInfo.TypeData.RecSize, 0);
+        var rec_val: TValue;
+        TValue.Make(rec_ptr, FTypeInfo, rec_val);
+        
+        // Invoke constructor on the record (modifies rec_val in place)
+        rtti_method.Invoke(rec_val, arr);
+        
+        // Wrap in TRecordReference (TValue contains a copy of the record)
+        Result := TRecordReference.Create(rec_val);
+      finally
+        // Free the temporary memory (TValue has made a copy)
+        FreeMem(rec_ptr);
+      end;
+    end
+    else
+    begin
+      // For classes, invoke constructor
+      Result := rtti_method.Invoke(PTypeInfo(FTypeInfo)^.TypeData.ClassType, arr).AsObject;
 
-    var ii: IInterface;
-    if Supports(TObject(Result), IInterface, ii) then
-      ii._AddRef;
+      var ii: IInterface;
+      if Supports(TObject(Result), IInterface, ii) then
+        ii._AddRef;
+    end;
   end;
 end;
 
