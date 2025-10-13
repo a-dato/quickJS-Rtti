@@ -39,7 +39,6 @@ type
 
   TPropertyWithDescriptor = class(CPropertyWrapper, IPropertyDescriptor, INotifyPropertyChanged)
   protected
-    _flags: Integer;
     _PropertyDescriptor: IPropertyDescriptor;
     _Marshaller: IMarshaller;
     _Notifiers: List<INotify>;
@@ -60,6 +59,7 @@ type
   TCollectionPropertyDescriptor = class(TPropertyDescriptor, ICollectionPropertyDescriptor)
   protected
     function  get_IsCollectionProperty: Boolean; override;
+
   end;
 
 implementation
@@ -211,7 +211,6 @@ end;
 
 
 { TCollectionPropertyDescriptor }
-
 function TCollectionPropertyDescriptor.get_IsCollectionProperty: Boolean;
 begin
   Result := True;

@@ -252,6 +252,49 @@ object ProjectFrame: TProjectFrame
       Text = 'Custom fields'
       ExplicitSize.cx = 93.000000000000000000
       ExplicitSize.cy = 26.000000000000000000
+      inline IProject_Customers_Model: TCustomerFrame
+        Align = Client
+        Size.Width = 605.000000000000000000
+        Size.Height = 468.000000000000000000
+        Size.PlatformDefault = False
+        inherited Customer_Model: TDataControl
+          Size.Height = 376.000000000000000000
+        end
+        inherited Layout1: TLayout
+          Size.Width = 605.000000000000000000
+        end
+        inherited Splitter1: TSplitter
+          Size.Height = 376.000000000000000000
+        end
+        inherited TabPages: TTabControl
+          Size.Width = 399.000000000000000000
+          Size.Height = 376.000000000000000000
+          Sizes = (
+            399s
+            350s
+            399s
+            350s)
+          inherited tbGeneral: TTabItem
+            Size.Width = 61.000000000000000000
+            Size.Height = 26.000000000000000000
+            ExplicitSize.cx = 61.000000000000000000
+            ExplicitSize.cy = 26.000000000000000000
+            inherited lyEditors: TLayout
+              Size.Width = 399.000000000000000000
+            end
+          end
+          inherited tbCustomfields: TTabItem
+            Size.Width = 93.000000000000000000
+            Size.Height = 26.000000000000000000
+            ExplicitSize.cx = 93.000000000000000000
+            ExplicitSize.cy = 26.000000000000000000
+          end
+        end
+        inherited Layout2: TLayout
+          Position.Y = 426.000000000000000000
+          Size.Width = 605.000000000000000000
+        end
+      end
     end
   end
   object Layout2: TLayout

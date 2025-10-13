@@ -230,14 +230,15 @@ begin
 
   var o := cust_prop.GetValue(project, []);
 
-  var customers: IList;
-  if not o.TryGetValue<IList>(customers) then
-  begin
-    var storage: IStorage := TStorage.Create(_app.Config.TypeByName('Customer'), 'Customers');
-    storage.Attach(CList<CObject>.Create);
-    customers := storage;
-    cust_prop.SetValue(project, CObject.From<IList>(customers), []);
-  end;
+  var customers: IList := o.AsType<IList>;
+
+//  if not o.TryGetValue<IList>(customers) then
+//  begin
+//    var storage: IStorage := TStorage.Create(_app.Config.TypeByName('Customer'), 'Customers');
+//    storage.Attach(CList<CObject>.Create);
+//    customers := storage;
+//    cust_prop.SetValue(project, CObject.From<IList>(customers), []);
+//  end;
 
   var c := _app.Storage['Customers'][0];
   customers.Add(c);
