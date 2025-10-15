@@ -165,6 +165,32 @@ class procedure TObjectBridgeDefaultDefinitions.Initialize(const Resolver: IObje
 begin
   if Resolver = nil then Exit;
 
+  // IsDelphiObject: boolean property that returns true for all Delphi objects
+  // This allows JS code to distinguish Delphi objects from pure JS objects
+  // Example usage in JS:
+  //   if (someObject.IsDelphiObject) {
+  //     console.log("This is a Delphi object");
+  //   }
+  Resolver.AddPropertyDescriptor(
+    TObjectBridgePropertyDescriptor.Create(
+      'IsDelphiObject',
+      // Object checker: handles any registered object
+      function(const AObject: IRegisteredObject): Boolean
+      begin
+        Result := AObject <> nil;
+      end,
+      // Property getter: always returns true
+      function(const Ptr: Pointer): TValue
+      begin
+        Result := TValue.From<Boolean>(True);
+      end,
+      // No setter (read-only property)
+      nil,
+      // Property type info
+      TypeInfo(Boolean)
+    )
+  );
+
   // forEach: enumerable collections call JS callback for each item (value, index)
   Resolver.AddMethodDescriptor(
     TObjectBridgeMethodDescriptor.Create(
