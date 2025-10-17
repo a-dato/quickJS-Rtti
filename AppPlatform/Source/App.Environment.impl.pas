@@ -172,7 +172,8 @@ begin
       if objectProperty <> nil then
       begin
         var bind := TPropertyBinding.CreateBindingByControl(c);
-        AModel.ObjectModelContext.Bind(WrapProperty(objectProperty), bind);
+        // AModel.ObjectModelContext.Bind(WrapProperty(objectProperty), bind);
+        AModel.ObjectModelContext.Bind(propertyName, bind);
       end;
     end;
 
