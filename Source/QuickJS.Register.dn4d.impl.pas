@@ -24,8 +24,8 @@ type
   end;
 
   TJSRegisterTypedObjects = class(TJSRegister)
-  const
-    tkJSType = TTypeKind(Ord(tkMRecord) + 1);
+//  const
+//    tkJSType = TTypeKind(Ord(tkMRecord) + 1);
 
   protected
     function CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; override;
@@ -419,7 +419,8 @@ begin
       var name := JS_ToCString(ctx, n);
 
       var tp: PTypeInfo := New(PTypeInfo);
-      tp.Kind := TJSRegisterTypedObjects.tkJSType;
+      // tp.Kind := TJSRegisterTypedObjects.tkJSType;
+      tp.Kind := TTypeKind.tkInterface;
       tp.Name := name;
 
       reg := TJSRegister.RegisterJSObject(TJSRuntime.Context[ctx], Value, tp);

@@ -172,9 +172,15 @@ begin
       if objectProperty <> nil then
       begin
         var bind := TPropertyBinding.CreateBindingByControl(c);
-        // AModel.ObjectModelContext.Bind(WrapProperty(objectProperty), bind);
         AModel.ObjectModelContext.Bind(propertyName, bind);
       end;
+
+//      var objectProperty := AType.PropertyByName(propertyName);
+//      if objectProperty <> nil then
+//      begin
+//        var bind := TPropertyBinding.CreateBindingByControl(c);
+//        AModel.ObjectModelContext.Bind(WrapProperty(objectProperty), bind);
+//      end;
     end;
 
     if c.ChildrenCount > 0 then
