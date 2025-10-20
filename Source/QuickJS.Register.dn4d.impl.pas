@@ -12,7 +12,7 @@ uses
   QuickJS.Register.dn4d.intf,
   System.Generics.Collections, System.Collections, System.Collections.Generic,
   QuickJS.Register.PropertyDescriptors.intf,
-  QuickJS.Register.PropertyDescriptors.impl;
+  QuickJS.Register.PropertyDescriptors.impl, System.Reflection;
 
 type
   TJSBaseObject = class(TJSObject, IBaseInterface)
@@ -32,6 +32,9 @@ type
   protected
     function CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; override;
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject; override;
+    procedure InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); override;
+    
+    procedure RegisterEnumConstants(const ctx: IJSContext; const Reg: IRegisteredObject; const EnumInfo: EnumInformation);
 
   public
     class procedure Initialize(const Context: IJSContext);
@@ -208,6 +211,89 @@ end;
 function TJSRegisterTypedObjects.CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject;
 begin
   Result := TRegisteredJSObject.Create(ctx, JSConstructor, ATypeInfo);
+end;
+
+procedure TJSRegisterTypedObjects.InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
+begin
+  // Call base implementation to register the type
+  inherited InternalRegisterType(ctx, Reg, ClassName);
+  
+  // Check if this type has registered enum information
+  if Reg.GetTypeInfo.Kind = tkRecord then
+  begin
+    var tp := &Type.Create(Reg.GetTypeInfo);
+    if &Assembly.IsRegisteredEnum(tp) then
+    begin
+      var enumInfo := &Assembly.GetRegisteredEnum(tp);
+      if Assigned(enumInfo) then
+        RegisterEnumConstants(ctx, Reg, enumInfo);
+    end;
+  end;
+end;
+
+procedure TJSRegisterTypedObjects.RegisterEnumConstants(const ctx: IJSContext; const Reg: IRegisteredObject; const EnumInfo: EnumInformation);
+begin
+  // Get the constructor function from global object
+  var jsctx := ctx.ctx;
+  var global := JS_GetGlobalObject(jsctx);
+  var className := AnsiString(string(Reg.GetTypeInfo.Name));
+  var constructorFunc := JS_GetPropertyStr(jsctx, global, PAnsiChar(className));
+  
+  if not JS_IsUndefined(constructorFunc) then
+  begin
+    var names := EnumInfo.Names;
+    var values := EnumInfo.Values;
+    
+    // If no explicit values array, use indices or bit flags
+    var hasExplicitValues := Length(values) > 0;
+    
+    for var i := 0 to High(names) do
+    begin
+      var enumValue: Int64;
+      if hasExplicitValues then
+        enumValue := values[i]
+      else if EnumInfo.Flags then
+        enumValue := Int64(1) shl i  // Bit flag: 1, 2, 4, 8, etc.
+      else
+        enumValue := i;  // Sequential: 0, 1, 2, 3, etc.
+      
+      // Create a record instance with this value using implicit conversion
+      var recordPtr: Pointer;
+      GetMem(recordPtr, Reg.GetTypeInfo.TypeData.RecSize);
+      try
+        // Initialize record memory
+        FillChar(recordPtr^, Reg.GetTypeInfo.TypeData.RecSize, 0);
+        
+        // For StatusCode, the Value field is an Integer at offset 0 (after any RTTI dummy)
+        // Copy the enumValue into the record
+        if EnumInfo.Size = 1 then
+          PByte(recordPtr)^ := enumValue
+        else if EnumInfo.Size = 2 then
+          PWord(recordPtr)^ := enumValue
+        else if EnumInfo.Size = 4 then
+          PInteger(recordPtr)^ := enumValue
+        else if EnumInfo.Size = 8 then
+          PInt64(recordPtr)^ := enumValue;
+        
+        // Wrap in TRecordReference and create JS object
+        var rec_val: TValue;
+        TValue.Make(recordPtr, Reg.GetTypeInfo, rec_val);
+        var recordRef := TRecordReference.Create(rec_val);
+        
+        var jsObject := JS_NewObjectClass(jsctx, Reg.ClassID);
+        JS_SetOpaque(jsObject, recordRef);
+        
+        // Add as static property on constructor
+        var propName := AnsiString(names[i]);
+        JS_SetPropertyStr(jsctx, constructorFunc, PAnsiChar(propName), jsObject);
+      finally
+        FreeMem(recordPtr);
+      end;
+    end;
+  end;
+  
+  JS_FreeValue(jsctx, constructorFunc);
+  JS_FreeValue(jsctx, global);
 end;
 
 { JSIEnumerableIterator }
@@ -470,8 +556,11 @@ begin
   if Target.Kind = tkInterface then
   begin
     if JS_IsNull(Value) then
-      // Exit(TValue.From<JSObjectReference>(JSObjectReference.Empty));
-      Exit(TValue.From<IJSObject>(nil));
+    begin
+      var nullPtr: Pointer := nil;
+      TValue.Make(@nullPtr, Target, Result);
+      Exit(Result);
+    end;
 
     if JS_IsFunction(ctx, Value) then
       Exit(inherited);

@@ -107,7 +107,6 @@ type
     class var FInstance: TJSRegister;
     class procedure set_Instance(Value: TJSRegister); static;
     class var First_ClassID: JSClassID;
-    class var JS_DATE_CONSTRUCTOR: JSValue;
 
   protected
     class var FAutoRegister: Boolean;
@@ -122,8 +121,8 @@ type
     class var FPendingRegistrations: TList<TRegistrationInfo>;
 
     class procedure AddRegisteredObjectWithClassID(const RegisteredObject: IRegisteredObject);
-    class procedure InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
-    class procedure InternalRegisterInterface(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
+    procedure InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
+    procedure InternalRegisterInterface(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
 
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; virtual;
     function CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; virtual;
@@ -457,8 +456,8 @@ begin
     var prop_name := JSConverter.Instance.JSValueToTValue(_ctx, argv[0], TypeInfo(string));
     if not prop_name.IsEmpty then
     begin
-      var prop_name_ansi: AnsiString := AnsiString(prop_name.ToString);
-      Result := JS_GetPropertyStr(_ctx, js_obj, PAnsiChar(prop_name_ansi));
+      var prop_name_utf8: UTF8String := UTF8Encode(prop_name.ToString);
+      Result := JS_GetPropertyStr(_ctx, js_obj, PAnsiChar(prop_name_utf8));
       TJSRuntime.Check(_ctx, Result);
       Result := TJSRuntime.WaitForJobs(_ctx, Result);
       TJSRuntime.Check(_ctx, Result);
@@ -786,7 +785,7 @@ var
 
   procedure SetIndexedPropertyCallBack(const Index: string);
   begin
-    var s := AnsiString(Index);
+    var s := UTF8Encode(Index);
     var data: JSValue := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
 
     desc^.flags := JS_PROP_GETSET or JS_PROP_HAS_GET or JS_PROP_HAS_SET or JS_PROP_ENUMERABLE;
@@ -833,7 +832,7 @@ var
   procedure SetExtendableObjectGetterSetter(const PropertyName: string);
   begin
     // data holds the name of the property
-    var s := AnsiString(PropertyName);
+    var s := UTF8Encode(PropertyName);
     var data: JSValue := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
 
     desc^.flags := JS_PROP_GETSET or JS_PROP_HAS_GET or JS_PROP_HAS_SET or JS_PROP_ENUMERABLE;
@@ -972,7 +971,8 @@ begin
     for name in names do
     begin
       p^.is_enumerable := False; // Not used?
-      p^.atom := JS_NewAtom(ctx, PAnsiChar(AnsiString(name)));
+      var name_utf8 := UTF8Encode(name);
+      p^.atom := JS_NewAtom(ctx, PAnsiChar(name_utf8));
       inc(p);
     end;
 
@@ -989,26 +989,28 @@ end;
 
 class function TJSRegister.JS_NewDate(ctx: JSContext; epoch_ms: Double) : JSValue;
 begin
-  if JS_IsNull(JS_DATE_CONSTRUCTOR) then
-  begin
-    var global := JS_NULL;
+  // Always get the Date constructor from the current context, not from a cached global
+  // Each context (including sandboxes) has its own Date constructor
+  // If this is not done, the "instanceOf Date" operator will return false
+  var dateConstructor := JS_NULL;
+  var global := JS_NULL;
 
-    try
-      global := JS_GetGlobalObject(ctx);
-      JS_DATE_CONSTRUCTOR := JS_GetPropertyStr(ctx, global, 'Date');
-      if not JS_IsConstructor(ctx, JS_DATE_CONSTRUCTOR) then
-        raise Exception.Create('Date constructor not found');
-    finally
-      JS_FreeValue(ctx, global);
-    end;
+  try
+    global := JS_GetGlobalObject(ctx);
+    dateConstructor := JS_GetPropertyStr(ctx, global, 'Date');
+    if not JS_IsConstructor(ctx, dateConstructor) then
+      raise Exception.Create('Date constructor not found');
+
+    var argc := 1;
+    var argv: array of JSValueConst;
+    SetLength(argv, 1);
+    argv[0] := JS_NewFloat64(ctx, epoch_ms);
+    Result := JS_CallConstructor(ctx, dateConstructor, argc, PJSValueConst(argv));
+    JS_FreeValue(ctx, argv[0]);
+  finally
+    JS_FreeValue(ctx, global);
+    JS_FreeValue(ctx, dateConstructor);
   end;
-
-  var argc := 1;
-  var argv: array of JSValueConst;
-  SetLength(argv, 1);
-  argv[0] := JS_NewFloat64(ctx, epoch_ms);
-  Result := JS_CallConstructor(ctx, JS_DATE_CONSTRUCTOR, argc, PJSValueConst(argv));
-  JS_FreeValue(ctx, argv[0]);
 end;
 
 class function TJSRegister.GetClassID(Value: JSValueConst): JSClassID;
@@ -1145,8 +1147,6 @@ class constructor TJSRegister.Create;
 begin
   FInstance := TJSRegister.Create;
 
-  JS_DATE_CONSTRUCTOR := JS_Null;
-
   FAutoRegister := True;
 
   FRegisteredObjectsByClassID := TDictionary<JSClassID, IRegisteredObject>.Create;
@@ -1240,7 +1240,7 @@ begin
   FPendingRegistrations.Free;
 end;
 
-class procedure TJSRegister.InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
+procedure TJSRegister.InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
 var
   obj,global : JSValue;
   JClass : JSClassDef;
@@ -1250,7 +1250,7 @@ var
   needsRuntimeRegistration: Boolean;
 
 begin
-  var s: AnsiString := AnsiString(ClassName);
+  var s: UTF8String := UTF8Encode(ClassName);
   JClass.class_name := PAnsiChar(s);
   JClass.finalizer := @CFinalize;
   JClass.gc_mark := nil;
@@ -1303,7 +1303,7 @@ begin
     InternalRegisterInterface(ctx, Reg, ClassName);
 end;
 
-class procedure TJSRegister.InternalRegisterInterface(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
+procedure TJSRegister.InternalRegisterInterface(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
 begin
   var g := Reg.GetTypeInfo.TypeData.GUID;
   if not g.IsEmpty then
@@ -1487,7 +1487,7 @@ begin
       ptr := TObjectReference.Create(TObject(AObject));
 
     JS_SetOpaque(jsval, ptr);
-    var s: AnsiString := AnsiString(ObjectName);
+    var s: UTF8String := UTF8Encode(ObjectName);
     JS_SetPropertyStr(ctx, global, PAnsiChar(s), jsval);
     JS_FreeValue(ctx, global);
   finally
@@ -1514,7 +1514,7 @@ begin
     // Bump ref count required
     AInterface._AddRef;
     JS_SetOpaque(jsval, Pointer(AInterface));
-    var s: AnsiString := AnsiString(ObjectName);
+    var s: UTF8String := UTF8Encode(ObjectName);
     JS_SetPropertyStr(jsctx, global, PAnsiChar(s), jsval);
     JS_FreeValue(jsctx, global);
   finally
@@ -2150,7 +2150,7 @@ begin
     
     tkString, tkUString:
     begin
-      var s := AnsiString(Value.AsString);
+      var s := UTF8Encode(Value.AsString);
       Result := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
     end;
 //    tkSet:
@@ -2198,13 +2198,21 @@ begin
         end
         else
         begin
-          var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
+          // Resolve interface mapping if available
+          var typeInfoToUse := Value.TypeInfo;
+          var ptr: Pointer;
+          Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
+          
+          if Assigned(TJSRegister.FObjectBridgeResolver) then
+            typeInfoToUse := TJSRegister.FObjectBridgeResolver.ResolveInterfaceMapping(Value.TypeInfo, ptr);
+          
+          var reg := GetRegisteredObjectFromTypeInfo(typeInfoToUse);
           if reg <> nil then
           begin
             Result := JS_NewObjectClass(ctx, reg.ClassID);
-            var ptr: Pointer;
             // No need to call _AddRef, Supports will bump reference count
-            Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
+            // Re-cast to the resolved interface type
+            Supports(Value.AsInterface, typeInfoToUse.TypeData.Guid, ptr);
             JS_SetOpaque(Result, ptr);
           end;
         end;
@@ -2533,16 +2541,16 @@ end;
 
 procedure TJSContext.eval(const Code: string; const CodeContext: string);
 begin
-  var buf: AnsiString := AnsiString(Code);
-  var filename: AnsiString := AnsiString(CodeContext) + #0;
+  var buf: UTF8String := UTF8Encode(Code);
+  var filename: UTF8String := UTF8Encode(CodeContext) + #0;
   eval_internal(PAnsiChar(buf), Length(buf), PAnsiChar(filename), JS_EVAL_TYPE_MODULE);
 end;
 
 function TJSContext.eval_with_result(const Code: string; const CodeContext: string): TValue;
 begin
 //  var buf: AnsiString := 'export function __run__() {return ' + AnsiString(Code) + ';}';
-   var buf: AnsiString := AnsiString(Code)  + #13#10 + ';export function __run__() { return typeof resultValue !== "undefined" ? resultValue : "resultValue is undefined"; }';
-   var filename: AnsiString := AnsiString(CodeContext) + #0;
+   var buf: UTF8String := UTF8Encode(Code + #13#10 + ';export function __run__() { return typeof resultValue !== "undefined" ? resultValue : "resultValue is undefined"; }');
+   var filename: UTF8String := UTF8Encode(CodeContext) + #0;
 
   // var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(CodeContext), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
   var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(filename), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);

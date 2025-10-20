@@ -191,6 +191,125 @@ begin
     )
   );
 
+  // GetObjectInfo: returns detailed information about the Delphi object
+  // Example usage in JS:
+  //   console.log(someObject.GetObjectInfo());
+  Resolver.AddMethodDescriptor(
+    TObjectBridgeMethodDescriptor.Create(
+      'GetObjectInfo',
+      // Object checker: handles any registered object
+      function(const AObject: IRegisteredObject): Boolean
+      begin
+        Result := AObject <> nil;
+      end,
+      // Method caller implementation
+      function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
+      var
+        Info: string;
+        ObjPtr: Pointer;
+        ObjType: string;
+        ToStr: string;
+        InterfaceList: string;
+        RttiCtx: TRttiContext;
+        RttiType: TRttiType;
+        Obj: TObject;
+        i: Integer;
+      begin
+        Result := JS_UNDEFINED;
+        
+        if Ptr = nil then
+        begin
+          var s := AnsiString('Object is nil');
+          Result := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
+          Exit;
+        end;
+
+        try
+          // Get the object from the pointer (works for both interfaces and classes)
+          try
+            Obj := IInterface(Ptr) as TObject;
+          except
+            // If casting fails, might be a direct object pointer
+            Obj := TObject(Ptr);
+          end;
+
+          if Obj = nil then
+          begin
+            var s := AnsiString('Object is nil');
+            Result := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
+            Exit;
+          end;
+
+          ObjPtr := Ptr;
+
+          // Get type info using RTTI
+          RttiCtx := TRttiContext.Create;
+          try
+            try
+              RttiType := RttiCtx.GetType(Obj.ClassType);
+              if Assigned(RttiType) then
+                ObjType := RttiType.QualifiedName
+              else
+                ObjType := Obj.ClassName;
+            except
+              on E: ENonPublicType do
+              begin
+                // Generic instantiations may not have full RTTI
+                ObjType := Obj.ClassName;
+                RttiType := nil;
+              end;
+            end;
+
+            // Get supported interfaces list
+            InterfaceList := '';
+            if Assigned(RttiType) and (RttiType is TRttiInstanceType) then
+            begin
+              try
+                var interfaces := TRttiInstanceType(RttiType).GetImplementedInterfaces;
+                for i := 0 to Length(interfaces) - 1 do
+                begin
+                  if i > 0 then
+                    InterfaceList := InterfaceList + ', ';
+                  InterfaceList := InterfaceList + interfaces[i].Name;
+                end;
+              except
+                on E: ENonPublicType do
+                  InterfaceList := '<RTTI not available>';
+              end;
+            end;
+
+            // ToString (if available)
+            try
+              ToStr := Obj.ToString;
+            except
+              ToStr := '<ToString() failed>';
+            end;
+
+            // Build info string
+            Info := 'Object Info:' + #10 +
+                    '  Type: ' + ObjType + #10 +
+                    '  Address: ' + IntToHex(NativeInt(ObjPtr), 16) + #10 +
+                    '  ToString: ' + ToStr + #10 +
+                    '  Supported Interfaces: ' + InterfaceList;
+
+            var s := AnsiString(Info);
+            Result := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
+
+          finally
+            RttiCtx.Free;
+          end;
+
+        except
+          on E: Exception do
+          begin
+            var errorMsg := AnsiString('Error getting object info: ' + E.Message);
+            Result := JS_NewStringLen(ctx, PAnsiChar(errorMsg), Length(errorMsg));
+          end;
+        end;
+      end
+    )
+  );
+
   // forEach: enumerable collections call JS callback for each item (value, index)
   Resolver.AddMethodDescriptor(
     TObjectBridgeMethodDescriptor.Create(

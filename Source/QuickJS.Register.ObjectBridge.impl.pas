@@ -15,6 +15,7 @@ type
   private
     class var _propertyDescriptors: TDictionary<string, TList<IObjectBridgePropertyDescriptor>>;
     class var _methodDescriptors: TDictionary<string, TList<IObjectBridgeMethodDescriptor>>;
+    class var _interfaceMappings: TDictionary<PTypeInfo, TList<PTypeInfo>>; // Source -> List of potential targets (ordered by priority)
     class var _isResolving: Boolean; // Recursion guard
     
     class procedure InitializeResolvers;
@@ -28,6 +29,8 @@ type
     function OnGetMemberByName(const AObject: IRegisteredObject; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean): IPropertyDescriptor;
     procedure AddPropertyDescriptor(const Descriptor: IObjectBridgePropertyDescriptor);
     procedure AddMethodDescriptor(const Descriptor: IObjectBridgeMethodDescriptor);
+    procedure AddInterfaceMapping(const SourceInterface: PTypeInfo; const TargetInterface: PTypeInfo);
+    function ResolveInterfaceMapping(const SourceInterface: PTypeInfo; const InterfacePtr: Pointer): PTypeInfo;
   end;
 
 implementation
@@ -51,12 +54,21 @@ class destructor TObjectBridgeResolver.Destroy;
 begin
   _propertyDescriptors.Free;
   _methodDescriptors.Free;
+  
+  // Free interface mapping lists
+  if Assigned(_interfaceMappings) then
+  begin
+    for var mappingList in _interfaceMappings.Values do
+      mappingList.Free;
+    _interfaceMappings.Free;
+  end;
 end;
 
 class procedure TObjectBridgeResolver.InitializeResolvers;
 begin
   _propertyDescriptors := TDictionary<string, TList<IObjectBridgePropertyDescriptor>>.Create;
   _methodDescriptors := TDictionary<string, TList<IObjectBridgeMethodDescriptor>>.Create;
+  _interfaceMappings := TDictionary<PTypeInfo, TList<PTypeInfo>>.Create;
 end;
 
 class function TObjectBridgeResolver.TryGetPropertyDescriptor(const AObject: IRegisteredObject; const PropertyName: string): IPropertyDescriptor;
@@ -167,6 +179,57 @@ begin
     end;
   finally
     _isResolving := False;
+  end;
+end;
+
+procedure TObjectBridgeResolver.AddInterfaceMapping(const SourceInterface: PTypeInfo; const TargetInterface: PTypeInfo);
+begin
+  if (SourceInterface = nil) or (TargetInterface = nil) then
+    Exit;
+    
+  if SourceInterface.Kind <> tkInterface then
+    raise Exception.Create('Source must be an interface type');
+    
+  if TargetInterface.Kind <> tkInterface then
+    raise Exception.Create('Target must be an interface type');
+  
+  // Get or create the list for this source interface
+  var mappingList: TList<PTypeInfo>;
+  if not _interfaceMappings.TryGetValue(SourceInterface, mappingList) then
+  begin
+    mappingList := TList<PTypeInfo>.Create;
+    _interfaceMappings.Add(SourceInterface, mappingList);
+  end;
+  
+  // Add to the beginning so later registrations take priority
+  mappingList.Insert(0, TargetInterface);
+end;
+
+function TObjectBridgeResolver.ResolveInterfaceMapping(const SourceInterface: PTypeInfo; const InterfacePtr: Pointer): PTypeInfo;
+begin
+  Result := SourceInterface; // Default: return the source if no mapping found
+  
+  if (SourceInterface = nil) or (InterfacePtr = nil) then
+    Exit;
+  
+  // Look up mappings for this source interface
+  var mappingList: TList<PTypeInfo>;
+  if not _interfaceMappings.TryGetValue(SourceInterface, mappingList) then
+    Exit;
+  
+  // Try each potential target interface in priority order
+  for var targetInterface in mappingList do
+  begin
+    // Check if the object supports the target interface
+    var targetIntf: IInterface;
+    var sourceIntf: IInterface := IInterface(InterfacePtr);
+    
+    if Supports(sourceIntf, targetInterface.TypeData.Guid, targetIntf) then
+    begin
+      // Object supports this target interface, use it
+      Result := targetInterface;
+      Exit;
+    end;
   end;
 end;
 
