@@ -52,6 +52,7 @@ type
 
   TFrameBinder = class(TBaseInterfacedObject, IContentBinder)
   protected
+    function  CreateModelForProperty() : IObjectListModel;
     procedure BindChildren(const Children: TFmxChildrenList;
       const AModel: IObjectListModel;
       const AType: &Type; const TypeDescriptor: ITypeDescriptor);
@@ -127,6 +128,12 @@ end;
 
 { TFrameBinder }
 
+function TFrameBinder.CreateModelForProperty() : IObjectListModel;
+begin
+  Result := TObjectListModelWithChangeTracking<IBaseInterface>.Create(AType);
+  Result.Context := Storage.Data;
+end;
+
 procedure TFrameBinder.BindChildren(const Children: TFmxChildrenList; const AModel: IObjectListModel;
   const AType: &Type; const TypeDescriptor: ITypeDescriptor);
 
@@ -162,10 +169,19 @@ begin
     begin
       var propertyName := ConcatNames(names); // 'Customer.Address.Zip'
 
-      if (c is TDataControl) and (propertyName = 'Model') then
+      if propertyName = 'Model' then
       begin
-        (c as TDataControl).Model := AModel;
-        continue;
+        var mdl: IObjectListModel;
+        if names[0] = AType.Name then // IProject_Model
+          mdl := AModel else
+          mdl := CreateModelForProperty();
+
+//        begin
+//          if (c is TDataControl) then
+//            (c as TDataControl).Model := AModel;
+//          continue;
+//        end;
+
       end;
 
       var objectProperty := AType.PropertyByName(propertyName);

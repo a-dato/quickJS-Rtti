@@ -104,7 +104,7 @@ object ProjectFrame: TProjectFrame
     Size.Width = 605.000000000000000000
     Size.Height = 494.000000000000000000
     Size.PlatformDefault = False
-    TabIndex = 0
+    TabIndex = 1
     TabOrder = 2
     TabPosition = PlatformDefault
     Sizes = (
@@ -117,7 +117,7 @@ object ProjectFrame: TProjectFrame
         item
         end>
       TextSettings.Trimming = None
-      IsSelected = True
+      IsSelected = False
       Size.Width = 61.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
@@ -243,7 +243,7 @@ object ProjectFrame: TProjectFrame
         item
         end>
       TextSettings.Trimming = None
-      IsSelected = False
+      IsSelected = True
       Size.Width = 93.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
