@@ -522,7 +522,7 @@ begin
     else if JS_IsString(Value) then
     begin
       var str: PAnsiChar := JS_ToCString(ctx, Value);
-      Result := string(str);
+      Result := UTF8ToString(str);
       JS_FreeCString(ctx, str);
     end
 
@@ -608,7 +608,7 @@ begin
       else if JS_IsString(Value) then
       begin
         var str: PAnsiChar := JS_ToCString(ctx, Value);
-        Result := TValue.From<CString>(string(str));
+        Result := TValue.From<CString>(UTF8ToString(str));
         JS_FreeCString(ctx, str);
       end
 
@@ -638,7 +638,7 @@ begin
       else if JS_IsString(Value) then
       begin
         var str: PAnsiChar := JS_ToCString(ctx, Value);
-        Result := TValue.From<CObject>(string(str));
+        Result := TValue.From<CObject>(UTF8ToString(str));
         JS_FreeCString(ctx, str);
       end
 
@@ -683,7 +683,7 @@ begin
         var constructor_val := JS_GetPropertyStr(ctx, Value, 'constructor');
         var name_val := JS_GetPropertyStr(ctx, constructor_val, 'name');
         var name_str := JS_ToCString(ctx, name_val);
-        var is_date := name_str = 'Date';
+        var is_date := UTF8ToString(name_str) = 'Date';
         JS_FreeCString(ctx, name_str);
         JS_FreeValue(ctx, name_val);
         JS_FreeValue(ctx, constructor_val);

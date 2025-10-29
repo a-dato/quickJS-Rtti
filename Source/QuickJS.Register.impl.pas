@@ -119,10 +119,12 @@ type
     class var FObjectBridgeResolver: IObjectBridgeResolver;
     class var FAllContexts: TList<Pointer {Unsafe IJSContext pointer}>;
     class var FPendingRegistrations: TList<TRegistrationInfo>;
+    class var FRegisteredEnums: TDictionary<PTypeInfo, string>; // Maps enum TypeInfo to enum name
 
     class procedure AddRegisteredObjectWithClassID(const RegisteredObject: IRegisteredObject);
     procedure InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
     procedure InternalRegisterInterface(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
+    procedure InternalRegisterEnum(const ctx: IJSContext; EnumTypeInfo: PTypeInfo; const EnumJSName: string); virtual;
 
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; virtual;
     function CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; virtual;
@@ -338,7 +340,7 @@ function AtomToString(ctx: JSContext; Atom: JSAtom) : string;
 begin
   var jv := JS_AtomToString(ctx, Atom);
   var ansistr := JS_ToCString(ctx, jv);
-  Result := string(ansistr);
+  Result := UTF8ToString(ansistr);
   JS_FreeCString(ctx, ansistr);
   JS_FreeValue(ctx, jv);
 end;
@@ -678,7 +680,7 @@ begin
   var propertyIndex := JS_ToCString(ctx, func_data^);
   var prop_access := TJSIndexedPropertyAccessor(TJSRegister.GetObjectFromJSValue(this_val, True));
   var ptr := TJSRegister.GetObjectFromJSValue(prop_access._this_obj, not prop_access._prop.IsInterface {Ptr is an IInterface} );
-  var vt := prop_access._prop.GetValue(ptr, [string(propertyIndex)]);
+  var vt := prop_access._prop.GetValue(ptr, [UTF8ToString(propertyIndex)]);
   JS_FreeValue(ctx, func_data^);
   Result := JSConverter.Instance.TValueToJSValue(ctx, vt);
 end;
@@ -723,7 +725,7 @@ begin
       var prop_name := JS_ToCString(ctx, func_data^);
       if Assigned(prop_name) then
       begin
-        Result := ext.GetValue(ctx, string(prop_name));
+        Result := ext.GetValue(ctx, UTF8ToString(prop_name));
         JS_FreeCString(ctx, prop_name);
       end;
     end;
@@ -752,7 +754,7 @@ begin
       var prop_name := JS_ToCString(ctx, func_data^);
       if Assigned(prop_name) then
       begin
-        ext.SetValue(ctx, string(prop_name), PJSValueConstArr(argv)[0]);
+        ext.SetValue(ctx, UTF8ToString(prop_name), PJSValueConstArr(argv)[0]);
         JS_FreeCString(ctx, prop_name);
       end;
     end;
@@ -1156,6 +1158,7 @@ begin
   FRegisteredInterfaces := TDictionary<TGuid, IRegisteredObject>.Create;
   FAllContexts := TList<Pointer>.Create;
   FPendingRegistrations := TList<TRegistrationInfo>.Create;
+  FRegisteredEnums := TDictionary<PTypeInfo, string>.Create;
 
   // Initialize ObjectBridge resolver
   FObjectBridgeResolver := TObjectBridgeResolver.Create;
@@ -1186,7 +1189,7 @@ type
   begin
     var n := JS_GetPropertyStr(ctx, c, 'name');
     var name := JS_ToCString(ctx, n);
-    Result := string(name);
+    Result := UTF8ToString(name);
     JS_FreeCString(ctx, name);
     JS_FreeValue(ctx, n);
   end;
@@ -1238,6 +1241,7 @@ begin
   FRegisteredInterfaces.Free;
   FAllContexts.Free;
   FPendingRegistrations.Free;
+  FRegisteredEnums.Free;
 end;
 
 procedure TJSRegister.InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
@@ -1322,6 +1326,37 @@ begin
   end;
 end;
 
+procedure TJSRegister.InternalRegisterEnum(const ctx: IJSContext; EnumTypeInfo: PTypeInfo; const EnumJSName: string);
+begin
+  var jsctx := ctx.ctx;
+  var global := JS_GetGlobalObject(jsctx);
+  
+  // Create a plain JavaScript object to hold enum values
+  var enumObj := JS_NewObject(jsctx);
+  
+  // Get enum type data
+  var typeData := GetTypeData(EnumTypeInfo);
+  var minValue := typeData.MinValue;
+  var maxValue := typeData.MaxValue;
+  
+  // Add each enum value as a property
+  for var i := minValue to maxValue do
+  begin
+    var enumName := GetEnumName(EnumTypeInfo, i);
+    if enumName <> '' then
+    begin
+      var propName := UTF8Encode(enumName);
+      var enumValue := JS_NewInt32(jsctx, i);
+      JS_SetPropertyStr(jsctx, enumObj, PAnsiChar(propName), enumValue);
+    end;
+  end;
+  
+  // Add the enum object to global scope
+  var globalName := UTF8Encode(EnumJSName);
+  JS_SetPropertyStr(jsctx, global, PAnsiChar(globalName), enumObj);
+  JS_FreeValue(jsctx, global);
+end;
+
 function TJSRegister.CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject;
 begin
   Result := TRegisteredObject.Create(ATypeInfo, AConstructor);
@@ -1344,6 +1379,18 @@ begin
     FAllContexts.Add(Pointer(Context));
   finally
     TMonitor.Exit(FAllContexts);
+  end;
+
+  // Apply all registered enums to this new context
+  TMonitor.Enter(FRegisteredEnums);
+  try
+    for var kvp in FRegisteredEnums do
+    begin
+      var instance := TJSRegister.Instance;
+      instance.InternalRegisterEnum(Context, kvp.Key, kvp.Value);
+    end;
+  finally
+    TMonitor.Exit(FRegisteredEnums);
   end;
 
   // Apply all pending registrations to this new context
@@ -1399,6 +1446,36 @@ end;
 
 class function TJSRegister.RegisterObject(ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject;
 begin
+  // Handle enum types specially
+  if TypeInfo.Kind = tkEnumeration then
+  begin
+    TMonitor.Enter(FRegisteredEnums);
+    try
+      // Check if enum is already registered
+      if FRegisteredEnums.ContainsKey(TypeInfo) then
+        Exit(nil); // Already registered
+      
+      // Store enum registration
+      FRegisteredEnums.Add(TypeInfo, ClassName);
+    finally
+      TMonitor.Exit(FRegisteredEnums);
+    end;
+    
+    // Apply to all existing contexts
+    TMonitor.Enter(FAllContexts);
+    try
+      for var i := 0 to FAllContexts.Count - 1 do
+      begin
+        var ctx: IJSContext := IJSContext(FAllContexts[i]);
+        TJSRegister.Instance.InternalRegisterEnum(ctx, TypeInfo, ClassName);
+      end;
+    finally
+      TMonitor.Exit(FAllContexts);
+    end;
+    
+    Exit(nil); // Enums don't return a registered object
+  end;
+
   TMonitor.Enter(FRegisteredObjectsByType);
   try
     // Check if type is already registered
@@ -2009,7 +2086,7 @@ begin
       var str: PAnsiChar := JS_ToCString(ctx, Value);
       if Assigned(str) then
       try
-        Result := TValue.From<string>(string(str));
+        Result := TValue.From<string>(UTF8ToString(str));
       finally
         JS_FreeCString(ctx, str);
       end;
@@ -2356,7 +2433,7 @@ begin
     if not JS_IsUndefined(name) then
     begin
       var str: PAnsiChar := JS_ToCString(ctx, name);
-      err := string(str);
+      err := UTF8ToString(str);
       JS_FreeCString(ctx, str);
       JS_FreeValue(ctx, name);
     end;
@@ -2365,7 +2442,7 @@ begin
     if not JS_IsUndefined(msg) then
     begin
       var str: PAnsiChar := JS_ToCString(ctx, msg);
-      err := err + ': ' + string(str);
+      err := err + ': ' + UTF8ToString(str);
       JS_FreeCString(ctx, str);
       JS_FreeValue(ctx, msg);
     end;
@@ -2374,7 +2451,7 @@ begin
     if not JS_IsUndefined(stack) then
     begin
       var str: PAnsiChar := JS_ToCString(ctx, stack);
-      err := err + #13#10 + string(str);
+      err := err + #13#10 + UTF8ToString(str);
       JS_FreeCString(ctx, str);
       JS_FreeValue(ctx, stack);
     end;
@@ -2393,7 +2470,7 @@ begin
     var exp := JS_GetException(ctx);
 
     var str := JS_ToCString(ctx, exp);
-    var s: string := str;
+    var s: string := UTF8ToString(str);
     JS_FreeCString(ctx, str);
 
     var rt := IJSContext(_ActiveContexts[ctx]).Runtime;
@@ -2614,7 +2691,7 @@ begin
      if not Assigned(str) then
         exit(JS_EXCEPTION);
 
-     var s: string := str;
+     var s: string := UTF8ToString(str);
      if Assigned(OutputLogString) then
       OutputLogString(s) else
       Write(s);
