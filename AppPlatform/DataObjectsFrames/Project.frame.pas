@@ -9,7 +9,7 @@ uses
   FMX.Controls.Presentation, FMX.Layouts, FMX.ScrollControl.Impl,
   FMX.ScrollControl.WithRows.Impl, FMX.ScrollControl.WithCells.Impl,
   FMX.ScrollControl.WithEditableCells.Impl, FMX.ScrollControl.DataControl.Impl,
-  FMX.ScrollControl.Events;
+  FMX.ScrollControl.Events, JSGeneral.frame, Customer.frame;
 
 type
   TProjectFrame = class(TFrame)
@@ -19,7 +19,7 @@ type
     IProject_Name_1: TLabel;
     Splitter1: TSplitter;
     TabPages: TTabControl;
-    tbCustomfields: TTabItem;
+    Customers: TTabItem;
     tbGeneral: TTabItem;
     Label2: TLabel;
     IProject_Name_2: TEdit;
@@ -38,6 +38,7 @@ type
     Label8: TLabel;
     IProject_SFAccount_0: TComboBox;
     Button2: TButton;
+    IProject_Customers_Model: TCustomerFrame;
     procedure acOkExecute(Sender: TObject);
     procedure Button2Click(Sender: TObject);
   private

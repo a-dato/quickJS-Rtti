@@ -101,6 +101,12 @@ end;
 function TProject.get_PropertyValue(const AProperty: _PropertyInfo): CObject;
 begin
   _PropertyValue.TryGetValue(AProperty, Result);
+
+  if (Result = nil) and AProperty.GetType.IsOfType<IList> then
+  begin
+    Result := CObject.From<IList>(CList<CObject>.Create);
+    _PropertyValue[AProperty] := Result;
+  end;
 end;
 
 constructor TProject.Create;

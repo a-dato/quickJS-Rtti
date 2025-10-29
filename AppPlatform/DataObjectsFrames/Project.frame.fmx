@@ -1,13 +1,13 @@
 object ProjectFrame: TProjectFrame
-  Size.Width = 868.000000000000000000
-  Size.Height = 474.000000000000000000
+  Size.Width = 891.000000000000000000
+  Size.Height = 586.000000000000000000
   Size.PlatformDefault = False
   object IProject_Model: TDataControl
     Align = Left
     HitTest = True
     Position.Y = 50.000000000000000000
     Size.Width = 281.000000000000000000
-    Size.Height = 382.000000000000000000
+    Size.Height = 494.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 0
     Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid, TreeOption_MultiSelect]
@@ -61,7 +61,7 @@ object ProjectFrame: TProjectFrame
   end
   object Layout1: TLayout
     Align = Top
-    Size.Width = 868.000000000000000000
+    Size.Width = 891.000000000000000000
     Size.Height = 50.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 1
@@ -96,28 +96,28 @@ object ProjectFrame: TProjectFrame
     Position.X = 281.000000000000000000
     Position.Y = 50.000000000000000000
     Size.Width = 5.000000000000000000
-    Size.Height = 382.000000000000000000
+    Size.Height = 494.000000000000000000
     Size.PlatformDefault = False
   end
   object TabPages: TTabControl
     Align = Client
-    Size.Width = 582.000000000000000000
-    Size.Height = 382.000000000000000000
+    Size.Width = 605.000000000000000000
+    Size.Height = 494.000000000000000000
     Size.PlatformDefault = False
-    TabIndex = 0
+    TabIndex = 1
     TabOrder = 2
     TabPosition = PlatformDefault
     Sizes = (
-      582s
-      356s
-      582s
-      356s)
+      605s
+      468s
+      605s
+      468s)
     object tbGeneral: TTabItem
       CustomIcon = <
         item
         end>
       TextSettings.Trimming = None
-      IsSelected = True
+      IsSelected = False
       Size.Width = 61.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
@@ -238,12 +238,12 @@ object ProjectFrame: TProjectFrame
         TabOrder = 6
       end
     end
-    object tbCustomfields: TTabItem
+    object Customers: TTabItem
       CustomIcon = <
         item
         end>
       TextSettings.Trimming = None
-      IsSelected = False
+      IsSelected = True
       Size.Width = 93.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
@@ -252,12 +252,55 @@ object ProjectFrame: TProjectFrame
       Text = 'Custom fields'
       ExplicitSize.cx = 93.000000000000000000
       ExplicitSize.cy = 26.000000000000000000
+      inline IProject_Customers_Model: TCustomerFrame
+        Align = Client
+        Size.Width = 605.000000000000000000
+        Size.Height = 468.000000000000000000
+        Size.PlatformDefault = False
+        inherited Customer_Model: TDataControl
+          Size.Height = 376.000000000000000000
+        end
+        inherited Layout1: TLayout
+          Size.Width = 605.000000000000000000
+        end
+        inherited Splitter1: TSplitter
+          Size.Height = 376.000000000000000000
+        end
+        inherited TabPages: TTabControl
+          Size.Width = 399.000000000000000000
+          Size.Height = 376.000000000000000000
+          Sizes = (
+            399s
+            350s
+            399s
+            350s)
+          inherited tbGeneral: TTabItem
+            Size.Width = 61.000000000000000000
+            Size.Height = 26.000000000000000000
+            ExplicitSize.cx = 61.000000000000000000
+            ExplicitSize.cy = 26.000000000000000000
+            inherited lyEditors: TLayout
+              Size.Width = 399.000000000000000000
+            end
+          end
+          inherited tbCustomfields: TTabItem
+            Size.Width = 93.000000000000000000
+            Size.Height = 26.000000000000000000
+            ExplicitSize.cx = 93.000000000000000000
+            ExplicitSize.cy = 26.000000000000000000
+          end
+        end
+        inherited Layout2: TLayout
+          Position.Y = 426.000000000000000000
+          Size.Width = 605.000000000000000000
+        end
+      end
     end
   end
   object Layout2: TLayout
     Align = Bottom
-    Position.Y = 432.000000000000000000
-    Size.Width = 868.000000000000000000
+    Position.Y = 544.000000000000000000
+    Size.Width = 891.000000000000000000
     Size.Height = 42.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 4

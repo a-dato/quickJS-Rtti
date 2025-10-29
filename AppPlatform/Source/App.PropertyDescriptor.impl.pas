@@ -22,9 +22,9 @@ type
     _Visible: Boolean;
 
     function  get_EqualityComparer: IEqualityComparer;
-    function  get_Flags: DescriptorFlags;
     function  get_Formatter: IFormatter;
     procedure set_Formatter(const Value: IFormatter);
+    function  get_IsCollectionProperty: Boolean; virtual;
     function  get_Marshaller: IMarshaller;
     procedure set_Marshaller(const Value: IMarshaller);
     function  get_Notify: INotify;
@@ -39,7 +39,6 @@ type
 
   TPropertyWithDescriptor = class(CPropertyWrapper, IPropertyDescriptor, INotifyPropertyChanged)
   protected
-    _flags: Integer;
     _PropertyDescriptor: IPropertyDescriptor;
     _Marshaller: IMarshaller;
     _Notifiers: List<INotify>;
@@ -55,6 +54,12 @@ type
     constructor Create(const AProperty: _PropertyInfo; const ADescriptor: IPropertyDescriptor);
 
     property PropertyDescriptor: IPropertyDescriptor read _PropertyDescriptor implements IPropertyDescriptor;
+  end;
+
+  TCollectionPropertyDescriptor = class(TPropertyDescriptor, ICollectionPropertyDescriptor)
+  protected
+    function  get_IsCollectionProperty: Boolean; override;
+
   end;
 
 implementation
@@ -76,14 +81,14 @@ begin
 
 end;
 
-function TPropertyDescriptor.get_Flags: DescriptorFlags;
+function TPropertyDescriptor.get_Formatter: IFormatter;
 begin
 
 end;
 
-function TPropertyDescriptor.get_Formatter: IFormatter;
+function TPropertyDescriptor.get_IsCollectionProperty: Boolean;
 begin
-
+  Result := False;
 end;
 
 function TPropertyDescriptor.get_Picklist: IPicklist;
@@ -204,6 +209,12 @@ begin
       notify.OnChanged(obj, val);
 end;
 
+
+{ TCollectionPropertyDescriptor }
+function TCollectionPropertyDescriptor.get_IsCollectionProperty: Boolean;
+begin
+  Result := True;
+end;
 
 end.
 

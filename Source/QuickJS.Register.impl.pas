@@ -910,7 +910,7 @@ begin
     if CharInSet(member_name[1], ['0'..'9']) then
     begin
       item_index := StrToInt(member_name);
-      member_name := 'Array.get_Item';
+      member_name := 'get_Item';
     end;
 
     if not reg.TryGetRttiDescriptor(member_name, rtti_descriptor) then
@@ -1863,15 +1863,16 @@ begin
     Exit;
   end;
 
-  if (AName = 'Array.get_Item') then
+  var rttictx := _RttiContext;
+  var rttiType := rttictx.GetType(FTypeInfo);
+
+  if (AName = 'get_Item') then
   begin
-    if get_ObjectSupportsIndexing then
+    var getter := rttiType.GetMethod('get_Item');
+    if getter <> nil then
       Result := GetArrayIndexer;
     Exit;
   end;
-
-  var rttictx := _RttiContext;
-  var rttiType := rttictx.GetType(FTypeInfo);
 
   if TMemberType.Methods in MemberTypes then
   begin
@@ -2003,7 +2004,7 @@ end;
 
 function TRegisteredObject.get_ObjectSupportsIndexing: Boolean;
 begin
-  Result := Pos('List', string(FTypeInfo.Name)) <> 0;
+  Assert(False);
 end;
 
 procedure TRegisteredObject.set_ObjectSupportsExtension(const Value: TObjectSupportsExtension);

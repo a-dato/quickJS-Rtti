@@ -88,6 +88,8 @@ begin
   // IList<customerType>
 
   // _app.Config.AddProperty(_selected, 'Customers', 'Customers', &Type.From<IList>, GetDescriptor(customerType));
+
+  // TCollectionPropertyDescriptor
   _app.Config.AddProperty(_selected, 'Customers', 'Customers', &Type.From<IList>, nil);
 end;
 
