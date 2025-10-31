@@ -349,13 +349,15 @@ constructor TJSObject.Create(const Ctx: JSContext; const Value: JSValueConst);
 begin
   _ctx := Ctx;
   _value := JS_DupValue(Ctx, Value);
+  _ImplementingInterfaces := nil; // Initialize to nil, created on demand
 end;
 
 destructor TJSObject.Destroy;
 begin
-  inherited;
-  _ImplementingInterfaces.Free;
+  if Assigned(_ImplementingInterfaces) then
+    _ImplementingInterfaces.Free;
   JS_FreeValue(_ctx, _value);
+  inherited;
 end;
 
 function TJSObject.get_Ctx: JSContext;
@@ -1402,22 +1404,27 @@ begin
       var instance := TJSRegister.Instance;
       var reg: IRegisteredObject;
       
-      // Check if this type was already registered
+      // Check if this type was already registered at the global level
       if not FRegisteredObjectsByType.TryGetValue(regInfo.TypeInfo, reg) then
       begin
+        // First time registering this type globally - create the registered object
         reg := instance.CreateRegisteredObject(regInfo.TypeInfo, regInfo.ConstructorFunc);
         FRegisteredObjectsByType.Add(regInfo.TypeInfo, reg);
       end;
       
-      // Register it in this context
+      // Always register the type in this new context (each context needs its own JS constructor)
       instance.InternalRegisterType(Context, reg, regInfo.ClassName);
       
+      // Add to global collections only once
       if not FRegisteredObjectsByClassID.ContainsKey(reg.ClassID) then
         instance.AddRegisteredObjectWithClassID(reg);
       
       if not FRegisteredObjectsByConstructor.ContainsKey(reg.JSConstructor) then
         FRegisteredObjectsByConstructor.Add(reg.JSConstructor, reg);
     end;
+    
+    // Do NOT clear FPendingRegistrations - we need it for future contexts
+    // Each new context needs these registrations applied
   finally
     TMonitor.Exit(FPendingRegistrations);
   end;

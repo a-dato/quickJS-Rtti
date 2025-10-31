@@ -394,6 +394,9 @@ end;
 
 destructor TJSObjectIterator.Destroy;
 begin
+  // Free the enumerator instance that was created in CreateIterator
+  if Assigned(_instance) then
+    _instance.Free;
   inherited;
 end;
 

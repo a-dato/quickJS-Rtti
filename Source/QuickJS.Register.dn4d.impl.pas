@@ -37,7 +37,7 @@ type
     procedure RegisterEnumConstants(const ctx: IJSContext; const Reg: IRegisteredObject; const EnumInfo: EnumInformation);
 
   public
-    class procedure Initialize(const Context: IJSContext);
+    class procedure Initialize; // Context parameter removed - not needed
   end;
 
   TJSTypedConverter = class(JSConverter)
@@ -193,11 +193,16 @@ end;
 
 { TJSRegisterTypedObjects }
 
-class procedure TJSRegisterTypedObjects.Initialize(const Context: IJSContext);
+class procedure TJSRegisterTypedObjects.Initialize;
 begin
-  JSConverter.Instance := TJSTypedConverter.Create;
-  TJSRegister.Instance := TJSRegisterTypedObjects.Create;
+  // Only initialize once - avoid recreating instances on every context creation
+  if not (TJSRegister.Instance is TJSRegisterTypedObjects) then
+  begin
+    JSConverter.Instance := TJSTypedConverter.Create;
+    TJSRegister.Instance := TJSRegisterTypedObjects.Create;
+  end;
 
+  // These registrations are safe to call multiple times (they check if already registered)
   TJSRegister.RegisterObject('JSIEnumerableIterator', TypeInfo(TJSIEnumerableIterator));
   // Register CTimeSpan record so it can be constructed in JS
   TJSRegister.RegisterObject('TimeSpan', TypeInfo(CTimeSpan));
@@ -299,6 +304,7 @@ end;
 { JSIEnumerableIterator }
 destructor TJSIEnumerableIterator.Destroy;
 begin
+  _enumerator := nil; // Explicitly release the enumerator interface
   inherited;
 end;
 
@@ -676,6 +682,12 @@ begin
     end
     else if Target = TypeInfo(CDateTime) then
     begin
+      if JS_IsNull(Value) or JS_IsUndefined(Value) then
+      begin
+        Result := TValue.From<CDateTime>(CDateTime.MinValue);
+        Exit;
+      end;
+
       var cd := CDateTime.MinValue;
 
       if JS_IsObject(Value) then
@@ -710,6 +722,12 @@ begin
     end
     else if Target = TypeInfo(CTimeSpan) then
     begin
+      if JS_IsNull(Value) or JS_IsUndefined(Value) then
+      begin
+        Result := TValue.From<CTimeSpan>(CTimeSpan.Create(0));
+        Exit;
+      end;
+
       var v: Int64;
       JS_ToBigInt64(ctx, @v, Value);
       Result := TValue.From<CTimeSpan>(CTimeSpan.Create(v));
@@ -753,7 +771,11 @@ begin
 
     if Value.TypeInfo = TypeInfo(CDateTime) then
     begin
-      var u_milis := DateTimeOffset.ToUnixTimeMiliSeconds(CDateTime(Value.GetReferenceToRawData^).Ticks);
+      var dt := CDateTime(Value.GetReferenceToRawData^);
+      if dt = CDateTime.MinValue then
+        Exit(JS_NULL);
+
+      var u_milis := DateTimeOffset.ToUnixTimeMiliSeconds(dt.Ticks);
       Exit(TJSRegister.JS_NewDate(ctx, u_milis));
     end;
 

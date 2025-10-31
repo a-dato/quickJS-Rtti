@@ -26,7 +26,7 @@ uses
 type
   TQuickJSConsole = class
   private
-    // Shared runtime is now managed internally by QuickJS.Register
+    // Context and test objects are created per-run to avoid memory leaks
     FContext: IJSContext;
     {$IFDEF TESTS}
     FTestObject: ITestObject;
@@ -34,6 +34,7 @@ type
     FTestObject3: ITestObject3;
     {$ENDIF}
     FJavaScriptFilePath: string;
+    FEnvFilePath: string;
     
     function EscapeJS(const S: string): string;
     function QuoteJS(const S: string): string;
@@ -41,8 +42,13 @@ type
     procedure InjectEnvDictionaryToJS(const Env: TDictionary<string, string>);
     procedure ClearConsole;
     procedure ShowHeader(const JSFilePath: string; const EnvFilePath: string = '');
+    
+    // Create a new context and register test objects
+    procedure CreateContextAndRegisterObjects;
+    // Destroy context and release test objects
+    procedure DestroyContext;
   public
-    procedure InitializeQuickJS;
+    procedure InitializeGlobalSettings;
     procedure InjectEnvFromFile(const EnvFile: string);
     procedure RunJavaScriptFile(const FilePath: string; TimeoutSeconds: Integer = 0);
     procedure WaitForExitWithAutoClose(AutoCloseSeconds: Integer);
@@ -76,38 +82,59 @@ begin
   Writeln('');
 end;
 
-procedure TQuickJSConsole.InitializeQuickJS;
+procedure TQuickJSConsole.InitializeGlobalSettings;
 begin
+  // One-time initialization - only needs to happen once
   QuickJS.Register.impl.OutputLogString := TProc<string>(
     procedure(S: string)
     begin
       Writeln(S);
     end);
+
+  {$IFDEF TESTS}
+  // Initialize the typed object system once
+  TJSRegisterTypedObjects.Initialize;
+
+  // Register test object bridge definitions (one-time registration)
+  TestObjectBridgeDefinitions.RegisterWithObjectBridge(TJSRegister.ObjectBridgeResolver);
+
+  // Register TimeInterval record type (one-time registration)
+  TJSRegister.RegisterObject('TimeInterval', TypeInfo(TimeInterval));
+  TJSRegister.RegisterObject('TimeSpan', TypeInfo(CTimeSpan));
+  {$ENDIF}
+end;
+
+procedure TQuickJSConsole.CreateContextAndRegisterObjects;
+begin
+  // Create a fresh context for this run
   FContext := TJSRegister.CreateContext;
 
   {$IFDEF TESTS}
-
-  var testExampleCTimeSpan := CTimeSpan.Create(1, 0, 0);
-
-  TJSRegisterTypedObjects.Initialize(FContext);
-
-  // Register test object bridge definitions
-  TestObjectBridgeDefinitions.RegisterWithObjectBridge(TJSRegister.ObjectBridgeResolver);
-
-  // Register TimeInterval record so it can be constructed in JS
-  TJSRegister.RegisterObject('TimeInterval', TypeInfo(TimeInterval));
-
-  // Create and register the test object
+  // Create and register the test objects for this context
   // Use TTestObject3 which inherits from ITestObject2 and ITestObject
   // This will allow testing inheritance - the object supports all three interfaces
   FTestObject3 := TTestObject3.Create;
   FTestObject2 := FTestObject3 as ITestObject2;
   FTestObject := FTestObject3 as ITestObject;
 
+  // Register live objects with the new context
   TJSRegister.RegisterLiveObject(FContext, 'testObj', TypeInfo(ITestObject), FTestObject);
   TJSRegister.RegisterLiveObject(FContext, 'testObj2', TypeInfo(ITestObject2), FTestObject2);
   TJSRegister.RegisterLiveObject(FContext, 'testObj3', TypeInfo(ITestObject3), FTestObject3);
   {$ENDIF}
+end;
+
+procedure TQuickJSConsole.DestroyContext;
+begin
+  {$IFDEF TESTS}
+  // Release test object references
+  FTestObject := nil;
+  FTestObject2 := nil;
+  FTestObject3 := nil;
+  {$ENDIF}
+  
+  // Destroy the context - this will clean up all registered objects
+  FContext := nil;
 end;
 
 function TQuickJSConsole.EscapeJS(const S: string): string;
@@ -329,6 +356,13 @@ begin
     Exit;
   end;
 
+  // Create a fresh context for this execution
+  CreateContextAndRegisterObjects;
+  
+  // Inject environment variables if we have an env file
+  if FEnvFilePath <> '' then
+    InjectEnvFromFile(FEnvFilePath);
+
   Src := TStringList.Create;
   try
     Src.LoadFromFile(FilePath, TEncoding.UTF8);
@@ -368,6 +402,8 @@ begin
           Writeln(Format('ERROR: JavaScript execution timed out after %d seconds', [TimeoutSeconds]));
           ExecutionThread.Terminate;
           ExitCode := 1;
+          // Destroy context even on timeout
+          DestroyContext;
           Exit;
         end;
         Sleep(50);
@@ -381,6 +417,8 @@ begin
         Writeln('ERROR: ' + ExecutionException.Message);
         ExecutionException.Free;
         ExitCode := 1;
+        // Destroy context even on error
+        DestroyContext;
         Exit;
       end;
     end
@@ -394,6 +432,8 @@ begin
         begin
           Writeln('ERROR: ' + E.ClassName + ': ' + E.Message);
           ExitCode := 1;
+          // Destroy context even on error
+          DestroyContext;
           Exit;
         end;
       end;
@@ -402,6 +442,8 @@ begin
     Writeln('Execution time: ' + SW.ElapsedMilliseconds.ToString + 'ms');
   finally
     Src.Free;
+    // Destroy context after successful execution
+    DestroyContext;
   end;
 end;
 
@@ -410,13 +452,35 @@ begin
   ClearConsole;
   ShowHeader(JSFilePath, EnvFilePath);
   
-  InitializeQuickJS;
-  FJavaScriptFilePath := JSFilePath;
+  // One-time initialization
+  InitializeGlobalSettings;
   
-  if EnvFilePath <> '' then
-    InjectEnvFromFile(EnvFilePath);
-    
+  // Store paths for re-runs
+  FJavaScriptFilePath := JSFilePath;
+  FEnvFilePath := EnvFilePath;
+  
+  {$IFDEF TESTS}
+  // Run 100 times to test for memory leaks
+  Writeln('Running 100 iterations to test for memory leaks...');
+  Writeln('');
+  for var iteration := 1 to 100 do
+  begin
+    Write(Format('Iteration %d/100...', [iteration]));
+    // Run the script (context is created/destroyed inside RunJavaScriptFile)
+    RunJavaScriptFile(FJavaScriptFilePath, TimeoutSeconds);
+    if ExitCode <> 0 then
+    begin
+      Writeln(' FAILED');
+      Break;
+    end;
+    Writeln(' OK');
+  end;
+  Writeln('');
+  Writeln('Completed all iterations.');
+  {$ELSE}
+  // Run the script once (context is created/destroyed inside RunJavaScriptFile)
   RunJavaScriptFile(FJavaScriptFilePath, TimeoutSeconds);
+  {$ENDIF}
   
   // Only wait if execution was successful (ExitCode = 0)
   if ExitCode = 0 then

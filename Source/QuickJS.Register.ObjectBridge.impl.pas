@@ -52,8 +52,21 @@ end;
 
 class destructor TObjectBridgeResolver.Destroy;
 begin
-  _propertyDescriptors.Free;
-  _methodDescriptors.Free;
+  // Free property descriptor lists
+  if Assigned(_propertyDescriptors) then
+  begin
+    for var descriptorList in _propertyDescriptors.Values do
+      descriptorList.Free;
+    _propertyDescriptors.Free;
+  end;
+  
+  // Free method descriptor lists
+  if Assigned(_methodDescriptors) then
+  begin
+    for var descriptorList in _methodDescriptors.Values do
+      descriptorList.Free;
+    _methodDescriptors.Free;
+  end;
   
   // Free interface mapping lists
   if Assigned(_interfaceMappings) then
