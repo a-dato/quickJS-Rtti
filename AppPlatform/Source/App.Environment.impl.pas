@@ -11,7 +11,7 @@ uses
   FMX.Types,
   ADato.ObjectModel.List.intf,
   App.intf,
-  App.Content.intf, App.Storage.intf;
+  App.Content.intf, App.Storage.intf, System.Collections.Generic;
 
 type
   Environment = class(TBaseInterfacedObject, IEnvironment)
@@ -52,10 +52,9 @@ type
 
   TFrameBinder = class(TBaseInterfacedObject, IContentBinder)
   protected
-    function  CreateModelForProperty() : IObjectListModel;
-    procedure BindChildren(const Children: TFmxChildrenList;
-      const AModel: IObjectListModel;
-      const AType: &Type; const TypeDescriptor: ITypeDescriptor);
+    _handlers: List<IContextChangedHandler>;
+
+    procedure BindChildren(const AType: &Type; const Children: TFmxChildrenList; const AModel: IObjectListModel);
     procedure Bind(const AContent: CObject; const AType: &Type; const Storage: IStorage);
 
     function WrapProperty(const AProp: _PropertyInfo) : _PropertyInfo; virtual;
@@ -77,7 +76,8 @@ uses
   ,App.Windows.FMX.impl
   ,FMX.Controls
   ,FMX.ScrollControl.DataControl.Impl
-  ;
+  , ADato.ObjectModel.List.impl
+  , App.ObjectModelWithDescriptor.impl;
 
 { Environment }
 
@@ -128,33 +128,63 @@ end;
 
 { TFrameBinder }
 
-function TFrameBinder.CreateModelForProperty() : IObjectListModel;
-begin
-  Result := TObjectListModelWithChangeTracking<IBaseInterface>.Create(AType);
-  Result.Context := Storage.Data;
-end;
+procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TFmxChildrenList; const AModel: IObjectListModel);
 
-procedure TFrameBinder.BindChildren(const Children: TFmxChildrenList; const AModel: IObjectListModel;
-  const AType: &Type; const TypeDescriptor: ITypeDescriptor);
-
-  function ConcatNames(const Names: TArray<string>) : string;
+  function ConcatNames(var Names: TArray<string>) : string;
   begin
     // names: ['IProject', 'Customer', 'Address', 'Zip', '1' <-- Name indexer]
-    var n := High(Names);
 
     // Do we have an indexer?
     var d: Integer;
     if Integer.TryParse(Names[High(Names)], d) then
-      dec(n);
+      SetLength(Names, Length(Names) - 1);  // Remove indexer
 
     Result := '';
 
-    for var i := 1 to n do
+    for var i := 1 to High(Names) do
     begin
       if i = 1 then
         Result := Names[i] else
         Result := Result  + '.' + Names[i];
     end;
+  end;
+
+  function GetModel(const Names: TArray<string>) : IObjectListModel;
+  begin
+    var parentModel := AModel;
+
+    // Loop will be skipped for IProject_Model
+    // Go deep for nested properties: IProject_Customers_Model
+    for var i := 1 to High(Names) - 1 do
+    begin
+      var parentProperty := parentModel.ObjectType.PropertyByName(Names[i]);
+
+      if parentProperty = nil then // Property does not exists
+        Exit(nil);
+
+      var handlerExists := False;
+      for var handler in _handlers do
+      begin
+        if handler.ParentModel.Equals(parentModel) and handler.ParentProperty.Equals(parentProperty) then
+        begin
+          handlerExists := True;
+          parentModel := handler.ChildModel;
+          break;
+        end;
+      end;
+
+      // Create a new model?
+      var dscr: IPropertyDescriptor;
+      if not handlerExists and Interfaces.Supports<IPropertyDescriptor>(parentProperty, dscr) then
+      begin
+        var childModel: IObjectListModel := TObjectModelWithDescriptor<IBaseInterface>.Create(dscr.GetType, dscr);
+        _handlers.Add(TContextChangedHandler.Create(parentModel, childModel, parentProperty));
+        parentModel := childModel;
+      end else
+        Exit(nil);
+    end;
+
+    Exit(parentModel);
   end;
 
 begin
@@ -169,19 +199,18 @@ begin
     begin
       var propertyName := ConcatNames(names); // 'Customer.Address.Zip'
 
-      if propertyName = 'Model' then
+      if names[High(names)] = 'Model' then  // IProject_Model, IProject_Customers_Model
       begin
-        var mdl: IObjectListModel;
-        if names[0] = AType.Name then // IProject_Model
-          mdl := AModel else
-          mdl := CreateModelForProperty();
+        var mdl := GetModel(names);
 
-//        begin
-//          if (c is TDataControl) then
-//            (c as TDataControl).Model := AModel;
-//          continue;
-//        end;
+        if mdl <> nil then
+        begin
+          if (c is TDataControl) then
+            (c as TDataControl).Model := AModel else
+            BindChildren(mdl.ObjectType, c.Children, mdl);
+        end;
 
+        continue;
       end;
 
       var objectProperty := AType.PropertyByName(propertyName);
@@ -200,7 +229,7 @@ begin
     end;
 
     if c.ChildrenCount > 0 then
-      BindChildren(c.Children, AModel, AType, TypeDescriptor);
+      BindChildren(AType, c.Children, AModel);
   end;
 end;
 
@@ -213,10 +242,12 @@ end;
 
 procedure TFrameBinder.Bind(const AContent: CObject; const AType: &Type; const Storage: IStorage);
 begin
+  _handlers := CList<IContextChangedHandler>.Create;
+
   var ctrl: TControl;
   if AContent.TryAsType<TControl>(ctrl) then
   begin
-    var objectType := _app.Config.TypeDescriptor(AType);
+    // var objectType := _app.Config.TypeDescriptor(AType);
 
     var model: IObjectListModel := nil;
     model := TObjectListModelWithChangeTracking<IBaseInterface>.Create(AType);
@@ -242,7 +273,7 @@ begin
 //          editorManager.Bind(model.ObjectModelContext);
 //
 //        BindChildren(ctrl.Children, model, editorManager, AType, objectType);
-        BindChildren(ctrl.Children, model, AType, objectType);
+        BindChildren(AType, ctrl.Children, model);
       end;
     end else
       raise CException.Create('Data is invalid');

@@ -53,7 +53,7 @@ uses
   System.ClassHelpers,
   System.Rtti,
   ADato.Extensions.intf,
-  ADato.ObjectModel.impl, App.PropertyDescriptor.impl;
+  ADato.ObjectModel.impl, App.PropertyDescriptor.impl, System.Collections;
 
 { TAppConfig }
 
@@ -84,7 +84,11 @@ begin
     var prop: _PropertyInfo := CustomProperty.Create(OwnerType, Name, ALabel, PropType);
 
     if Descriptor <> nil then
-      prop := TPropertyWithDescriptor.Create(prop, descriptor);
+    begin
+      if PropType.IsOfType<IList> then
+        prop := TCollectionPropertyWithDescriptor.Create(prop, descriptor) else
+        prop := TPropertyWithDescriptor.Create(prop, descriptor);
+    end;
 
     if Name.Contains('.') then
     begin

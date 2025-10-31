@@ -226,6 +226,14 @@ begin
 
   var cust_prop := tp.PropertyByName('Customers');
 
+  var dscr: IPropertyDescriptor;
+  if Interfaces.Supports<IPropertyDescriptor>(cust_prop, dscr) then
+  begin
+    var cust_type := cust_prop.GetType;
+    var dscr_type := dscr.GetType;
+
+  end;
+
   var project := _app.Storage['Projects'][0];
 
   var o := cust_prop.GetValue(project, []);
@@ -241,7 +249,8 @@ begin
 //  end;
 
   var c := _app.Storage['Customers'][0];
-  customers.Add(c);
+  var m := dscr.Marshaller.Marshal(nil, c);
+  customers.Add(m);
 
   ShowMessage(customers.Count.ToString);
 end;

@@ -206,8 +206,10 @@ export class CustomerType extends ITypeDescriptor_ {
 		this.Builder = new JSFrameBuilder();	// IContentBuilder
 		this.Provider = new CustomerProvider();	// IContentProvider
 		this.PropertyDescriptor = {
-			// IPropertyDescriptor
 			Customer: {
+				GetType: () => {
+					return Customer;
+				},
 				EditorType: editor.Combo,
 				Label: 'Customer',
 				// IFormatter

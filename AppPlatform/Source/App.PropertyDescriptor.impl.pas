@@ -56,10 +56,14 @@ type
     property PropertyDescriptor: IPropertyDescriptor read _PropertyDescriptor implements IPropertyDescriptor;
   end;
 
-  TCollectionPropertyDescriptor = class(TPropertyDescriptor, ICollectionPropertyDescriptor)
+  TCollectionPropertyWithDescriptor = class(CPropertyWrapper, IPropertyDescriptor, ICollectionPropertyDescriptor)
   protected
-    function  get_IsCollectionProperty: Boolean; override;
+    _PropertyDescriptor: IPropertyDescriptor;
 
+  public
+    constructor Create(const AProperty: _PropertyInfo; const ADescriptor: IPropertyDescriptor);
+
+    property PropertyDescriptor: IPropertyDescriptor read _PropertyDescriptor implements IPropertyDescriptor;
   end;
 
 implementation
@@ -209,11 +213,12 @@ begin
       notify.OnChanged(obj, val);
 end;
 
+{ TCollectionPropertyWithDescriptor }
 
-{ TCollectionPropertyDescriptor }
-function TCollectionPropertyDescriptor.get_IsCollectionProperty: Boolean;
+constructor TCollectionPropertyWithDescriptor.Create(const AProperty: _PropertyInfo; const ADescriptor: IPropertyDescriptor);
 begin
-  Result := True;
+  inherited Create(AProperty);
+  _PropertyDescriptor := ADescriptor;
 end;
 
 end.

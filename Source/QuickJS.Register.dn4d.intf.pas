@@ -104,17 +104,22 @@ begin
   end else
     name := Method.Name;
 
-  if name = 'GetType' then
-    Result := TValue.From<&Type>(&Type.Create(FTypeInfo))
+  var rt: PTypeInfo := nil;
+  if Method.ReturnType <> nil then
+    rt := Method.ReturnType.Handle;
+  Result := FObj.Invoke(name, Copy(Args, 1), rt);
 
-  else
-  begin
-    var rt: PTypeInfo := nil;
-    if Method.ReturnType <> nil then
-      rt := Method.ReturnType.Handle;
-
-    Result := FObj.Invoke(name, Copy(Args, 1), rt);
-  end;
+//  if name = 'GetType' then
+//    Result := TValue.From<&Type>(&Type.Create(FTypeInfo))
+//
+//  else
+//  begin
+//    var rt: PTypeInfo := nil;
+//    if Method.ReturnType <> nil then
+//      rt := Method.ReturnType.Handle;
+//
+//    Result := FObj.Invoke(name, Copy(Args, 1), rt);
+//  end;
 end;
 
 function TJSVirtualInterface.QueryInterface(const IID: TGUID; out Obj): HResult;

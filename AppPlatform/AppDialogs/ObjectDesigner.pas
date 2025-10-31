@@ -90,7 +90,7 @@ begin
   // _app.Config.AddProperty(_selected, 'Customers', 'Customers', &Type.From<IList>, GetDescriptor(customerType));
 
   // TCollectionPropertyDescriptor
-  _app.Config.AddProperty(_selected, 'Customers', 'Customers', &Type.From<IList>, nil);
+  _app.Config.AddProperty(_selected, 'Customers', 'Customers', &Type.From<IList>, GetDescriptor(customerType));
 end;
 
 { TObjectDesignerForm }
