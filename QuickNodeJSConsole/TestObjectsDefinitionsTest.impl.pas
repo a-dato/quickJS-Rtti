@@ -25,7 +25,7 @@ uses
   QuickJS.Register.intf, System.Rtti,
   System.Collections.Generic, System.Collections,
   QuickJS.Register.ObjectBridge.impl, QuickJS.Register.ObjectBridgeTypes.impl,
-  quickjs_ng, QuickJS.Register.PropertyDescriptors.impl, QuickJS.Register.impl;
+   QuickJS.Register.PropertyDescriptors.impl, QuickJS.Register.impl, quickjs_ng;
 
 { TestObjectBridgeDefinitions }
 

@@ -7,10 +7,10 @@ uses
   System.Rtti,
   System.SysUtils,
   System.Generics.Collections,
-  quickjs_ng,
+  
   QuickJS.Register.intf, QuickJS.Register.ObjectBridge.intf,
   QuickJS.Register.PropertyDescriptors.impl,
-  QuickJS.Register.PropertyDescriptors.intf;
+  QuickJS.Register.PropertyDescriptors.intf, quickjs_ng;
 
 type
   TProc_0 = TProc;
@@ -183,6 +183,7 @@ type
     class procedure RegisterContext(const Context: IJSContext);
     class procedure UnregisterContext(const Context: IJSContext);
     class function  CreateContext: IJSContext;
+    class function  TryLoadQuickJS: Boolean;
 
     class function  RegisterObject(ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject; overload;
     class function  RegisterObject(ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; overload;
@@ -356,7 +357,10 @@ destructor TJSObject.Destroy;
 begin
   if Assigned(_ImplementingInterfaces) then
     _ImplementingInterfaces.Free;
-  JS_FreeValue(_ctx, _value);
+    
+  if (_ctx <> nil) and IsQuickJSLoaded then
+    JS_FreeValue(_ctx, _value);
+    
   inherited;
 end;
 
@@ -1446,6 +1450,29 @@ begin
   RegisterContext(Result);
 end;
 
+class function TJSRegister.TryLoadQuickJS: Boolean;
+begin
+  Result := False;
+  
+  // Try to load QuickJS library
+  if not IsQuickJSLoaded then
+  begin
+    if not LoadQuickJS then
+      Exit(False);
+  end;
+  
+  // Ensure global runtime is created
+  if TJSRuntime._GlobalRuntime = nil then
+  begin
+    TJSRuntime._GlobalRuntime := TJSRuntime.Create;
+    // Check if runtime was actually created (will be nil if QuickJS failed to load)
+    if (TJSRuntime._GlobalRuntime = nil) or ((TJSRuntime._GlobalRuntime as TJSRuntime)._rt = nil) then
+      Exit(False);
+  end;
+  
+  Result := True;
+end;
+
 class function TJSRegister.RegisterObject(ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject;
 begin
   Result := RegisterObject(ClassName, TypeInfo, nil);
@@ -2414,11 +2441,14 @@ procedure TJSRuntime.BeforeDestruction;
 begin
   inherited;
 
-  try
-    js_std_free_handlers(_rt);
-    JS_FreeRuntime(_rt);
-  except
+  if (_rt <> nil) and IsQuickJSLoaded then
+  begin
+    try
+      js_std_free_handlers(_rt);
+      JS_FreeRuntime(_rt);
+    except
 
+    end;
   end;
 end;
 
@@ -2492,27 +2522,49 @@ class constructor TJSRuntime.Create;
 begin
   _ActiveContexts := TDictionary<JSContext, Pointer {Unsafe IJSContext pointer}>.Create;
 
-  // Register internal QuickJS types globally
-  TJSRegister.RegisterObject('JSIterator', TypeInfo(TJSIterator), nil);
-  TJSRegister.RegisterObject('JSIndexedPropertyAccessor', TypeInfo(TJSIndexedPropertyAccessor), nil);
+  // Load QuickJS library if not already loaded
+  // Note: Cannot use Exit in class constructors - must complete
+  if not IsQuickJSLoaded then
+    LoadQuickJS; // Will set QuickJSLoaded flag if successful
 
-  // Create shared runtime instance
-  if _GlobalRuntime = nil then
-    _GlobalRuntime := TJSRuntime.Create;
+  // Only proceed with registration if QuickJS loaded successfully
+  if IsQuickJSLoaded then
+  begin
+    // Register internal QuickJS types globally
+    TJSRegister.RegisterObject('JSIterator', TypeInfo(TJSIterator), nil);
+    TJSRegister.RegisterObject('JSIndexedPropertyAccessor', TypeInfo(TJSIndexedPropertyAccessor), nil);
+
+    // Create shared runtime instance
+    if _GlobalRuntime = nil then
+      _GlobalRuntime := TJSRuntime.Create;
+  end;
 end;
 
 class destructor TJSRuntime.Destroy;
 begin
-  _ActiveContexts.Free;
+  if (_ActiveContexts <> nil) then
+    _ActiveContexts.Free;
 end;
 
 constructor TJSRuntime.Create;
 begin
+  if not IsQuickJSLoaded then
+  begin
+    _rt := nil;
+    Exit;
+  end;
+  
   _rt := JS_NewRuntime;
 end;
 
 function TJSRuntime.CreateContext: IJSContext;
 begin
+  if (_rt = nil) or not IsQuickJSLoaded then
+  begin
+    Result := nil;
+    Exit;
+  end;
+  
   Result := TJSContext.Create(Self);
 end;
 
@@ -2597,19 +2649,34 @@ end;
 
 procedure TJSContext.BeforeDestruction;
 begin
-  TJSRuntime.UnRegisterContext(_ctx);
-  TJSRegister.UnregisterContext(Self);
-  try
-    JS_FreeContext(_ctx);
-  except
+  if _ctx <> nil then
+  begin
+    TJSRuntime.UnRegisterContext(_ctx);
+    TJSRegister.UnregisterContext(Self);
+    
+    if IsQuickJSLoaded then
+    begin
+      try
+        JS_FreeContext(_ctx);
+      except
 
+      end;
+    end;
   end;
+  
   inherited;
 end;
 
 constructor TJSContext.Create(const Runtime: IJSRuntime);
 begin
   _runtime := Runtime;
+  
+  if (_runtime = nil) or (_runtime.rt = nil) or not IsQuickJSLoaded then
+  begin
+    _ctx := nil;
+    Exit;
+  end;
+  
   _ctx := JS_NewContext(_runtime.rt);
   TJSRuntime.RegisterContext(_ctx, IJSContext(Self));
   Initialize;
@@ -2753,6 +2820,9 @@ const
 ;
 
 begin
+  if (_ctx = nil) or not IsQuickJSLoaded then
+    Exit;
+
   js_std_init_handlers(_runtime.rt);
 
   // ES6 Module loader.
@@ -2793,7 +2863,9 @@ end;
 destructor TJSIndexedPropertyAccessor.Destroy;
 begin
   inherited;
-  JS_FreeValue(_ctx, _this_obj);
+  
+  if (_ctx <> nil) and IsQuickJSLoaded then
+    JS_FreeValue(_ctx, _this_obj);
 end;
 
 

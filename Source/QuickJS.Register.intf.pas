@@ -5,9 +5,8 @@ interface
 uses
   System.Variants,
   System.Rtti,
-  System.TypInfo,
-  quickjs_ng,
-  System.SysUtils;
+  System.TypInfo, quickjs_ng, System.SysUtils;
+
 
 type
   TObjectConstuctor = function : Pointer;

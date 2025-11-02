@@ -22,17 +22,11 @@
   IN THE SOFTWARE.
 }
 
-unit quickjs_ng; // sync with version - "2020-04-12".
+unit quickjs_ng; // sync with version - "2020-04-12" - Dynamic Loading Version
 
 {$IfDef FPC}
   {$MODE Delphi}
   {$PackRecords C}
-{$EndIf}
-
-{$IfDef FPC}
-  {$IfNDef windows}
-    {$LinkLib 'libquickjs.a'}
-  {$EndIf}
 {$EndIf}
 
 {$IfDef FPC}
@@ -48,6 +42,13 @@ unit quickjs_ng; // sync with version - "2020-04-12".
 interface
 
 uses
+  {$IFDEF FPC}
+  dynlibs,
+  {$ELSE}
+  {$IFDEF MSWINDOWS}
+  Winapi.Windows,
+  {$ENDIF}
+  {$ENDIF}
   math;
 
 {===============================================================================}
@@ -497,293 +498,409 @@ type
   end;
   PJSCFunctionListEntry = ^JSCFunctionListEntry;
 
-  {$IFDEF mswindows}const QJSDLL = {$IfDef WIN64}'quickjs64.dll'{$Else}'quickjs32.dll'{$EndIf};{$endif}
-  { QuickJS external APIs }
+{===============================================================================}
+{                        Dynamic Loading Function Pointer Types                 }
+{===============================================================================}
 
-  function  JS_NewRuntime : JSRuntime; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  (* info lifetime must exceed that of rt *)
-  procedure JS_SetRuntimeInfo(rt : JSRuntime; const info : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_SetMemoryLimit(rt : JSRuntime; limit : size_t); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_SetGCThreshold(rt : JSRuntime; gc_threshold : size_t); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_SetMaxStackSize(ctx: JSContext; stack_size:size_t); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
+  TJS_NewRuntime = function : JSRuntime; cdecl;
+  TJS_SetRuntimeInfo = procedure(rt : JSRuntime; const info : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}); cdecl;
+  TJS_SetMemoryLimit = procedure(rt : JSRuntime; limit : size_t); cdecl;
+  TJS_SetGCThreshold = procedure(rt : JSRuntime; gc_threshold : size_t); cdecl;
+  TJS_SetMaxStackSize = procedure(ctx: JSContext; stack_size:size_t); cdecl;
+  TJS_NewRuntime2 = function(const mf : PJSMallocFunctions; opaque : Pointer) : JSRuntime; cdecl;
+  TJS_FreeRuntime = procedure(rt : JSRuntime); cdecl;
+  TJS_GetRuntimeOpaque = function(rt : JSRuntime) : Pointer; cdecl;
+  TJS_SetRuntimeOpaque = procedure(rt : JSRuntime; opaque : Pointer); cdecl;
+  TJS_MarkValue = procedure(rt:JSRuntime; val:JSValueConst; mark_func:PJS_MarkFunc); cdecl;
+  TJS_RunGC = procedure(rt:JSRuntime); cdecl;
+  TJS_IsLiveObject = function(rt:JSRuntime; obj:JSValueConst):JS_BOOL; cdecl;
+  TJS_NewContext = function(rt:JSRuntime):JSContext; cdecl;
+  TJS_FreeContext = procedure(s: JSContext); cdecl;
+  TJS_DupContext = function(ctx : JSContext) : JSContext; cdecl;
+  TJS_GetContextOpaque = function(ctx: JSContext):pointer; cdecl;
+  TJS_SetContextOpaque = procedure(ctx: JSContext; opaque:pointer); cdecl;
+  TJS_GetRuntime = function(ctx: JSContext):JSRuntime; cdecl;
+  TJS_SetClassProto = procedure(ctx: JSContext; class_id:JSClassID; obj:JSValue); cdecl;
+  TJS_GetClassProto = function(ctx: JSContext; class_id:JSClassID):JSValue; cdecl;
+  TJS_NewContextRaw = function(rt: JSRuntime): JSContext; cdecl;
+  TJS_AddIntrinsicBaseObjects = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicDate = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicEval = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicStringNormalize = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicRegExpCompiler = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicRegExp = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicJSON = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicProxy = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicMapSet = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicTypedArrays = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicPromise = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicBigInt = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicBigFloat = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicBigDecimal = procedure(ctx: JSContext); cdecl;
+  TJS_AddIntrinsicOperators = procedure(ctx: JSContext); cdecl;
+  TJS_EnableBignumExt = procedure(ctx: JSContext; enable : JS_BOOL); cdecl;
+  Tjs_string_codePointRange = function(ctx: JSContext; this_val:JSValueConst; argc:Integer; argv:PJSValueConst):JSValue; cdecl;
+  Tjs_malloc_rt = function(rt: JSRuntime; size:size_t):pointer; cdecl;
+  Tjs_free_rt = procedure(rt: JSRuntime; ptr:pointer); cdecl;
+  Tjs_realloc_rt = function(rt: JSRuntime; ptr:pointer; size:size_t):pointer; cdecl;
+  Tjs_malloc_usable_size_rt = function(rt: JSRuntime; ptr:pointer):size_t; cdecl;
+  Tjs_mallocz_rt = function(rt: JSRuntime; size:size_t):pointer; cdecl;
+  Tjs_malloc = function(ctx: JSContext; size:size_t):pointer; cdecl;
+  Tjs_free = procedure(ctx: JSContext; ptr:pointer); cdecl;
+  Tjs_realloc = function(ctx: JSContext; ptr:pointer; size:size_t):pointer; cdecl;
+  Tjs_malloc_usable_size = function(ctx: JSContext; ptr:pointer):size_t; cdecl;
+  Tjs_realloc2 = function(ctx: JSContext; ptr:pointer; size:size_t; pslack:Psize_t):pointer; cdecl;
+  Tjs_mallocz = function(ctx: JSContext; size:size_t):pointer; cdecl;
+  Tjs_strdup = function(ctx: JSContext; str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}): {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; cdecl;
+  Tjs_strndup = function(ctx: JSContext; s:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; n:size_t): {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; cdecl;
+  TJS_ComputeMemoryUsage = procedure(rt: JSRuntime; s:PJSMemoryUsage); cdecl;
+  TJS_DumpMemoryUsage = procedure(fp: Pointer; s:PJSMemoryUsage; rt: JSRuntime); cdecl;
+  TJS_NewAtomLen = function(ctx: JSContext; str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; len:size_t):JSAtom; cdecl;
+  TJS_NewAtom = function(ctx: JSContext; str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSAtom; cdecl;
+  TJS_NewAtomUInt32 = function(ctx: JSContext; n:UInt32):JSAtom; cdecl;
+  TJS_DupAtom = function(ctx: JSContext; v:JSAtom):JSAtom; cdecl;
+  TJS_FreeAtom = procedure(ctx: JSContext; v:JSAtom); cdecl;
+  TJS_FreeAtomRT = procedure(rt: JSRuntime; v:JSAtom); cdecl;
+  TJS_AtomToValue = function(ctx: JSContext; atom:JSAtom):JSValue; cdecl;
+  TJS_AtomToString = function(ctx: JSContext; atom:JSAtom):JSValue; cdecl;
+  TJS_ValueToAtom = function(ctx: JSContext; val:JSValueConst) : JSAtom; cdecl;
+  TJS_NewClassID = function(rt: JSRuntime; pclass_id:PJSClassID):JSClassID; cdecl;
+  TJS_NewClass = function(rt: JSRuntime; class_id:JSClassID; class_def: PJSClassDef):Integer; cdecl;
+  TJS_IsRegisteredClass = function(rt: JSRuntime; class_id:JSClassID):Integer; cdecl;
+  TJS_GetClassID = function(Value: JSValueConst): JSClassID; cdecl;
+  TJS_NewBigInt64 = function(ctx : JSContext; v : Int64): JSValue; cdecl;
+  TJS_NewBigUint64 = function(ctx : JSContext; v : UInt64): JSValue; cdecl;
+  TJS_Throw = function(ctx: JSContext; obj:JSValue):JSValue; cdecl;
+  TJS_HasException = function(ctx: JSContext):JS_BOOL; cdecl;
+  TJS_GetException = function(ctx: JSContext):JSValue; cdecl;
+  TJS_IsError = function(ctx: JSContext; val:JSValueConst):JS_BOOL; cdecl;
+  TJS_ResetUncatchableError = procedure(ctx: JSContext); cdecl;
+  TJS_NewError = function(ctx: JSContext):JSValue; cdecl;
+  TJS_ThrowSyntaxError = function(ctx: JSContext; fmt : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; args : Array of Const): JSValue; cdecl;
+  TJS_ThrowTypeError = function(ctx: JSContext; fmt : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; args : Array of Const): JSValue; cdecl;
+  TJS_ThrowReferenceError = function(ctx: JSContext; fmt : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; args : Array of Const): JSValue; cdecl;
+  TJS_ThrowRangeError = function(ctx: JSContext; fmt : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; args : Array of Const): JSValue; cdecl;
+  TJS_ThrowInternalError = function(ctx: JSContext; fmt : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; args : Array of Const): JSValue; cdecl;
+  TJS_ThrowOutOfMemory = function(ctx: JSContext): JSValue; cdecl;
+  T__JS_FreeValue = procedure(ctx: JSContext; v : JSValue); cdecl;
+  T__JS_FreeValueRT = procedure(rt: JSRuntime; v : JSValue); cdecl;
+  TJS_ToBool = function(ctx: JSContext; val:JSValueConst):Integer; cdecl;
+  TJS_ToInt32 = function(ctx: JSContext; pres:pInt32; val:JSValueConst):Integer; cdecl;
+  TJS_ToInt64 = function(ctx: JSContext; pres:PInt64; val:JSValueConst):Integer; cdecl;
+  TJS_ToIndex = function(ctx: JSContext; plen:PUInt64; val:JSValueConst):Integer; cdecl;
+  TJS_ToFloat64 = function(ctx: JSContext; pres:PDouble; val:JSValueConst):Integer; cdecl;
+  TJS_ToBigInt64 = function(ctx: JSContext; pres:PInt64; val:JSValueConst):Integer; cdecl;
+  TJS_ToInt64Ext = function(ctx: JSContext; pres:PInt64; val:JSValueConst):Integer; cdecl;
+  TJS_NewStringLen = function(ctx:JSContext; str1:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; len1: size_t):JSValue; cdecl;
+  TJS_NewAtomString = function(ctx:JSContext; str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSValue; cdecl;
+  TJS_ToString = function(ctx:JSContext; val:JSValueConst):JSValue; cdecl;
+  TJS_ToPropertyKey = function(ctx:JSContext; val:JSValueConst):JSValue; cdecl;
+  TJS_ToCStringLen2 = function(ctx:JSContext; plen:psize_t; val1:JSValueConst; cesu8:JS_BOOL): {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; cdecl;
+  TJS_FreeCString = procedure(ctx:JSContext; ptr:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}); cdecl;
+  TJS_NewObjectProtoClass = function(ctx:JSContext; proto:JSValueConst; class_id:JSClassID):JSValue; cdecl;
+  TJS_NewObjectClass = function(ctx:JSContext; class_id:JSClassID):JSValue; cdecl;
+  TJS_NewObjectProto = function(ctx:JSContext; proto:JSValueConst):JSValue; cdecl;
+  TJS_NewObject = function(ctx:JSContext):JSValue; cdecl;
+  TJS_IsFunction = function(ctx:JSContext; val:JSValueConst):JS_BOOL; cdecl;
+  TJS_IsConstructor = function(ctx:JSContext; val:JSValueConst):JS_BOOL; cdecl;
+  TJS_SetConstructorBit = function(ctx:JSContext; func_obj : JSValueConst; val:JS_BOOL):JS_BOOL; cdecl;
+  TJS_NewArray = function(ctx:JSContext):JSValue; cdecl;
+  TJS_IsArray = function(ctx:JSContext; val:JSValueConst):Integer; cdecl;
+  TJS_GetPropertyInternal = function(ctx:JSContext; obj:JSValueConst; prop:JSAtom; receiver:JSValueConst; throw_ref_error:JS_BOOL):JSValue; cdecl;
+  TJS_GetPropertyStr = function(ctx:JSContext; this_obj:JSValueConst; prop:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSValue; cdecl;
+  TJS_GetPropertyUint32 = function(ctx:JSContext; this_obj:JSValueConst; idx:UInt32):JSValue; cdecl;
+  TJS_SetPropertyInternal = function(ctx:JSContext; this_obj:JSValueConst; prop:JSAtom; val:JSValue; flags:Integer):Integer; cdecl;
+  TJS_SetPropertyUint32 = function(ctx:JSContext; this_obj:JSValueConst; idx:UInt32; val:JSValue):Integer; cdecl;
+  TJS_SetPropertyInt64 = function(ctx:JSContext; this_obj:JSValueConst; idx:Int64; val:JSValue):Integer; cdecl;
+  TJS_SetPropertyStr = function(ctx:JSContext; this_obj:JSValueConst; prop:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; val:JSValue):Integer; cdecl;
+  TJS_HasProperty = function(ctx:JSContext; this_obj:JSValueConst; prop:JSAtom):Integer; cdecl;
+  TJS_IsExtensible = function(ctx:JSContext; obj:JSValueConst):Integer; cdecl;
+  TJS_PreventExtensions = function(ctx:JSContext; obj:JSValueConst):Integer; cdecl;
+  TJS_DeleteProperty = function(ctx:JSContext; obj:JSValueConst; prop:JSAtom; flags:Integer):Integer; cdecl;
+  TJS_SetPrototype = function(ctx:JSContext; obj:JSValueConst; proto_val:JSValueConst):Integer; cdecl;
+  TJS_GetPrototype = function(ctx:JSContext; val:JSValueConst):JSValueConst; cdecl;
+  TJS_GetOwnPropertyNames = function(ctx: JSContext; ptab:PPJSPropertyEnum; plen: pUInt32; obj:JSValueConst; flags : Integer): Integer; cdecl;
+  TJS_GetOwnProperty = function(ctx: JSContext; desc : PJSPropertyDescriptor; obj : JSValueConst; prop : JSAtom): Integer; cdecl;
+  TJS_ParseJSON = function(ctx:JSContext; buf:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; buf_len:size_t; filename:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSValue; cdecl;
+  TJS_JSONStringify = function(ctx:JSContext; obj, replacer, space0 : JSValueConst):JSValue; cdecl;
+  TJS_Call = function(ctx:JSContext; func_obj:JSValueConst; this_obj:JSValueConst; argc:Integer; argv:PJSValueConstArr):JSValue; cdecl;
+  TJS_Invoke = function(ctx:JSContext; this_val:JSValueConst; atom:JSAtom; argc:Integer; argv:PJSValueConst):JSValue; cdecl;
+  TJS_CallConstructor = function(ctx:JSContext; func_obj:JSValueConst; argc:Integer; argv:PJSValueConst):JSValue; cdecl;
+  TJS_CallConstructor2 = function(ctx:JSContext; func_obj:JSValueConst; new_target:JSValueConst; argc:Integer; argv:PJSValueConst):JSValue; cdecl;
+  TJS_DetectModule = function(const input:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; input_len : size_t):JS_BOOL; cdecl;
+  TJS_Eval = function(ctx:JSContext; input:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; input_len:size_t; filename:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; eval_flags:Integer):JSValue; cdecl;
+  TJS_EvalFunction = function(ctx:JSContext; fun_obj : JSValue):JSValue; cdecl;
+  TJS_GetGlobalObject = function(ctx:JSContext):JSValue; cdecl;
+  TJS_IsInstanceOf = function(ctx:JSContext; val:JSValueConst; obj:JSValueConst):Integer; cdecl;
+  TJS_DefineProperty = function(ctx:JSContext; this_obj:JSValueConst; prop:JSAtom; val:JSValueConst; getter:JSValueConst; setter:JSValueConst; flags:Integer):Integer; cdecl;
+  TJS_DefinePropertyValue = function(ctx:JSContext; this_obj:JSValueConst; prop:JSAtom; val:JSValue; flags:Integer):Integer; cdecl;
+  TJS_DefinePropertyValueUint32 = function(ctx:JSContext; this_obj:JSValueConst; idx:UInt32; val:JSValue; flags:Integer):Integer; cdecl;
+  TJS_DefinePropertyValueStr = function(ctx:JSContext; this_obj:JSValueConst; prop:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; val:JSValue; flags:Integer):Integer; cdecl;
+  TJS_DefinePropertyGetSet = function(ctx:JSContext; this_obj:JSValueConst; prop:JSAtom; getter:JSValue; setter:JSValue; flags:Integer):Integer; cdecl;
+  TJS_SetOpaque = procedure(obj:JSValue; opaque:pointer); cdecl;
+  TJS_GetOpaque = function(obj:JSValueConst; class_id:JSClassID):pointer; cdecl;
+  TJS_GetOpaque2 = function(ctx:JSContext; obj:JSValueConst; class_id:JSClassID):pointer; cdecl;
+  TJS_NewArrayBuffer = function(ctx:JSContext; buf:pUInt8; len:size_t; free_func:PJSFreeArrayBufferDataFunc; opaque:pointer; is_shared:JS_BOOL):JSValue; cdecl;
+  TJS_NewArrayBufferCopy = function(ctx:JSContext; buf:pUInt8; len:size_t):JSValue; cdecl;
+  TJS_DetachArrayBuffer = procedure(ctx:JSContext; obj:JSValueConst); cdecl;
+  TJS_GetArrayBuffer = function(ctx:JSContext; psize:Psize_t; obj:JSValueConst):pUInt8; cdecl;
+  TJS_GetTypedArrayBuffer = function(ctx : JSContext; obj : JSValueConst; pbyte_offset, pbyte_length, pbytes_per_element : psize_t):JSValue; cdecl;
+  TJS_NewPromiseCapability = function(ctx:JSContext; resolving_funcs:PJSValue):JSValue; cdecl;
+  TJS_PromiseState = function(ctx:JSContext; promise:JSValue):JSPromiseStateEnum; cdecl;
+  TJS_PromiseResult = function(ctx:JSContext; promise:JSValue):JSValue; cdecl;
+  TJS_IsPromise = function(val: JSValueConst) : Boolean; cdecl;
+  TJS_SetHostPromiseRejectionTracker = procedure(rt: JSRuntime; cb : PJSHostPromiseRejectionTracker; opaque : Pointer); cdecl;
+  TJS_SetInterruptHandler = procedure(rt:JSRuntime; cb:PJSInterruptHandler; opaque:pointer); cdecl;
+  TJS_SetCanBlock = procedure(rt:JSRuntime; can_block:JS_BOOL); cdecl;
+  TJS_SetModuleLoaderFunc = procedure(rt:JSRuntime; module_normalize:PJSModuleNormalizeFunc; module_loader:PJSModuleLoaderFunc; opaque:pointer); cdecl;
+  TJS_EnqueueJob = function(ctx:JSContext; job_func:PJSJobFunc; argc:Integer; argv:PJSValueConst):Integer; cdecl;
+  TJS_IsJobPending = function(rt:JSRuntime):JS_BOOL; cdecl;
+  TJS_ExecutePendingJob = function(rt:JSRuntime; pctx: PPJSContext):Integer; cdecl;
+  TJS_WriteObject = function(ctx: JSContext; psize:psize_t; obj:JSValueConst; flags:Integer):pUInt8; cdecl;
+  TJS_ReadObject = function(ctx: JSContext; buf:pUInt8; buf_len:size_t; flags:Integer):JSValue; cdecl;
+  TJS_ResolveModule = function(ctx: JSContext; obj : JSValueConst):Integer; cdecl;
+  TJS_GetModuleNamespace = function(ctx: JSContext; ModuleDef: JSModuleDef) : JSValue; cdecl;
+  TJS_SetConstructor = procedure(ctx : JSContext; func_obj, proto : JSValueConst); cdecl;
+  TJS_NewCFunction2 = function(ctx: JSContext; func:PJSCFunction; name:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; length:Integer; cproto:JSCFunctionEnum; magic:Integer):JSValue; cdecl;
+  TJS_NewCFunctionData = function(ctx: JSContext; func:PJSCFunctionData; length:Integer; magic:Integer; data_len:Integer; data:PJSValueConst):JSValue; cdecl;
+  TJS_SetPropertyFunctionList = procedure(ctx: JSContext; obj:JSValueConst; tab:PJSCFunctionListEntry; len:Integer); cdecl;
+  TJS_NewCModule = function(ctx: JSContext; name_str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; func:PJSModuleInitFunc): JSModuleDef; cdecl;
+  TJS_AddModuleExport = function(ctx: JSContext; m: JSModuleDef; name_str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):Integer; cdecl;
+  TJS_AddModuleExportList = function(ctx: JSContext; m: JSModuleDef; tab:PJSCFunctionListEntry; len:Integer):Integer; cdecl;
+  TJS_SetModuleExport = function(ctx: JSContext; m: JSModuleDef; export_name:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; val:JSValue):Integer; cdecl;
+  TJS_SetModuleExportList = function(ctx: JSContext; m: JSModuleDef; tab:PJSCFunctionListEntry; len:Integer):Integer; cdecl;
+  TJS_GetImportMeta = function(ctx: JSContext; m: JSModuleDef) : JSValue; cdecl;
+  TJS_GetModuleName = function(ctx: JSContext; m: JSModuleDef) : JSAtom; cdecl;
+  Tjs_init_module_std = function(ctx: JSContext; module_name:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSModuleDef; cdecl;
+  Tjs_init_module_os = function(ctx: JSContext; module_name:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSModuleDef; cdecl;
+  Tjs_init_module_bjson = function(ctx: JSContext; module_name:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSModuleDef; cdecl;
+  Tjs_std_add_helpers = procedure(ctx : JSContext; argc : Integer; argv : Pointer); cdecl;
+  Tjs_std_loop = procedure(ctx : JSContext); cdecl;
+  Tjs_std_init_handlers = procedure(rt:JSRuntime); cdecl;
+  Tjs_std_free_handlers = procedure(rt:JSRuntime); cdecl;
+  Tjs_std_dump_error = procedure(ctx:JSContext); cdecl;
+  Tjs_std_await = function(ctx:JSContext; val:JSValue) : JSValue; cdecl;
+  Tjs_load_file = function(ctx:JSContext; pbuf_len: psize_t; filename:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}): Pointer; cdecl;
+  Tjs_module_loader = function(ctx:JSContext; module_name:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; opaque:pointer):JSModuleDef; cdecl;
+  Tjs_std_eval_binary = procedure(ctx : JSContext; buf : Pointer; buf_len : size_t; flags : Integer); cdecl;
+  Tjs_module_set_import_meta = function(ctx : JSContext; func_val : JSValueConst; use_realpath, is_main : JS_BOOL) : Integer; cdecl;
+  Tjs_std_promise_rejection_tracker = procedure(ctx : JSContext; promise, reason : JSValueConst; is_handled : JS_BOOL; opaque : Pointer); cdecl;
+  TJS_NewInt64 = function(ctx : JSContext; val : Int64): JSValue; cdecl;
+  TJS_FreeValue = procedure(ctx : JSContext; v : JSValue); cdecl;
+  TJS_FreeValueRT = procedure(rt : JSRuntime; v : JSValue); cdecl;
+  TJS_DupValue = function(ctx : JSContext; v : JSValueConst) : JSValue; cdecl;
+  TJS_DupValueRT = function(rt : JSRuntime; v : JSValueConst) : JSValue; cdecl;
 
-  function  JS_NewRuntime2(const mf : PJSMallocFunctions; opaque : Pointer) : JSRuntime; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_FreeRuntime(rt : JSRuntime); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function  JS_GetRuntimeOpaque(rt : JSRuntime) : Pointer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_SetRuntimeOpaque(rt : JSRuntime; opaque : Pointer); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
+{===============================================================================}
+{                        Dynamic Loading Variables                              }
+{===============================================================================}
 
+const
+  {$IFDEF mswindows}
+  QJSDLL = {$IfDef WIN64}'quickjs64.dll'{$Else}'quickjs32.dll'{$EndIf};
+  {$ELSE}
+  QJSDLL = 'libquickjs.so';
+  {$endif}
 
-  procedure JS_MarkValue(rt:JSRuntime; val:JSValueConst; mark_func:PJS_MarkFunc);cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_RunGC(rt:JSRuntime);  cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
+var
+  QuickJSHandle: {$IFDEF FPC}TLibHandle{$ELSE}HMODULE{$ENDIF} = 0;
+  QuickJSLoaded: Boolean = False;
 
-  function JS_IsLiveObject(rt:JSRuntime; obj:JSValueConst):JS_BOOL; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  //{REMOVE}function JS_IsInGCSweep(rt:JSRuntime):JS_BOOL; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function  JS_NewContext(rt:JSRuntime):JSContext; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_FreeContext(s: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_DupContext(ctx : JSContext) : JSContext; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetContextOpaque(ctx: JSContext):pointer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_SetContextOpaque(ctx: JSContext; opaque:pointer); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetRuntime(ctx: JSContext):JSRuntime; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_SetClassProto(ctx: JSContext; class_id:JSClassID; obj:JSValue); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetClassProto(ctx: JSContext; class_id:JSClassID):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
+  JS_NewRuntime: TJS_NewRuntime = nil;
+  JS_SetRuntimeInfo: TJS_SetRuntimeInfo = nil;
+  JS_SetMemoryLimit: TJS_SetMemoryLimit = nil;
+  JS_SetGCThreshold: TJS_SetGCThreshold = nil;
+  JS_SetMaxStackSize: TJS_SetMaxStackSize = nil;
+  JS_NewRuntime2: TJS_NewRuntime2 = nil;
+  JS_FreeRuntime: TJS_FreeRuntime = nil;
+  JS_GetRuntimeOpaque: TJS_GetRuntimeOpaque = nil;
+  JS_SetRuntimeOpaque: TJS_SetRuntimeOpaque = nil;
+  JS_MarkValue: TJS_MarkValue = nil;
+  JS_RunGC: TJS_RunGC = nil;
+  JS_IsLiveObject: TJS_IsLiveObject = nil;
+  JS_NewContext: TJS_NewContext = nil;
+  JS_FreeContext: TJS_FreeContext = nil;
+  JS_DupContext: TJS_DupContext = nil;
+  JS_GetContextOpaque: TJS_GetContextOpaque = nil;
+  JS_SetContextOpaque: TJS_SetContextOpaque = nil;
+  JS_GetRuntime: TJS_GetRuntime = nil;
+  JS_SetClassProto: TJS_SetClassProto = nil;
+  JS_GetClassProto: TJS_GetClassProto = nil;
+  JS_NewContextRaw: TJS_NewContextRaw = nil;
+  JS_AddIntrinsicBaseObjects: TJS_AddIntrinsicBaseObjects = nil;
+  JS_AddIntrinsicDate: TJS_AddIntrinsicDate = nil;
+  JS_AddIntrinsicEval: TJS_AddIntrinsicEval = nil;
+  JS_AddIntrinsicStringNormalize: TJS_AddIntrinsicStringNormalize = nil;
+  JS_AddIntrinsicRegExpCompiler: TJS_AddIntrinsicRegExpCompiler = nil;
+  JS_AddIntrinsicRegExp: TJS_AddIntrinsicRegExp = nil;
+  JS_AddIntrinsicJSON: TJS_AddIntrinsicJSON = nil;
+  JS_AddIntrinsicProxy: TJS_AddIntrinsicProxy = nil;
+  JS_AddIntrinsicMapSet: TJS_AddIntrinsicMapSet = nil;
+  JS_AddIntrinsicTypedArrays: TJS_AddIntrinsicTypedArrays = nil;
+  JS_AddIntrinsicPromise: TJS_AddIntrinsicPromise = nil;
+  JS_AddIntrinsicBigInt: TJS_AddIntrinsicBigInt = nil;
+  JS_AddIntrinsicBigFloat: TJS_AddIntrinsicBigFloat = nil;
+  JS_AddIntrinsicBigDecimal: TJS_AddIntrinsicBigDecimal = nil;
+  JS_AddIntrinsicOperators: TJS_AddIntrinsicOperators = nil;
+  JS_EnableBignumExt: TJS_EnableBignumExt = nil;
+  js_string_codePointRange: Tjs_string_codePointRange = nil;
+  js_malloc_rt: Tjs_malloc_rt = nil;
+  js_free_rt: Tjs_free_rt = nil;
+  js_realloc_rt: Tjs_realloc_rt = nil;
+  js_malloc_usable_size_rt: Tjs_malloc_usable_size_rt = nil;
+  js_mallocz_rt: Tjs_mallocz_rt = nil;
+  js_malloc: Tjs_malloc = nil;
+  js_free: Tjs_free = nil;
+  js_realloc: Tjs_realloc = nil;
+  js_malloc_usable_size: Tjs_malloc_usable_size = nil;
+  js_realloc2: Tjs_realloc2 = nil;
+  js_mallocz: Tjs_mallocz = nil;
+  js_strdup: Tjs_strdup = nil;
+  js_strndup: Tjs_strndup = nil;
+  JS_ComputeMemoryUsage: TJS_ComputeMemoryUsage = nil;
+  JS_DumpMemoryUsage: TJS_DumpMemoryUsage = nil;
+  JS_NewAtomLen: TJS_NewAtomLen = nil;
+  JS_NewAtom: TJS_NewAtom = nil;
+  JS_NewAtomUInt32: TJS_NewAtomUInt32 = nil;
+  JS_DupAtom: TJS_DupAtom = nil;
+  JS_FreeAtom: TJS_FreeAtom = nil;
+  JS_FreeAtomRT: TJS_FreeAtomRT = nil;
+  JS_AtomToValue: TJS_AtomToValue = nil;
+  JS_AtomToString: TJS_AtomToString = nil;
+  JS_ValueToAtom: TJS_ValueToAtom = nil;
+  JS_NewClassID: TJS_NewClassID = nil;
+  JS_NewClass: TJS_NewClass = nil;
+  JS_IsRegisteredClass: TJS_IsRegisteredClass = nil;
+  JS_GetClassID: TJS_GetClassID = nil;
+  JS_NewBigInt64: TJS_NewBigInt64 = nil;
+  JS_NewBigUint64: TJS_NewBigUint64 = nil;
+  JS_Throw: TJS_Throw = nil;
+  JS_HasException: TJS_HasException = nil;
+  JS_GetException: TJS_GetException = nil;
+  JS_IsError: TJS_IsError = nil;
+  JS_ResetUncatchableError: TJS_ResetUncatchableError = nil;
+  JS_NewError: TJS_NewError = nil;
+  JS_ThrowSyntaxError: TJS_ThrowSyntaxError = nil;
+  JS_ThrowTypeError: TJS_ThrowTypeError = nil;
+  JS_ThrowReferenceError: TJS_ThrowReferenceError = nil;
+  JS_ThrowRangeError: TJS_ThrowRangeError = nil;
+  JS_ThrowInternalError: TJS_ThrowInternalError = nil;
+  JS_ThrowOutOfMemory: TJS_ThrowOutOfMemory = nil;
+  __JS_FreeValue: T__JS_FreeValue = nil;
+  __JS_FreeValueRT: T__JS_FreeValueRT = nil;
+  JS_ToBool: TJS_ToBool = nil;
+  JS_ToInt32: TJS_ToInt32 = nil;
+  JS_ToInt64: TJS_ToInt64 = nil;
+  JS_ToIndex: TJS_ToIndex = nil;
+  JS_ToFloat64: TJS_ToFloat64 = nil;
+  JS_ToBigInt64: TJS_ToBigInt64 = nil;
+  JS_ToInt64Ext: TJS_ToInt64Ext = nil;
+  JS_NewStringLen: TJS_NewStringLen = nil;
+  JS_NewAtomString: TJS_NewAtomString = nil;
+  JS_ToString: TJS_ToString = nil;
+  JS_ToPropertyKey: TJS_ToPropertyKey = nil;
+  JS_ToCStringLen2: TJS_ToCStringLen2 = nil;
+  JS_FreeCString: TJS_FreeCString = nil;
+  JS_NewObjectProtoClass: TJS_NewObjectProtoClass = nil;
+  JS_NewObjectClass: TJS_NewObjectClass = nil;
+  JS_NewObjectProto: TJS_NewObjectProto = nil;
+  JS_NewObject: TJS_NewObject = nil;
+  JS_IsFunction: TJS_IsFunction = nil;
+  JS_IsConstructor: TJS_IsConstructor = nil;
+  JS_SetConstructorBit: TJS_SetConstructorBit = nil;
+  JS_NewArray: TJS_NewArray = nil;
+  JS_IsArray: TJS_IsArray = nil;
+  JS_GetPropertyInternal: TJS_GetPropertyInternal = nil;
+  JS_GetPropertyStr: TJS_GetPropertyStr = nil;
+  JS_GetPropertyUint32: TJS_GetPropertyUint32 = nil;
+  JS_SetPropertyInternal: TJS_SetPropertyInternal = nil;
+  JS_SetPropertyUint32: TJS_SetPropertyUint32 = nil;
+  JS_SetPropertyInt64: TJS_SetPropertyInt64 = nil;
+  JS_SetPropertyStr: TJS_SetPropertyStr = nil;
+  JS_HasProperty: TJS_HasProperty = nil;
+  JS_IsExtensible: TJS_IsExtensible = nil;
+  JS_PreventExtensions: TJS_PreventExtensions = nil;
+  JS_DeleteProperty: TJS_DeleteProperty = nil;
+  JS_SetPrototype: TJS_SetPrototype = nil;
+  JS_GetPrototype: TJS_GetPrototype = nil;
+  JS_GetOwnPropertyNames: TJS_GetOwnPropertyNames = nil;
+  JS_GetOwnProperty: TJS_GetOwnProperty = nil;
+  JS_ParseJSON: TJS_ParseJSON = nil;
+  JS_JSONStringify: TJS_JSONStringify = nil;
+  JS_Call: TJS_Call = nil;
+  JS_Invoke: TJS_Invoke = nil;
+  JS_CallConstructor: TJS_CallConstructor = nil;
+  JS_CallConstructor2: TJS_CallConstructor2 = nil;
+  JS_DetectModule: TJS_DetectModule = nil;
+  JS_Eval: TJS_Eval = nil;
+  JS_EvalFunction: TJS_EvalFunction = nil;
+  JS_GetGlobalObject: TJS_GetGlobalObject = nil;
+  JS_IsInstanceOf: TJS_IsInstanceOf = nil;
+  JS_DefineProperty: TJS_DefineProperty = nil;
+  JS_DefinePropertyValue: TJS_DefinePropertyValue = nil;
+  JS_DefinePropertyValueUint32: TJS_DefinePropertyValueUint32 = nil;
+  JS_DefinePropertyValueStr: TJS_DefinePropertyValueStr = nil;
+  JS_DefinePropertyGetSet: TJS_DefinePropertyGetSet = nil;
+  JS_SetOpaque: TJS_SetOpaque = nil;
+  JS_GetOpaque: TJS_GetOpaque = nil;
+  JS_GetOpaque2: TJS_GetOpaque2 = nil;
+  JS_NewArrayBuffer: TJS_NewArrayBuffer = nil;
+  JS_NewArrayBufferCopy: TJS_NewArrayBufferCopy = nil;
+  JS_DetachArrayBuffer: TJS_DetachArrayBuffer = nil;
+  JS_GetArrayBuffer: TJS_GetArrayBuffer = nil;
+  JS_GetTypedArrayBuffer: TJS_GetTypedArrayBuffer = nil;
+  JS_NewPromiseCapability: TJS_NewPromiseCapability = nil;
+  JS_PromiseState: TJS_PromiseState = nil;
+  JS_PromiseResult: TJS_PromiseResult = nil;
+  JS_IsPromise: TJS_IsPromise = nil;
+  JS_SetHostPromiseRejectionTracker: TJS_SetHostPromiseRejectionTracker = nil;
+  JS_SetInterruptHandler: TJS_SetInterruptHandler = nil;
+  JS_SetCanBlock: TJS_SetCanBlock = nil;
+  JS_SetModuleLoaderFunc: TJS_SetModuleLoaderFunc = nil;
+  JS_EnqueueJob: TJS_EnqueueJob = nil;
+  JS_IsJobPending: TJS_IsJobPending = nil;
+  JS_ExecutePendingJob: TJS_ExecutePendingJob = nil;
+  JS_WriteObject: TJS_WriteObject = nil;
+  JS_ReadObject: TJS_ReadObject = nil;
+  JS_ResolveModule: TJS_ResolveModule = nil;
+  JS_GetModuleNamespace: TJS_GetModuleNamespace = nil;
+  JS_SetConstructor: TJS_SetConstructor = nil;
+  JS_NewCFunction2: TJS_NewCFunction2 = nil;
+  JS_NewCFunctionData: TJS_NewCFunctionData = nil;
+  JS_SetPropertyFunctionList: TJS_SetPropertyFunctionList = nil;
+  JS_NewCModule: TJS_NewCModule = nil;
+  JS_AddModuleExport: TJS_AddModuleExport = nil;
+  JS_AddModuleExportList: TJS_AddModuleExportList = nil;
+  JS_SetModuleExport: TJS_SetModuleExport = nil;
+  JS_SetModuleExportList: TJS_SetModuleExportList = nil;
+  JS_GetImportMeta: TJS_GetImportMeta = nil;
+  JS_GetModuleName: TJS_GetModuleName = nil;
+  js_init_module_std: Tjs_init_module_std = nil;
+  js_init_module_os: Tjs_init_module_os = nil;
+  js_init_module_bjson: Tjs_init_module_bjson = nil;
+  js_std_add_helpers: Tjs_std_add_helpers = nil;
+  js_std_loop: Tjs_std_loop = nil;
+  js_std_init_handlers: Tjs_std_init_handlers = nil;
+  js_std_free_handlers: Tjs_std_free_handlers = nil;
+  js_std_dump_error: Tjs_std_dump_error = nil;
+  js_std_await: Tjs_std_await = nil;
+  js_load_file: Tjs_load_file = nil;
+  js_module_loader: Tjs_module_loader = nil;
+  js_std_eval_binary: Tjs_std_eval_binary = nil;
+  js_module_set_import_meta: Tjs_module_set_import_meta = nil;
+  js_std_promise_rejection_tracker: Tjs_std_promise_rejection_tracker = nil;
+  JS_NewInt64: TJS_NewInt64 = nil;
+  JS_FreeValue: TJS_FreeValue = nil;
+  JS_FreeValueRT: TJS_FreeValueRT = nil;
+  JS_DupValue: TJS_DupValue = nil;
+  JS_DupValueRT: TJS_DupValueRT = nil;
 
-{ the following functions are used to select the intrinsic object to save memory  }
+{ Dynamic Loading Functions }
+function LoadQuickJS(const DLLPath: string = ''): Boolean;
+function UnloadQuickJS: Boolean;
+function IsQuickJSLoaded: Boolean;
 
-  function JS_NewContextRaw(rt: JSRuntime): JSContext; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_AddIntrinsicBaseObjects(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_AddIntrinsicDate(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_AddIntrinsicEval(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_AddIntrinsicStringNormalize(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_AddIntrinsicRegExpCompiler(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_AddIntrinsicRegExp(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_AddIntrinsicJSON(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_AddIntrinsicProxy(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_AddIntrinsicMapSet(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_AddIntrinsicTypedArrays(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_AddIntrinsicPromise(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  procedure JS_AddIntrinsicBigInt(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_AddIntrinsicBigFloat(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_AddIntrinsicBigDecimal(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  { enable operator overloading }
-  procedure JS_AddIntrinsicOperators(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  { enable "use math" }
-  procedure JS_EnableBignumExt(ctx: JSContext; enable : JS_BOOL); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  function js_string_codePointRange(ctx: JSContext; this_val:JSValueConst; argc:Integer; argv:PJSValueConst):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  function js_malloc_rt(rt: JSRuntime; size:size_t):pointer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure js_free_rt(rt: JSRuntime; ptr:pointer); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function js_realloc_rt(rt: JSRuntime; ptr:pointer; size:size_t):pointer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function js_malloc_usable_size_rt(rt: JSRuntime; ptr:pointer):size_t; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function js_mallocz_rt(rt: JSRuntime; size:size_t):pointer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function js_malloc(ctx: JSContext; size:size_t):pointer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure js_free(ctx: JSContext; ptr:pointer); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function js_realloc(ctx: JSContext; ptr:pointer; size:size_t):pointer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function js_malloc_usable_size(ctx: JSContext; ptr:pointer):size_t; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function js_realloc2(ctx: JSContext; ptr:pointer; size:size_t; pslack:Psize_t):pointer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function js_mallocz(ctx: JSContext; size:size_t):pointer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function js_strdup(ctx: JSContext; str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}): {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function js_strndup(ctx: JSContext; s:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; n:size_t): {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  procedure JS_ComputeMemoryUsage(rt: JSRuntime; s:PJSMemoryUsage); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_DumpMemoryUsage(fp: Pointer; s:PJSMemoryUsage; rt: JSRuntime); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { atom support }
-
-  function JS_NewAtomLen(ctx: JSContext; str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; len:size_t):JSAtom; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewAtom(ctx: JSContext; str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSAtom; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewAtomUInt32(ctx: JSContext; n:UInt32):JSAtom; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_DupAtom(ctx: JSContext; v:JSAtom):JSAtom; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_FreeAtom(ctx: JSContext; v:JSAtom); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_FreeAtomRT(rt: JSRuntime; v:JSAtom); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_AtomToValue(ctx: JSContext; atom:JSAtom):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_AtomToString(ctx: JSContext; atom:JSAtom):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  //function JS_AtomToCString(ctx: JSContext; atom:JSAtom):{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ValueToAtom(ctx: JSContext; val:JSValueConst) : JSAtom; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { object class support }
-
-  function JS_NewClassID(rt: JSRuntime; pclass_id:PJSClassID):JSClassID; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewClass(rt: JSRuntime; class_id:JSClassID; class_def: PJSClassDef):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_IsRegisteredClass(rt: JSRuntime; class_id:JSClassID):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetClassID(Value: JSValueConst): JSClassID; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { JS Numbers }
-  function JS_NewBigInt64 (ctx : JSContext; v : Int64): JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewBigUint64 (ctx : JSContext; v : UInt64): JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-
-  function JS_Throw(ctx: JSContext; obj:JSValue):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_HasException(ctx: JSContext):JS_BOOL; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetException(ctx: JSContext):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_IsError(ctx: JSContext; val:JSValueConst):JS_BOOL; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_ResetUncatchableError(ctx: JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewError(ctx: JSContext):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ThrowSyntaxError(ctx: JSContext; fmt : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; args : Array of Const): JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ThrowTypeError(ctx: JSContext; fmt : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; args : Array of Const): JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ThrowReferenceError(ctx: JSContext; fmt : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; args : Array of Const): JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ThrowRangeError(ctx: JSContext; fmt : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; args : Array of Const): JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ThrowInternalError(ctx: JSContext; fmt : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; args : Array of Const): JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ThrowOutOfMemory(ctx: JSContext): JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  procedure __JS_FreeValue(ctx: JSContext; v : JSValue); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure __JS_FreeValueRT(rt: JSRuntime; v : JSValue); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { JS Values - return -1 for JS_EXCEPTION }
-
-  function JS_ToBool(ctx: JSContext; val:JSValueConst):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ToInt32(ctx: JSContext; pres:pInt32; val:JSValueConst):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  function JS_ToInt64(ctx: JSContext; pres:PInt64; val:JSValueConst):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ToIndex(ctx: JSContext; plen:PUInt64; val:JSValueConst):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ToFloat64(ctx: JSContext; pres:PDouble; val:JSValueConst):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  { return an exception if 'val' is a Number }
-  function JS_ToBigInt64(ctx: JSContext; pres:PInt64; val:JSValueConst):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  { same as JS_ToInt64() but allow BigInt }
-  function JS_ToInt64Ext(ctx: JSContext; pres:PInt64; val:JSValueConst):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  function JS_NewStringLen(ctx:JSContext; str1:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; len1: size_t):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  // function JS_NewString(ctx:JSContext; str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewAtomString(ctx:JSContext; str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ToString(ctx:JSContext; val:JSValueConst):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ToPropertyKey(ctx:JSContext; val:JSValueConst):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ToCStringLen2(ctx:JSContext; plen:psize_t; val1:JSValueConst; cesu8:JS_BOOL): {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-
-
-  procedure JS_FreeCString(ctx:JSContext; ptr:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewObjectProtoClass(ctx:JSContext; proto:JSValueConst; class_id:JSClassID):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewObjectClass(ctx:JSContext; class_id:JSClassID):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewObjectProto(ctx:JSContext; proto:JSValueConst):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewObject(ctx:JSContext):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_IsFunction(ctx:JSContext; val:JSValueConst):JS_BOOL; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_IsConstructor(ctx:JSContext; val:JSValueConst):JS_BOOL; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_SetConstructorBit(ctx:JSContext; func_obj : JSValueConst; val:JS_BOOL):JS_BOOL; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewArray(ctx:JSContext):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_IsArray(ctx:JSContext; val:JSValueConst):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetPropertyInternal(ctx:JSContext; obj:JSValueConst; prop:JSAtom;
-                              receiver:JSValueConst; throw_ref_error:JS_BOOL):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  function JS_GetPropertyStr(ctx:JSContext; this_obj:JSValueConst; prop:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetPropertyUint32(ctx:JSContext; this_obj:JSValueConst; idx:UInt32):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_SetPropertyInternal(ctx:JSContext; this_obj:JSValueConst;
-                              prop:JSAtom; val:JSValue; flags:Integer):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  function JS_SetPropertyUint32(ctx:JSContext; this_obj:JSValueConst; idx:UInt32; val:JSValue):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_SetPropertyInt64(ctx:JSContext; this_obj:JSValueConst; idx:Int64; val:JSValue):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_SetPropertyStr(ctx:JSContext; this_obj:JSValueConst; prop:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; val:JSValue):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_HasProperty(ctx:JSContext; this_obj:JSValueConst; prop:JSAtom):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_IsExtensible(ctx:JSContext; obj:JSValueConst):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_PreventExtensions(ctx:JSContext; obj:JSValueConst):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_DeleteProperty(ctx:JSContext; obj:JSValueConst; prop:JSAtom; flags:Integer):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_SetPrototype(ctx:JSContext; obj:JSValueConst; proto_val:JSValueConst):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetPrototype(ctx:JSContext; val:JSValueConst):JSValueConst;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  function JS_GetOwnPropertyNames(ctx: JSContext; ptab:PPJSPropertyEnum; plen: pUInt32; obj:JSValueConst; flags : Integer): Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetOwnProperty(ctx: JSContext; desc : PJSPropertyDescriptor; obj : JSValueConst; prop : JSAtom): Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { 'buf' must be zero terminated i.e. buf[buf_len] := #0.  }
-  function JS_ParseJSON(ctx:JSContext; buf:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; buf_len:size_t; filename:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_JSONStringify(ctx:JSContext; obj, replacer, space0 : JSValueConst):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_Call(ctx:JSContext; func_obj:JSValueConst; this_obj:JSValueConst; argc:Integer; argv:PJSValueConstArr):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_Invoke(ctx:JSContext; this_val:JSValueConst; atom:JSAtom; argc:Integer; argv:PJSValueConst):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_CallConstructor(ctx:JSContext; func_obj:JSValueConst; argc:Integer; argv:PJSValueConst):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_CallConstructor2(ctx:JSContext; func_obj:JSValueConst; new_target:JSValueConst; argc:Integer; argv:PJSValueConst):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_DetectModule(const input:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; input_len : size_t):JS_BOOL;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  { 'input' must be zero terminated i.e. buf[buf_len] := #0.  }
-  function JS_Eval(ctx:JSContext; input:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; input_len:size_t; filename:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; eval_flags:Integer):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_EvalFunction(ctx:JSContext; fun_obj : JSValue):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetGlobalObject(ctx:JSContext):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_IsInstanceOf(ctx:JSContext; val:JSValueConst; obj:JSValueConst):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_DefineProperty(ctx:JSContext; this_obj:JSValueConst; prop:JSAtom; val:JSValueConst; getter:JSValueConst;
-             setter:JSValueConst; flags:Integer):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  function JS_DefinePropertyValue(ctx:JSContext; this_obj:JSValueConst; prop:JSAtom; val:JSValue; flags:Integer):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_DefinePropertyValueUint32(ctx:JSContext; this_obj:JSValueConst; idx:UInt32; val:JSValue; flags:Integer):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_DefinePropertyValueStr(ctx:JSContext; this_obj:JSValueConst; prop:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; val:JSValue; flags:Integer):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_DefinePropertyGetSet(ctx:JSContext; this_obj:JSValueConst; prop:JSAtom; getter:JSValue; setter:JSValue;
-             flags:Integer):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  procedure JS_SetOpaque(obj:JSValue; opaque:pointer);cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetOpaque(obj:JSValueConst; class_id:JSClassID):pointer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetOpaque2(ctx:JSContext; obj:JSValueConst; class_id:JSClassID):pointer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  function JS_NewArrayBuffer(ctx:JSContext; buf:pUInt8; len:size_t; free_func:PJSFreeArrayBufferDataFunc; opaque:pointer;
-             is_shared:JS_BOOL):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewArrayBufferCopy(ctx:JSContext; buf:pUInt8; len:size_t):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_DetachArrayBuffer(ctx:JSContext; obj:JSValueConst);cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetArrayBuffer(ctx:JSContext; psize:Psize_t; obj:JSValueConst):pUInt8;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  function JS_GetTypedArrayBuffer(ctx : JSContext; obj : JSValueConst;
-             pbyte_offset, pbyte_length, pbytes_per_element : psize_t):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  function JS_NewPromiseCapability(ctx:JSContext; resolving_funcs:PJSValue):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_PromiseState(ctx:JSContext; promise:JSValue):JSPromiseStateEnum;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_PromiseResult(ctx:JSContext; promise:JSValue):JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_IsPromise(val: JSValueConst) : Boolean; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  procedure JS_SetHostPromiseRejectionTracker(rt: JSRuntime;
-             cb : PJSHostPromiseRejectionTracker; opaque : Pointer); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  procedure JS_SetInterruptHandler(rt:JSRuntime; cb:PJSInterruptHandler; opaque:pointer);cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { if can_block is TRUE, Atomics.wait() can be used  }
-  procedure JS_SetCanBlock(rt:JSRuntime; can_block:JS_BOOL);cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { module_normalize = NULL is allowed and invokes the default module
-     filename normalizer  }
-  procedure JS_SetModuleLoaderFunc(rt:JSRuntime;
-             module_normalize:PJSModuleNormalizeFunc;
-             module_loader:PJSModuleLoaderFunc; opaque:pointer);cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { JS Job support  }
-
-  function JS_EnqueueJob(ctx:JSContext; job_func:PJSJobFunc; argc:Integer; argv:PJSValueConst):Integer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_IsJobPending(rt:JSRuntime):JS_BOOL;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  // TODO: Check pctx if the type is right.
-  function JS_ExecutePendingJob(rt:JSRuntime; pctx: PPJSContext):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { Object Writer/Reader (currently only used to handle precompiled code)  }
-  { allow function/module  }
-
-  function JS_WriteObject(ctx: JSContext; psize:psize_t; obj:JSValueConst; flags:Integer):pUInt8; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_ReadObject(ctx: JSContext; buf:pUInt8; buf_len:size_t; flags:Integer):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  {
-    load the dependencies of the module 'obj'. Useful when JS_ReadObject()
-     returns a module.
-  }
-  function JS_ResolveModule(ctx: JSContext; obj : JSValueConst):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetModuleNamespace(ctx: JSContext; ModuleDef: JSModuleDef) : JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { C function definition }
-
-  procedure JS_SetConstructor(ctx : JSContext; func_obj, proto : JSValueConst);cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  function JS_NewCFunction2(ctx: JSContext; func:PJSCFunction; name:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; length:Integer; cproto:JSCFunctionEnum;
-             magic:Integer):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_NewCFunctionData(ctx: JSContext; func:PJSCFunctionData; length:Integer; magic:Integer; data_len:Integer;
-             data:PJSValueConst):JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  procedure JS_SetPropertyFunctionList(ctx: JSContext; obj:JSValueConst;
-             tab:PJSCFunctionListEntry; len:Integer); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { C module definition  }
-
-  function JS_NewCModule(ctx: JSContext; name_str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; func:PJSModuleInitFunc): JSModuleDef; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { can only be called before the module is instantiated  }
-  function JS_AddModuleExport(ctx: JSContext; m: JSModuleDef; name_str:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_AddModuleExportList(ctx: JSContext; m: JSModuleDef; tab:PJSCFunctionListEntry; len:Integer):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { can only be called after the module is instantiated  }
-  function JS_SetModuleExport(ctx: JSContext; m: JSModuleDef; export_name:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; val:JSValue):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_SetModuleExportList(ctx: JSContext; m: JSModuleDef; tab:PJSCFunctionListEntry; len:Integer):Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { return the import.meta object of a module }
-  function JS_GetImportMeta(ctx: JSContext; m: JSModuleDef) : JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function JS_GetModuleName(ctx: JSContext; m: JSModuleDef) : JSAtom; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-
-  { QuickJS libc }
-  function  js_init_module_std(ctx: JSContext; module_name:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSModuleDef;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function  js_init_module_os(ctx: JSContext; module_name:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSModuleDef;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function  js_init_module_bjson(ctx: JSContext; module_name:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}):JSModuleDef;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure js_std_add_helpers(ctx : JSContext; argc : Integer; argv : Pointer);cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure js_std_loop(ctx : JSContext); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure js_std_init_handlers(rt:JSRuntime);cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure js_std_free_handlers(rt:JSRuntime);cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure js_std_dump_error(ctx:JSContext);cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function  js_std_await(ctx:JSContext; val:JSValue) : JSValue;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function  js_load_file(ctx:JSContext; pbuf_len: psize_t; filename:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}): Pointer;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function  js_module_loader(ctx:JSContext; module_name:{$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; opaque:pointer):JSModuleDef;cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure js_std_eval_binary(ctx : JSContext; buf : Pointer; buf_len : size_t; flags : Integer); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  function  js_module_set_import_meta(ctx : JSContext; func_val : JSValueConst; use_realpath, is_main : JS_BOOL) : Integer; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure js_std_promise_rejection_tracker(ctx : JSContext;
-             promise, reason : JSValueConst; is_handled : JS_BOOL; opaque : Pointer); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-//  function  js_new_std_file(ctx: JSContext;
-//             static JSValue js_new_std_file(JSContext *ctx, FILE *f,
-//                               BOOL close_in_finalizer,
-//                               BOOL is_popen)
+{ Note: All QuickJS external APIs are now loaded dynamically through function pointers }
 
 
 { internal implementations}
@@ -823,7 +940,6 @@ function JS_UNINITIALIZED : JSValue;
 
 function JS_NewBool({%H-}ctx : JSContext; val : JS_BOOL): JSValue; inline;
 function JS_NewInt32( {%H-}ctx : JSContext; val : Int32): JSValue; inline;
-function JS_NewInt64(ctx : JSContext; val : Int64): JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
 function JS_NewCatchOffset( {%H-}ctx : JSContext; val : Int32): JSValue; inline;
 function JS_NewFloat64(ctx : JSContext; d : Double): JSValue;
 function JS_IsBigInt(v : JSValueConst): JS_BOOL; inline;
@@ -837,10 +953,6 @@ function JS_IsNumber(v : JSValueConst): JS_BOOL; inline;
 function JS_IsSymbol(v : JSValueConst): JS_BOOL; inline;
 function JS_IsObject(v : JSValueConst): JS_BOOL; inline;
 
-procedure JS_FreeValue(ctx : JSContext; v : JSValue); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-procedure JS_FreeValueRT(rt : JSRuntime; v : JSValue); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-function JS_DupValue({%H-}ctx : JSContext; v : JSValueConst) : JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-function JS_DupValueRT({%H-}rt : JSRuntime; v : JSValueConst) : JSValue; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
 
 function JS_ToUint32(ctx : JSContext; pres : pUInt32; val : JSValueConst): Integer; inline;
 function JS_ToCStringLen(ctx : JSContext; plen : psize_t; val : JSValueConst): {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}; inline;
@@ -878,6 +990,454 @@ var
   OldFPUMask : TFPUExceptionMask;
 
 implementation
+
+{===============================================================================}
+{                        Dynamic Loading Implementation                          }
+{===============================================================================}
+
+function GetProcAddr(Handle: {$IFDEF FPC}TLibHandle{$ELSE}HMODULE{$ENDIF}; const ProcName: AnsiString): Pointer;
+begin
+  {$IFDEF FPC}
+  Result := GetProcedureAddress(Handle, ProcName);
+  {$ELSE}
+  Result := GetProcAddress(Handle, PAnsiChar(ProcName));
+  {$ENDIF}
+end;
+
+function IsQuickJSLoaded: Boolean;
+begin
+  Result := QuickJSLoaded;
+end;
+
+function LoadQuickJS(const DLLPath: string = ''): Boolean;
+var
+  libPath: string;
+begin
+  Result := False;
+  
+  if QuickJSLoaded then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  if DLLPath = '' then
+    libPath := QJSDLL
+  else
+    libPath := DLLPath;
+
+  QuickJSHandle := LoadLibrary(PChar(libPath));
+
+  if QuickJSHandle = 0 then
+    Exit;
+
+  // Load all function pointers
+  @JS_NewRuntime := GetProcAddr(QuickJSHandle, 'JS_NewRuntime');
+  @JS_SetRuntimeInfo := GetProcAddr(QuickJSHandle, 'JS_SetRuntimeInfo');
+  @JS_SetMemoryLimit := GetProcAddr(QuickJSHandle, 'JS_SetMemoryLimit');
+  @JS_SetGCThreshold := GetProcAddr(QuickJSHandle, 'JS_SetGCThreshold');
+  @JS_SetMaxStackSize := GetProcAddr(QuickJSHandle, 'JS_SetMaxStackSize');
+  @JS_NewRuntime2 := GetProcAddr(QuickJSHandle, 'JS_NewRuntime2');
+  @JS_FreeRuntime := GetProcAddr(QuickJSHandle, 'JS_FreeRuntime');
+  @JS_GetRuntimeOpaque := GetProcAddr(QuickJSHandle, 'JS_GetRuntimeOpaque');
+  @JS_SetRuntimeOpaque := GetProcAddr(QuickJSHandle, 'JS_SetRuntimeOpaque');
+  @JS_MarkValue := GetProcAddr(QuickJSHandle, 'JS_MarkValue');
+  @JS_RunGC := GetProcAddr(QuickJSHandle, 'JS_RunGC');
+  @JS_IsLiveObject := GetProcAddr(QuickJSHandle, 'JS_IsLiveObject');
+  @JS_NewContext := GetProcAddr(QuickJSHandle, 'JS_NewContext');
+  @JS_FreeContext := GetProcAddr(QuickJSHandle, 'JS_FreeContext');
+  @JS_DupContext := GetProcAddr(QuickJSHandle, 'JS_DupContext');
+  @JS_GetContextOpaque := GetProcAddr(QuickJSHandle, 'JS_GetContextOpaque');
+  @JS_SetContextOpaque := GetProcAddr(QuickJSHandle, 'JS_SetContextOpaque');
+  @JS_GetRuntime := GetProcAddr(QuickJSHandle, 'JS_GetRuntime');
+  @JS_SetClassProto := GetProcAddr(QuickJSHandle, 'JS_SetClassProto');
+  @JS_GetClassProto := GetProcAddr(QuickJSHandle, 'JS_GetClassProto');
+  @JS_NewContextRaw := GetProcAddr(QuickJSHandle, 'JS_NewContextRaw');
+  @JS_AddIntrinsicBaseObjects := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicBaseObjects');
+  @JS_AddIntrinsicDate := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicDate');
+  @JS_AddIntrinsicEval := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicEval');
+  @JS_AddIntrinsicStringNormalize := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicStringNormalize');
+  @JS_AddIntrinsicRegExpCompiler := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicRegExpCompiler');
+  @JS_AddIntrinsicRegExp := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicRegExp');
+  @JS_AddIntrinsicJSON := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicJSON');
+  @JS_AddIntrinsicProxy := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicProxy');
+  @JS_AddIntrinsicMapSet := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicMapSet');
+  @JS_AddIntrinsicTypedArrays := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicTypedArrays');
+  @JS_AddIntrinsicPromise := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicPromise');
+  @JS_AddIntrinsicBigInt := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicBigInt');
+  @JS_AddIntrinsicBigFloat := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicBigFloat');
+  @JS_AddIntrinsicBigDecimal := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicBigDecimal');
+  @JS_AddIntrinsicOperators := GetProcAddr(QuickJSHandle, 'JS_AddIntrinsicOperators');
+  @JS_EnableBignumExt := GetProcAddr(QuickJSHandle, 'JS_EnableBignumExt');
+  @js_string_codePointRange := GetProcAddr(QuickJSHandle, 'js_string_codePointRange');
+  @js_malloc_rt := GetProcAddr(QuickJSHandle, 'js_malloc_rt');
+  @js_free_rt := GetProcAddr(QuickJSHandle, 'js_free_rt');
+  @js_realloc_rt := GetProcAddr(QuickJSHandle, 'js_realloc_rt');
+  @js_malloc_usable_size_rt := GetProcAddr(QuickJSHandle, 'js_malloc_usable_size_rt');
+  @js_mallocz_rt := GetProcAddr(QuickJSHandle, 'js_mallocz_rt');
+  @js_malloc := GetProcAddr(QuickJSHandle, 'js_malloc');
+  @js_free := GetProcAddr(QuickJSHandle, 'js_free');
+  @js_realloc := GetProcAddr(QuickJSHandle, 'js_realloc');
+  @js_malloc_usable_size := GetProcAddr(QuickJSHandle, 'js_malloc_usable_size');
+  @js_realloc2 := GetProcAddr(QuickJSHandle, 'js_realloc2');
+  @js_mallocz := GetProcAddr(QuickJSHandle, 'js_mallocz');
+  @js_strdup := GetProcAddr(QuickJSHandle, 'js_strdup');
+  @js_strndup := GetProcAddr(QuickJSHandle, 'js_strndup');
+  @JS_ComputeMemoryUsage := GetProcAddr(QuickJSHandle, 'JS_ComputeMemoryUsage');
+  @JS_DumpMemoryUsage := GetProcAddr(QuickJSHandle, 'JS_DumpMemoryUsage');
+  @JS_NewAtomLen := GetProcAddr(QuickJSHandle, 'JS_NewAtomLen');
+  @JS_NewAtom := GetProcAddr(QuickJSHandle, 'JS_NewAtom');
+  @JS_NewAtomUInt32 := GetProcAddr(QuickJSHandle, 'JS_NewAtomUInt32');
+  @JS_DupAtom := GetProcAddr(QuickJSHandle, 'JS_DupAtom');
+  @JS_FreeAtom := GetProcAddr(QuickJSHandle, 'JS_FreeAtom');
+  @JS_FreeAtomRT := GetProcAddr(QuickJSHandle, 'JS_FreeAtomRT');
+  @JS_AtomToValue := GetProcAddr(QuickJSHandle, 'JS_AtomToValue');
+  @JS_AtomToString := GetProcAddr(QuickJSHandle, 'JS_AtomToString');
+  @JS_ValueToAtom := GetProcAddr(QuickJSHandle, 'JS_ValueToAtom');
+  @JS_NewClassID := GetProcAddr(QuickJSHandle, 'JS_NewClassID');
+  @JS_NewClass := GetProcAddr(QuickJSHandle, 'JS_NewClass');
+  @JS_IsRegisteredClass := GetProcAddr(QuickJSHandle, 'JS_IsRegisteredClass');
+  @JS_GetClassID := GetProcAddr(QuickJSHandle, 'JS_GetClassID');
+  @JS_NewBigInt64 := GetProcAddr(QuickJSHandle, 'JS_NewBigInt64');
+  @JS_NewBigUint64 := GetProcAddr(QuickJSHandle, 'JS_NewBigUint64');
+  @JS_Throw := GetProcAddr(QuickJSHandle, 'JS_Throw');
+  @JS_HasException := GetProcAddr(QuickJSHandle, 'JS_HasException');
+  @JS_GetException := GetProcAddr(QuickJSHandle, 'JS_GetException');
+  @JS_IsError := GetProcAddr(QuickJSHandle, 'JS_IsError');
+  @JS_ResetUncatchableError := GetProcAddr(QuickJSHandle, 'JS_ResetUncatchableError');
+  @JS_NewError := GetProcAddr(QuickJSHandle, 'JS_NewError');
+  @JS_ThrowSyntaxError := GetProcAddr(QuickJSHandle, 'JS_ThrowSyntaxError');
+  @JS_ThrowTypeError := GetProcAddr(QuickJSHandle, 'JS_ThrowTypeError');
+  @JS_ThrowReferenceError := GetProcAddr(QuickJSHandle, 'JS_ThrowReferenceError');
+  @JS_ThrowRangeError := GetProcAddr(QuickJSHandle, 'JS_ThrowRangeError');
+  @JS_ThrowInternalError := GetProcAddr(QuickJSHandle, 'JS_ThrowInternalError');
+  @JS_ThrowOutOfMemory := GetProcAddr(QuickJSHandle, 'JS_ThrowOutOfMemory');
+  @__JS_FreeValue := GetProcAddr(QuickJSHandle, '__JS_FreeValue');
+  @__JS_FreeValueRT := GetProcAddr(QuickJSHandle, '__JS_FreeValueRT');
+  @JS_ToBool := GetProcAddr(QuickJSHandle, 'JS_ToBool');
+  @JS_ToInt32 := GetProcAddr(QuickJSHandle, 'JS_ToInt32');
+  @JS_ToInt64 := GetProcAddr(QuickJSHandle, 'JS_ToInt64');
+  @JS_ToIndex := GetProcAddr(QuickJSHandle, 'JS_ToIndex');
+  @JS_ToFloat64 := GetProcAddr(QuickJSHandle, 'JS_ToFloat64');
+  @JS_ToBigInt64 := GetProcAddr(QuickJSHandle, 'JS_ToBigInt64');
+  @JS_ToInt64Ext := GetProcAddr(QuickJSHandle, 'JS_ToInt64Ext');
+  @JS_NewStringLen := GetProcAddr(QuickJSHandle, 'JS_NewStringLen');
+  @JS_NewAtomString := GetProcAddr(QuickJSHandle, 'JS_NewAtomString');
+  @JS_ToString := GetProcAddr(QuickJSHandle, 'JS_ToString');
+  @JS_ToPropertyKey := GetProcAddr(QuickJSHandle, 'JS_ToPropertyKey');
+  @JS_ToCStringLen2 := GetProcAddr(QuickJSHandle, 'JS_ToCStringLen2');
+  @JS_FreeCString := GetProcAddr(QuickJSHandle, 'JS_FreeCString');
+  @JS_NewObjectProtoClass := GetProcAddr(QuickJSHandle, 'JS_NewObjectProtoClass');
+  @JS_NewObjectClass := GetProcAddr(QuickJSHandle, 'JS_NewObjectClass');
+  @JS_NewObjectProto := GetProcAddr(QuickJSHandle, 'JS_NewObjectProto');
+  @JS_NewObject := GetProcAddr(QuickJSHandle, 'JS_NewObject');
+  @JS_IsFunction := GetProcAddr(QuickJSHandle, 'JS_IsFunction');
+  @JS_IsConstructor := GetProcAddr(QuickJSHandle, 'JS_IsConstructor');
+  @JS_SetConstructorBit := GetProcAddr(QuickJSHandle, 'JS_SetConstructorBit');
+  @JS_NewArray := GetProcAddr(QuickJSHandle, 'JS_NewArray');
+  @JS_IsArray := GetProcAddr(QuickJSHandle, 'JS_IsArray');
+  @JS_GetPropertyInternal := GetProcAddr(QuickJSHandle, 'JS_GetPropertyInternal');
+  @JS_GetPropertyStr := GetProcAddr(QuickJSHandle, 'JS_GetPropertyStr');
+  @JS_GetPropertyUint32 := GetProcAddr(QuickJSHandle, 'JS_GetPropertyUint32');
+  @JS_SetPropertyInternal := GetProcAddr(QuickJSHandle, 'JS_SetPropertyInternal');
+  @JS_SetPropertyUint32 := GetProcAddr(QuickJSHandle, 'JS_SetPropertyUint32');
+  @JS_SetPropertyInt64 := GetProcAddr(QuickJSHandle, 'JS_SetPropertyInt64');
+  @JS_SetPropertyStr := GetProcAddr(QuickJSHandle, 'JS_SetPropertyStr');
+  @JS_HasProperty := GetProcAddr(QuickJSHandle, 'JS_HasProperty');
+  @JS_IsExtensible := GetProcAddr(QuickJSHandle, 'JS_IsExtensible');
+  @JS_PreventExtensions := GetProcAddr(QuickJSHandle, 'JS_PreventExtensions');
+  @JS_DeleteProperty := GetProcAddr(QuickJSHandle, 'JS_DeleteProperty');
+  @JS_SetPrototype := GetProcAddr(QuickJSHandle, 'JS_SetPrototype');
+  @JS_GetPrototype := GetProcAddr(QuickJSHandle, 'JS_GetPrototype');
+  @JS_GetOwnPropertyNames := GetProcAddr(QuickJSHandle, 'JS_GetOwnPropertyNames');
+  @JS_GetOwnProperty := GetProcAddr(QuickJSHandle, 'JS_GetOwnProperty');
+  @JS_ParseJSON := GetProcAddr(QuickJSHandle, 'JS_ParseJSON');
+  @JS_JSONStringify := GetProcAddr(QuickJSHandle, 'JS_JSONStringify');
+  @JS_Call := GetProcAddr(QuickJSHandle, 'JS_Call');
+  @JS_Invoke := GetProcAddr(QuickJSHandle, 'JS_Invoke');
+  @JS_CallConstructor := GetProcAddr(QuickJSHandle, 'JS_CallConstructor');
+  @JS_CallConstructor2 := GetProcAddr(QuickJSHandle, 'JS_CallConstructor2');
+  @JS_DetectModule := GetProcAddr(QuickJSHandle, 'JS_DetectModule');
+  @JS_Eval := GetProcAddr(QuickJSHandle, 'JS_Eval');
+  @JS_EvalFunction := GetProcAddr(QuickJSHandle, 'JS_EvalFunction');
+  @JS_GetGlobalObject := GetProcAddr(QuickJSHandle, 'JS_GetGlobalObject');
+  @JS_IsInstanceOf := GetProcAddr(QuickJSHandle, 'JS_IsInstanceOf');
+  @JS_DefineProperty := GetProcAddr(QuickJSHandle, 'JS_DefineProperty');
+  @JS_DefinePropertyValue := GetProcAddr(QuickJSHandle, 'JS_DefinePropertyValue');
+  @JS_DefinePropertyValueUint32 := GetProcAddr(QuickJSHandle, 'JS_DefinePropertyValueUint32');
+  @JS_DefinePropertyValueStr := GetProcAddr(QuickJSHandle, 'JS_DefinePropertyValueStr');
+  @JS_DefinePropertyGetSet := GetProcAddr(QuickJSHandle, 'JS_DefinePropertyGetSet');
+  @JS_SetOpaque := GetProcAddr(QuickJSHandle, 'JS_SetOpaque');
+  @JS_GetOpaque := GetProcAddr(QuickJSHandle, 'JS_GetOpaque');
+  @JS_GetOpaque2 := GetProcAddr(QuickJSHandle, 'JS_GetOpaque2');
+  @JS_NewArrayBuffer := GetProcAddr(QuickJSHandle, 'JS_NewArrayBuffer');
+  @JS_NewArrayBufferCopy := GetProcAddr(QuickJSHandle, 'JS_NewArrayBufferCopy');
+  @JS_DetachArrayBuffer := GetProcAddr(QuickJSHandle, 'JS_DetachArrayBuffer');
+  @JS_GetArrayBuffer := GetProcAddr(QuickJSHandle, 'JS_GetArrayBuffer');
+  @JS_GetTypedArrayBuffer := GetProcAddr(QuickJSHandle, 'JS_GetTypedArrayBuffer');
+  @JS_NewPromiseCapability := GetProcAddr(QuickJSHandle, 'JS_NewPromiseCapability');
+  @JS_PromiseState := GetProcAddr(QuickJSHandle, 'JS_PromiseState');
+  @JS_PromiseResult := GetProcAddr(QuickJSHandle, 'JS_PromiseResult');
+  @JS_IsPromise := GetProcAddr(QuickJSHandle, 'JS_IsPromise');
+  @JS_SetHostPromiseRejectionTracker := GetProcAddr(QuickJSHandle, 'JS_SetHostPromiseRejectionTracker');
+  @JS_SetInterruptHandler := GetProcAddr(QuickJSHandle, 'JS_SetInterruptHandler');
+  @JS_SetCanBlock := GetProcAddr(QuickJSHandle, 'JS_SetCanBlock');
+  @JS_SetModuleLoaderFunc := GetProcAddr(QuickJSHandle, 'JS_SetModuleLoaderFunc');
+  @JS_EnqueueJob := GetProcAddr(QuickJSHandle, 'JS_EnqueueJob');
+  @JS_IsJobPending := GetProcAddr(QuickJSHandle, 'JS_IsJobPending');
+  @JS_ExecutePendingJob := GetProcAddr(QuickJSHandle, 'JS_ExecutePendingJob');
+  @JS_WriteObject := GetProcAddr(QuickJSHandle, 'JS_WriteObject');
+  @JS_ReadObject := GetProcAddr(QuickJSHandle, 'JS_ReadObject');
+  @JS_ResolveModule := GetProcAddr(QuickJSHandle, 'JS_ResolveModule');
+  @JS_GetModuleNamespace := GetProcAddr(QuickJSHandle, 'JS_GetModuleNamespace');
+  @JS_SetConstructor := GetProcAddr(QuickJSHandle, 'JS_SetConstructor');
+  @JS_NewCFunction2 := GetProcAddr(QuickJSHandle, 'JS_NewCFunction2');
+  @JS_NewCFunctionData := GetProcAddr(QuickJSHandle, 'JS_NewCFunctionData');
+  @JS_SetPropertyFunctionList := GetProcAddr(QuickJSHandle, 'JS_SetPropertyFunctionList');
+  @JS_NewCModule := GetProcAddr(QuickJSHandle, 'JS_NewCModule');
+  @JS_AddModuleExport := GetProcAddr(QuickJSHandle, 'JS_AddModuleExport');
+  @JS_AddModuleExportList := GetProcAddr(QuickJSHandle, 'JS_AddModuleExportList');
+  @JS_SetModuleExport := GetProcAddr(QuickJSHandle, 'JS_SetModuleExport');
+  @JS_SetModuleExportList := GetProcAddr(QuickJSHandle, 'JS_SetModuleExportList');
+  @JS_GetImportMeta := GetProcAddr(QuickJSHandle, 'JS_GetImportMeta');
+  @JS_GetModuleName := GetProcAddr(QuickJSHandle, 'JS_GetModuleName');
+  @js_init_module_std := GetProcAddr(QuickJSHandle, 'js_init_module_std');
+  @js_init_module_os := GetProcAddr(QuickJSHandle, 'js_init_module_os');
+  @js_init_module_bjson := GetProcAddr(QuickJSHandle, 'js_init_module_bjson');
+  @js_std_add_helpers := GetProcAddr(QuickJSHandle, 'js_std_add_helpers');
+  @js_std_loop := GetProcAddr(QuickJSHandle, 'js_std_loop');
+  @js_std_init_handlers := GetProcAddr(QuickJSHandle, 'js_std_init_handlers');
+  @js_std_free_handlers := GetProcAddr(QuickJSHandle, 'js_std_free_handlers');
+  @js_std_dump_error := GetProcAddr(QuickJSHandle, 'js_std_dump_error');
+  @js_std_await := GetProcAddr(QuickJSHandle, 'js_std_await');
+  @js_load_file := GetProcAddr(QuickJSHandle, 'js_load_file');
+  @js_module_loader := GetProcAddr(QuickJSHandle, 'js_module_loader');
+  @js_std_eval_binary := GetProcAddr(QuickJSHandle, 'js_std_eval_binary');
+  @js_module_set_import_meta := GetProcAddr(QuickJSHandle, 'js_module_set_import_meta');
+  @js_std_promise_rejection_tracker := GetProcAddr(QuickJSHandle, 'js_std_promise_rejection_tracker');
+  @JS_NewInt64 := GetProcAddr(QuickJSHandle, 'JS_NewInt64');
+  @JS_FreeValue := GetProcAddr(QuickJSHandle, 'JS_FreeValue');
+  @JS_FreeValueRT := GetProcAddr(QuickJSHandle, 'JS_FreeValueRT');
+  @JS_DupValue := GetProcAddr(QuickJSHandle, 'JS_DupValue');
+  @JS_DupValueRT := GetProcAddr(QuickJSHandle, 'JS_DupValueRT');
+
+  QuickJSLoaded := True;
+  Result := True;
+end;
+
+function UnloadQuickJS: Boolean;
+begin
+  Result := False;
+  
+  if not QuickJSLoaded then
+  begin
+    Result := True;
+    Exit;
+  end;
+
+  if QuickJSHandle <> 0 then
+  begin
+    {$IFDEF FPC}
+    FreeLibrary(QuickJSHandle);
+    {$ELSE}
+    FreeLibrary(QuickJSHandle);
+    {$ENDIF}
+    QuickJSHandle := 0;
+  end;
+
+  // Clear all function pointers
+  JS_NewRuntime := nil;
+  JS_SetRuntimeInfo := nil;
+  JS_SetMemoryLimit := nil;
+  JS_SetGCThreshold := nil;
+  JS_SetMaxStackSize := nil;
+  JS_NewRuntime2 := nil;
+  JS_FreeRuntime := nil;
+  JS_GetRuntimeOpaque := nil;
+  JS_SetRuntimeOpaque := nil;
+  JS_MarkValue := nil;
+  JS_RunGC := nil;
+  JS_IsLiveObject := nil;
+  JS_NewContext := nil;
+  JS_FreeContext := nil;
+  JS_DupContext := nil;
+  JS_GetContextOpaque := nil;
+  JS_SetContextOpaque := nil;
+  JS_GetRuntime := nil;
+  JS_SetClassProto := nil;
+  JS_GetClassProto := nil;
+  JS_NewContextRaw := nil;
+  JS_AddIntrinsicBaseObjects := nil;
+  JS_AddIntrinsicDate := nil;
+  JS_AddIntrinsicEval := nil;
+  JS_AddIntrinsicStringNormalize := nil;
+  JS_AddIntrinsicRegExpCompiler := nil;
+  JS_AddIntrinsicRegExp := nil;
+  JS_AddIntrinsicJSON := nil;
+  JS_AddIntrinsicProxy := nil;
+  JS_AddIntrinsicMapSet := nil;
+  JS_AddIntrinsicTypedArrays := nil;
+  JS_AddIntrinsicPromise := nil;
+  JS_AddIntrinsicBigInt := nil;
+  JS_AddIntrinsicBigFloat := nil;
+  JS_AddIntrinsicBigDecimal := nil;
+  JS_AddIntrinsicOperators := nil;
+  JS_EnableBignumExt := nil;
+  js_string_codePointRange := nil;
+  js_malloc_rt := nil;
+  js_free_rt := nil;
+  js_realloc_rt := nil;
+  js_malloc_usable_size_rt := nil;
+  js_mallocz_rt := nil;
+  js_malloc := nil;
+  js_free := nil;
+  js_realloc := nil;
+  js_malloc_usable_size := nil;
+  js_realloc2 := nil;
+  js_mallocz := nil;
+  js_strdup := nil;
+  js_strndup := nil;
+  JS_ComputeMemoryUsage := nil;
+  JS_DumpMemoryUsage := nil;
+  JS_NewAtomLen := nil;
+  JS_NewAtom := nil;
+  JS_NewAtomUInt32 := nil;
+  JS_DupAtom := nil;
+  JS_FreeAtom := nil;
+  JS_FreeAtomRT := nil;
+  JS_AtomToValue := nil;
+  JS_AtomToString := nil;
+  JS_ValueToAtom := nil;
+  JS_NewClassID := nil;
+  JS_NewClass := nil;
+  JS_IsRegisteredClass := nil;
+  JS_GetClassID := nil;
+  JS_NewBigInt64 := nil;
+  JS_NewBigUint64 := nil;
+  JS_Throw := nil;
+  JS_HasException := nil;
+  JS_GetException := nil;
+  JS_IsError := nil;
+  JS_ResetUncatchableError := nil;
+  JS_NewError := nil;
+  JS_ThrowSyntaxError := nil;
+  JS_ThrowTypeError := nil;
+  JS_ThrowReferenceError := nil;
+  JS_ThrowRangeError := nil;
+  JS_ThrowInternalError := nil;
+  JS_ThrowOutOfMemory := nil;
+  __JS_FreeValue := nil;
+  __JS_FreeValueRT := nil;
+  JS_ToBool := nil;
+  JS_ToInt32 := nil;
+  JS_ToInt64 := nil;
+  JS_ToIndex := nil;
+  JS_ToFloat64 := nil;
+  JS_ToBigInt64 := nil;
+  JS_ToInt64Ext := nil;
+  JS_NewStringLen := nil;
+  JS_NewAtomString := nil;
+  JS_ToString := nil;
+  JS_ToPropertyKey := nil;
+  JS_ToCStringLen2 := nil;
+  JS_FreeCString := nil;
+  JS_NewObjectProtoClass := nil;
+  JS_NewObjectClass := nil;
+  JS_NewObjectProto := nil;
+  JS_NewObject := nil;
+  JS_IsFunction := nil;
+  JS_IsConstructor := nil;
+  JS_SetConstructorBit := nil;
+  JS_NewArray := nil;
+  JS_IsArray := nil;
+  JS_GetPropertyInternal := nil;
+  JS_GetPropertyStr := nil;
+  JS_GetPropertyUint32 := nil;
+  JS_SetPropertyInternal := nil;
+  JS_SetPropertyUint32 := nil;
+  JS_SetPropertyInt64 := nil;
+  JS_SetPropertyStr := nil;
+  JS_HasProperty := nil;
+  JS_IsExtensible := nil;
+  JS_PreventExtensions := nil;
+  JS_DeleteProperty := nil;
+  JS_SetPrototype := nil;
+  JS_GetPrototype := nil;
+  JS_GetOwnPropertyNames := nil;
+  JS_GetOwnProperty := nil;
+  JS_ParseJSON := nil;
+  JS_JSONStringify := nil;
+  JS_Call := nil;
+  JS_Invoke := nil;
+  JS_CallConstructor := nil;
+  JS_CallConstructor2 := nil;
+  JS_DetectModule := nil;
+  JS_Eval := nil;
+  JS_EvalFunction := nil;
+  JS_GetGlobalObject := nil;
+  JS_IsInstanceOf := nil;
+  JS_DefineProperty := nil;
+  JS_DefinePropertyValue := nil;
+  JS_DefinePropertyValueUint32 := nil;
+  JS_DefinePropertyValueStr := nil;
+  JS_DefinePropertyGetSet := nil;
+  JS_SetOpaque := nil;
+  JS_GetOpaque := nil;
+  JS_GetOpaque2 := nil;
+  JS_NewArrayBuffer := nil;
+  JS_NewArrayBufferCopy := nil;
+  JS_DetachArrayBuffer := nil;
+  JS_GetArrayBuffer := nil;
+  JS_GetTypedArrayBuffer := nil;
+  JS_NewPromiseCapability := nil;
+  JS_PromiseState := nil;
+  JS_PromiseResult := nil;
+  JS_IsPromise := nil;
+  JS_SetHostPromiseRejectionTracker := nil;
+  JS_SetInterruptHandler := nil;
+  JS_SetCanBlock := nil;
+  JS_SetModuleLoaderFunc := nil;
+  JS_EnqueueJob := nil;
+  JS_IsJobPending := nil;
+  JS_ExecutePendingJob := nil;
+  JS_WriteObject := nil;
+  JS_ReadObject := nil;
+  JS_ResolveModule := nil;
+  JS_GetModuleNamespace := nil;
+  JS_SetConstructor := nil;
+  JS_NewCFunction2 := nil;
+  JS_NewCFunctionData := nil;
+  JS_SetPropertyFunctionList := nil;
+  JS_NewCModule := nil;
+  JS_AddModuleExport := nil;
+  JS_AddModuleExportList := nil;
+  JS_SetModuleExport := nil;
+  JS_SetModuleExportList := nil;
+  JS_GetImportMeta := nil;
+  JS_GetModuleName := nil;
+  js_init_module_std := nil;
+  js_init_module_os := nil;
+  js_init_module_bjson := nil;
+  js_std_add_helpers := nil;
+  js_std_loop := nil;
+  js_std_init_handlers := nil;
+  js_std_free_handlers := nil;
+  js_std_dump_error := nil;
+  js_std_await := nil;
+  js_load_file := nil;
+  js_module_loader := nil;
+  js_std_eval_binary := nil;
+  js_module_set_import_meta := nil;
+  js_std_promise_rejection_tracker := nil;
+  JS_NewInt64 := nil;
+  JS_FreeValue := nil;
+  JS_FreeValueRT := nil;
+  JS_DupValue := nil;
+  JS_DupValueRT := nil;
+
+  QuickJSLoaded := False;
+  Result := True;
+end;
 
 {$If Defined(JS_NAN_BOXING)}
 

@@ -7,8 +7,8 @@ uses
   System.Rtti,
   System.SysUtils,
   System.Generics.Collections,
-  quickjs_ng,
-  QuickJS.Register.PropertyDescriptors.intf, QuickJS.Register.intf;
+  
+  QuickJS.Register.PropertyDescriptors.intf, QuickJS.Register.intf, quickjs_ng;
 
 type
   TJSIterator = class abstract

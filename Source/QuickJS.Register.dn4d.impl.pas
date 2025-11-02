@@ -6,13 +6,13 @@ uses
   System_,
   System.TypInfo,
   System.Rtti,
-  quickjs_ng,
+  
   QuickJS.Register.intf,
   QuickJS.Register.impl,
   QuickJS.Register.dn4d.intf,
   System.Generics.Collections, System.Collections, System.Collections.Generic,
   QuickJS.Register.PropertyDescriptors.intf,
-  QuickJS.Register.PropertyDescriptors.impl, System.Reflection;
+  QuickJS.Register.PropertyDescriptors.impl, System.Reflection, quickjs_ng;
 
 type
   TJSBaseObject = class(TJSObject, IBaseInterface)

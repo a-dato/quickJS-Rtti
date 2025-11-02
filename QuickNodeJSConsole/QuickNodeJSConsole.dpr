@@ -11,7 +11,7 @@ uses
   System.Diagnostics,
   System.Generics.Collections,
   System.StrUtils,
-  quickjs_ng,
+  
   QuickJS.Register.intf,
   QuickJS.Register.impl
   {$IFDEF TESTS}

@@ -6,7 +6,7 @@ uses
   System_,
   System.Collections,
   System.Collections.Generic,
-  quickjs_ng,
+  
   QuickJS.Register.intf,
   App.Base.intf,
   App.intf,
@@ -16,7 +16,7 @@ uses
   App.Environment.intf,
   ADato.ObjectModel.List.intf,
   App.PropertyDescriptor.intf,
-  App.Factory.intf;
+  App.Factory.intf, quickjs_ng;
 
 type
   TAppObject = class(TStorageSupport, IAppObject, IConverterSupport, IJSExtendableObject)

@@ -39,8 +39,7 @@ uses
   System.SysUtils,
   QuickJS.Register.impl,
 //  System.Collections,
-  System.Rtti,
-  quickjs_ng;
+  System.Rtti;
 
 { TObjectBridgeResolver }
 

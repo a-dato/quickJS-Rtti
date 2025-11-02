@@ -8,7 +8,7 @@ uses
   System.Rtti,
   System.AnsiStrings,
   System.Generics.Collections,
-  quickjs_ng,
+  
   QuickJS.Register.intf,
   QuickJS.Register.ObjectBridge.intf,
   QuickJS.Register.ObjectBridgeTypes.impl;
@@ -23,7 +23,8 @@ type
 implementation
 
 uses
-  QuickJS.Register.impl, System.Generics.Defaults; // for JSConverter
+  QuickJS.Register.impl, System.Generics.Defaults,
+  quickjs_ng; // for JSConverter
 
 type
   // RTTI-based enumerator wrapper to avoid DN4D System.Collections dependency

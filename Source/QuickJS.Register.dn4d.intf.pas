@@ -6,11 +6,11 @@ uses
   System_,
   System.TypInfo,
   System.SysUtils,
-  quickjs_ng,
+  
   QuickJS.Variant,
   System.Rtti,
   System.Collections.Generic,
-  QuickJS.Register.intf;
+  QuickJS.Register.intf, quickjs_ng;
 
 type
   IJSRegisteredObject = interface

@@ -6,9 +6,9 @@ uses
   System.Variants,
   System.Rtti,
   System.TypInfo,
-  quickjs_ng,
+  
   System.SysUtils,
-  QuickJS.Register.intf;
+  QuickJS.Register.intf, quickjs_ng;
 
 type
   TObjectConstuctor = reference to function: Pointer;

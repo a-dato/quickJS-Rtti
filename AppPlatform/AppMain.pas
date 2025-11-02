@@ -133,7 +133,6 @@ var
 implementation
 
 uses
-  quickjs_ng,
   QuickJS.Register.impl,
   QuickJS.Register.dn4d.impl,
   App.impl,
