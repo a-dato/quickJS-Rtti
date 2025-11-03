@@ -25,14 +25,30 @@ type
     function  Build: IWindow; overload;
     function  Build(const Builder: IContentBuilder): IWindow; overload;
     function  Bind(const Storage: IStorage) : IWindow;
-    function  Show(OnClose: TWindowClose) : IWindow;
+    function  Show(OnClose: WindowClose) : IWindow;
 
   public
     constructor Create(const App: IAppObject; const Frame: IWindowFrame; const AType: &Type);
   end;
 
+  WindowType = class(TBaseInterfacedObject, IWindowType)
+  protected
+    _name: string;
+    _objectType: &Type;
+    _creatorFunc: WindowCreateFunc;
+
+    function get_Name: CString;
+    function get_ObjectType: &Type;
+
+    function CreateInstance(const AOwner: CObject) : IWindow;
+  public
+    constructor Create(const ObjectType: &Type; const Name: string; const CreatorFunc: WindowCreateFunc);
+  end;
+
   Windows = class(CList<IWindow>, IWindows)
-    function  CreateWindow(const AOwner: CObject; const AType: &Type) : IWindow;
+  protected
+    function  CreateWindow(const AType: &Type; const AOwner: CObject) : IWindow; overload;
+    function  CreateWindow(const AType: &Type; const AOwner: CObject; const FrameClassName: string) : IWindow; overload;
   end;
 
 implementation
@@ -42,7 +58,7 @@ uses
 
 { Windows }
 
-function Windows.CreateWindow(const AOwner: CObject; const AType: &Type): IWindow;
+function Windows.CreateWindow(const AType: &Type; const AOwner: CObject): IWindow;
 begin
   var ot := _app.Config.TypeDescriptor(AType);
   if ot = nil then
@@ -52,6 +68,10 @@ begin
   Result := Window.Create(_app, frame, AType);
 end;
 
+function Windows.CreateWindow(const AType: &Type; const AOwner: CObject; const FrameClassName: string) : IWindow;
+begin
+
+end;
 { Window }
 
 function Window.Bind(const Storage: IStorage): IWindow;
@@ -85,10 +105,34 @@ begin
   Result := _frame;
 end;
 
-function Window.Show(OnClose: TWindowClose): IWindow;
+function Window.Show(OnClose: WindowClose): IWindow;
 begin
   _Frame.Show(OnClose);
   Result := Self;
+end;
+
+{ WindowType }
+
+constructor WindowType.Create(const ObjectType: &Type; const Name: string; const CreatorFunc: WindowCreateFunc);
+begin
+  _objectType := ObjectType;
+  _name := Name;
+  _creatorFunc := CreatorFunc;
+end;
+
+function WindowType.CreateInstance(const AOwner: CObject): IWindow;
+begin
+
+end;
+
+function WindowType.get_Name: CString;
+begin
+  Result := _Name;
+end;
+
+function WindowType.get_ObjectType: &Type;
+begin
+  Result := _objectType;
 end;
 
 end.

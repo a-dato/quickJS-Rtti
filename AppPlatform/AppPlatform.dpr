@@ -18,7 +18,8 @@ uses
   App.EditorManager.impl in 'AppUI\App.EditorManager.impl.pas',
   App.KeyNavigator.intf in 'AppUI\App.KeyNavigator.intf.pas',
   App.UIStateDelegate in 'AppUI\App.UIStateDelegate.pas',
-  App.KeyNavigator.impl in 'AppUI\App.KeyNavigator.impl.pas';
+  App.KeyNavigator.impl in 'AppUI\App.KeyNavigator.impl.pas',
+  ProjectSelection.frame in 'DataObjectsFrames\ProjectSelection.frame.pas' {ProjectSelectionFrame: TFrame};
 
 {$R *.res}
 

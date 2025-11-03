@@ -13,12 +13,12 @@ type
   protected
     _content: CObject;
     _handle: TForm;
-    _onClose: TWindowClose;
+    _onClose: WindowClose;
 
     function  get_Content: CObject;
     procedure set_Content(const Value: CObject);
 
-    procedure Show(OnClose: TWindowClose);
+    procedure Show(OnClose: WindowClose);
 
     procedure FormClose(Sender: TObject; var Action: TCloseAction);
 
@@ -56,7 +56,7 @@ begin
     _onClose(nil);
 end;
 
-procedure TWindowFrame.Show(OnClose: TWindowClose);
+procedure TWindowFrame.Show(OnClose: WindowClose);
 begin
   _onClose := OnClose;
   _handle.OnClose := FormClose;

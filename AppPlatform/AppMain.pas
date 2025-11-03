@@ -158,7 +158,8 @@ uses
   ADato.ObjectModel.TrackInterfaces,
   App.Factory.impl,
   System.TypInfo,
-  QuickJS.VirtualMethod.impl, App.Storage.intf, App.Storage.impl;
+  QuickJS.VirtualMethod.impl, App.Storage.intf, App.Storage.impl,
+  App.Config.intf, App.Windows.intf;
 
 {$R *.fmx}
 
@@ -187,7 +188,7 @@ end;
 
 procedure TForm1.btnCustomerClick(Sender: TObject);
 begin
-  _app.Windows.CreateWindow(Self, TProject.Type).
+  _app.Windows.CreateWindow(TProject.Type, Self).
     Build.
       Bind(_app.Storage[TProject.TypeDescriptor.StorageName]).
         Show(nil);
@@ -283,10 +284,7 @@ end;
 
 procedure TForm1.Button6Click(Sender: TObject);
 begin
-  var i64: Int64 := 100;
-  var v := TValue.From<CObject>(i64);
-  _test.Test(v);
-  _test.ID := v;
+;
 end;
 
 procedure TForm1.Button7Click(Sender: TObject);
@@ -320,11 +318,16 @@ begin
   _app := TAppObject.Create(App.Environment.impl.Environment.Create);
   {$ENDIF}
 
-  TProject.TypeDescriptor.Builder := TFrameBuilder.Create(TProjectFrame);
+  _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
+
+  _app.Config.RegisterWindow(TProject.Type, 'Projects', function(const AOwner: CObject) : IWindow begin
+
+  end);
+
+  // TProject.TypeDescriptor.Builder := TFrameBuilder.Create(TProjectFrame);
+
   TProject.TypeDescriptor.Binder := TFrameBinder.Create();
   TProject.TypeDescriptor.Provider := ProjectProvider.Create(TProject.TypeDescriptor);
-
-  _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
 
   _app.Factory.RegisterType(TProject.Type, function : CObject begin
     Result := CObject.From<IProject>(TProject.Create);
@@ -366,8 +369,9 @@ begin
 
     TJSRegister.RegisterObject(_context, 'JSFrameBuilder', TypeInfo(IContentBuilder),
       function : Pointer begin
+        Assert(False);
         // Result := TFrameBuilder.Create(TJSGeneralFrame);
-        Result := TFrameBuilder.Create(TCustomerFrame);
+        //Result := TFrameBuilder.Create(TCustomerFrame);
       end);
 
     TJSRegister.RegisterObject(_context, 'XMLHttpRequest', TypeInfo(IXMLHttpRequest),

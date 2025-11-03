@@ -10,6 +10,7 @@ uses
   App.TypeDescriptor.impl,
   QuickJS.Register.dn4d.intf,
   App.Content.intf,
+  App.Windows.intf,
   ADato.ObjectModel.List.intf,
   App.PropertyDescriptor.intf;
 
@@ -17,11 +18,14 @@ type
   TAppConfig = class(TBaseInterfacedObject, IAppConfig)
   protected
     _Types: Dictionary<&Type, ITypeDescriptor>;
+    _WindowTypes: Dictionary<&Type, IWindowType>;
 
     function get_Types: List<&Type>;
 
     function  AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
     procedure RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
+    procedure RegisterWindow(const AType: &Type; const Name: string; const CreateFunc: WindowCreateFunc);
+
     function  TypeByName(const Name: string) : &Type;
     function  TypeDescriptor(const AType: &Type): ITypeDescriptor;
     function  TypeDescriptorByName(const Name: string) : ITypeDescriptor;
@@ -124,6 +128,11 @@ begin
   for var entry in _Types do
     if CString.Equals(entry.Key.Name, Name) then
       Exit(entry.Key);
+end;
+
+procedure TAppConfig.RegisterWindow(const AType: &Type; const Name: string; const CreateFunc: WindowCreateFunc);
+begin
+
 end;
 
 function TAppConfig.TypeDescriptorByName(const Name: string): ITypeDescriptor;

@@ -4,14 +4,18 @@ interface
 
 uses
   System_,
+  System.Collections.Generic,
+  FMX.Forms,
+  FMX.Types,
+
   App.Environment.intf,
   App.TypeDescriptor.intf,
   App.Windows.intf,
-  FMX.Forms,
-  FMX.Types,
   ADato.ObjectModel.List.intf,
   App.intf,
-  App.Content.intf, App.Storage.intf, System.Collections.Generic;
+  App.Config.intf,
+  App.Content.intf,
+  App.Storage.intf;
 
 type
   Environment = class(TBaseInterfacedObject, IEnvironment)
@@ -22,7 +26,6 @@ type
     class var _FormClass: TFormClass;
 
   protected
-    function get_Application: IApplication;
     function get_MainForm: IWindow;
 
     function get_TickCount: Integer;
@@ -35,19 +38,16 @@ type
   end;
 
   TFrameBuilder = class(TBaseInterfacedObject, IContentBuilder)
-  type
-    TFrameClass = class of TFrame;
-
   protected
-    _frameClass: TFrameClass;
+    _creator: WindowCreateFunc;
 
     // IContentBuilder
     function Build(const AOwner: CObject): CObject;
 
   public
-    constructor Create(FrameClass: TFrameClass);
+    constructor Create(const ACreator: WindowCreateFunc);
 
-    property FrameClass: TFrameClass read _frameClass;
+    property Creator: WindowCreateFunc read _creator;
   end;
 
   TFrameBinder = class(TBaseInterfacedObject, IContentBinder)
@@ -96,14 +96,9 @@ begin
   Result := TWindowFrame.Create(f);
 end;
 
-function Environment.get_Application: IApplication;
-begin
-
-end;
-
 function Environment.get_MainForm: IWindow;
 begin
-
+  Result := nil;
 end;
 
 function Environment.get_TickCount: Integer;
@@ -118,12 +113,13 @@ begin
   var cmp: TComponent := nil;
   if (AOwner <> nil) and not AOwner.TryAsType<TComponent>(cmp) then
     raise ArgumentException.Create('AOwner must be of type TComponent');
-  Result := _frameClass.Create(cmp);
+//  Result := _frameClass.Create();
+//  (Result as TFrame).Owner
 end;
 
-constructor TFrameBuilder.Create(FrameClass: TFrameClass);
+constructor TFrameBuilder.Create(const ACreator: WindowCreateFunc);
 begin
-  _frameClass := FrameClass;
+  _creator := ACreator;
 end;
 
 { TFrameBinder }
