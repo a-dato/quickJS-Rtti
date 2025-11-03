@@ -7,8 +7,10 @@ uses
   System.Rtti,
   System.SysUtils,
   System.Generics.Collections,
-  quickjs_ng,
-  QuickJS.Register.intf;
+  
+  QuickJS.Register.intf, QuickJS.Register.ObjectBridge.intf,
+  QuickJS.Register.PropertyDescriptors.impl,
+  QuickJS.Register.PropertyDescriptors.intf, quickjs_ng;
 
 type
   TProc_0 = TProc;
@@ -41,6 +43,7 @@ type
   TJSRuntime = class(TInterfacedObject, IJSRuntime)
   protected
     class var _ActiveContexts: TDictionary<JSContext, Pointer {Unsafe IJSContext pointer}>;
+    class var _GlobalRuntime: IJSRuntime;
     var _rt: JSRuntime;
 
     function  get_rt: JSRuntime;
@@ -67,6 +70,7 @@ type
     function CreateContext: IJSContext;
 
     class property Context[const Value: JSContext]: IJSContext read get_Context;
+    class function Shared: IJSRuntime; static;
   end;
 
   TJSContext = class(TInterfacedObject, IJSContext)
@@ -92,12 +96,17 @@ type
     procedure  BeforeDestruction; override;
   end;
 
+  TRegistrationInfo = record
+    ClassName: string;
+    TypeInfo: PTypeInfo;
+    ConstructorFunc: TObjectConstuctor;
+  end;
+
   TJSRegister = class
   protected
     class var FInstance: TJSRegister;
     class procedure set_Instance(Value: TJSRegister); static;
     class var First_ClassID: JSClassID;
-    class var JS_DATE_CONSTRUCTOR: JSValue;
 
   protected
     class var FAutoRegister: Boolean;
@@ -107,10 +116,15 @@ type
     class var FRegisteredObjectsByConstructor: TDictionary<JSValueConst, IRegisteredObject>;
     class var FRegisteredJSObjects: TDictionary<JSValueConst, IRegisteredObject>;
     class var FRegisteredInterfaces: TDictionary<TGuid, IRegisteredObject>;
+    class var FObjectBridgeResolver: IObjectBridgeResolver;
+    class var FAllContexts: TList<Pointer {Unsafe IJSContext pointer}>;
+    class var FPendingRegistrations: TList<TRegistrationInfo>;
+    class var FRegisteredEnums: TDictionary<PTypeInfo, string>; // Maps enum TypeInfo to enum name
 
     class procedure AddRegisteredObjectWithClassID(const RegisteredObject: IRegisteredObject);
-    class procedure InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
-    class procedure InternalRegisterInterface(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
+    procedure InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
+    procedure InternalRegisterInterface(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
+    procedure InternalRegisterEnum(const ctx: IJSContext; EnumTypeInfo: PTypeInfo; const EnumJSName: string); virtual;
 
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; virtual;
     function CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; virtual;
@@ -166,8 +180,13 @@ type
     class function  GetClassName(Value: PTypeInfo) : string;
     class function  GetObjectFromJSValue(Value: JSValueConst; PointerIsAnObject: Boolean) : Pointer;
 
-    class function  RegisterObject(const ctx: IJSContext; ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject; overload;
-    class function  RegisterObject(const ctx: IJSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; overload;
+    class procedure RegisterContext(const Context: IJSContext);
+    class procedure UnregisterContext(const Context: IJSContext);
+    class function  CreateContext: IJSContext;
+    class function  TryLoadQuickJS: Boolean;
+
+    class function  RegisterObject(ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject; overload;
+    class function  RegisterObject(ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject; overload;
     class function  RegisterJSObject(const ctx: IJSContext; JSConstructor: JSValueConst; TypeInfo: PTypeInfo) : IRegisteredObject; overload;
 
     class procedure RegisterLiveObject(const ctx: IJSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean); overload;
@@ -182,6 +201,7 @@ type
 
     class property AutoRegister: Boolean read FAutoRegister write FAutoRegister;
     class property Instance: TJSRegister read FInstance write set_Instance;
+    class property ObjectBridgeResolver: IObjectBridgeResolver read FObjectBridgeResolver;
   end;
 
   JSConverter = class
@@ -212,25 +232,6 @@ type
     destructor Destroy; override;
   end;
 
-  TJSIterator = class abstract
-  public
-    function MoveNext: Boolean; virtual; abstract;
-    function Current: TValue; virtual; abstract;
-  end;
-
-  TJSObjectIterator = class(TJSIterator)
-  protected
-    _instance: TObject;
-    _move_next: PObjectMember;
-    _get_current: PObjectMember;
-
-  public
-    destructor Destroy; override;
-    class function CreateIterator(const Obj: TObject) : TJSIterator;
-
-    function MoveNext: Boolean; override;
-    function Current: TValue; override;
-  end;
 
   TObjectReference = class
   public
@@ -253,101 +254,6 @@ type
     destructor Destroy; override;
   end;
 
-  TPropertyDescriptor = class(TInterfacedObject, IPropertyDescriptor)
-  protected
-    FTypeInfo: PTypeInfo;
-
-    function  get_MemberType: TMemberType; virtual;
-    function  get_TypeInfo: PTypeInfo; virtual;
-    function  get_PropertyType: PTypeInfo; virtual;
-    function IsInterface: Boolean; virtual;
-
-    function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; virtual;
-    procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); virtual;
-  public
-    constructor Create(AInfo: PTypeInfo); virtual;
-  end;
-
-  TRttiStandardPropertyDescriptor = class(TPropertyDescriptor)
-  protected
-    FProp: TRttiMember;
-
-    function  get_MemberType: TMemberType; override;
-    function  get_PropertyType: PTypeInfo; override;
-
-    function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; override;
-    procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
-
-  public
-    constructor Create(AInfo: PTypeInfo; const RttiProp: TRttiMember); reintroduce;
-  end;
-
-  TRttiMethodPropertyDescriptor = class(TPropertyDescriptor, IMethodsPropertyDescriptor)
-  protected
-    FIsInterface: Boolean;
-    FMethods: TArray<TRttiMethod>; // Multiple methods can have the same name
-
-    function  get_MemberType: TMemberType; override;
-    function  Methods: TArray<TRttiMethod>;
-    function  Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue; virtual;
-
-    function  SelectMethodMatchArguments(ctx: JSContext; argc: Integer; argv: PJSValueConst): TRttiMethod;
-  public
-    constructor Create(AInfo: PTypeInfo; const RttiMethods: TArray<TRttiMethod>; IsInterface: Boolean); reintroduce;
-  end;
-
-  TRttiInterfacePropertyDescriptor = class(TPropertyDescriptor)
-  protected
-    FGetter: TRttiMethod;
-    FSetter: TRttiMethod;
-
-    function  get_MemberType: TMemberType; override;
-    function  get_PropertyType: PTypeInfo; override;
-
-    function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; override;
-    procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
-
-  public
-    constructor Create(AInfo: PTypeInfo; const RttiGetter: TRttiMethod; const RttiSetter: TRttiMethod); reintroduce;
-  end;
-
-  TRttiIndexedInterfacePropertyDescriptor = class(TRttiInterfacePropertyDescriptor)
-  protected
-    function  get_MemberType: TMemberType; override;
-  end;
-
-  TRttiArrayIndexDescriptor = class(TPropertyDescriptor)
-  protected
-    function  get_MemberType: TMemberType; override;
-    function  get_PropertyType: PTypeInfo; override;
-
-    function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; override;
-    procedure SetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue; const Value: TValue); override;
-
-  public
-    constructor Create(AInfo: PTypeInfo); reintroduce;
-  end;
-
-  TRttiIteratorDescriptor = class(TPropertyDescriptor)
-  protected
-    function  get_MemberType: TMemberType; override;
-    function  GetValue(const Ptr: Pointer {TObject/IInterface}; const Index: array of TValue) : TValue; override;
-  end;
-
-  TRttiIteratorNextDescriptor = class(TPropertyDescriptor)
-  protected
-    function  get_MemberType: TMemberType; override;
-  end;
-
-  TRttiExtensionPropertyDescriptor = class(TPropertyDescriptor)
-  protected
-    _propertyName: string;
-
-    function  get_MemberType: TMemberType; override;
-
-  public
-    constructor Create(const PropertyName: string); reintroduce;
-  end;
 
   TRegisteredObject = class(TInterfacedObject, IRegisteredObject)
   protected
@@ -409,18 +315,33 @@ var
   OutputLogString: TProc<string>;
   // To keep the RTTI Pool alive and avoid continuously creating/destroying it
   // See also https://stackoverflow.com/questions/27368556/trtticontext-multi-thread-issue
-  _RttiContext: TRttiContext;
+  // _RttiContext is declared in QuickJS.Register.intf for shared access
 
 implementation
-
 uses
-  System.Classes, QuickJS.VirtualMethod.impl;
+  System.Classes, QuickJS.VirtualMethod.impl, QuickJS.Register.ObjectBridge.impl,
+  QuickJS.Register.ObjectBridgeDefaultDefinitions.impl;
+
+function _JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
+begin
+  Result := JSConverter.Instance.JSValueToTValue(ctx, Value, Target);
+end;
+
+function _TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue;
+begin
+  Result := JSConverter.Instance.TValueToJSValue(ctx, Value);
+end;
+
+function _GetDefaultValue(const Param: TRttiParameter): TValue;
+begin
+  Result := JSConverter.GetDefaultValue(Param);
+end;
 
 function AtomToString(ctx: JSContext; Atom: JSAtom) : string;
 begin
   var jv := JS_AtomToString(ctx, Atom);
   var ansistr := JS_ToCString(ctx, jv);
-  Result := string(ansistr);
+  Result := UTF8ToString(ansistr);
   JS_FreeCString(ctx, ansistr);
   JS_FreeValue(ctx, jv);
 end;
@@ -429,13 +350,18 @@ constructor TJSObject.Create(const Ctx: JSContext; const Value: JSValueConst);
 begin
   _ctx := Ctx;
   _value := JS_DupValue(Ctx, Value);
+  _ImplementingInterfaces := nil; // Initialize to nil, created on demand
 end;
 
 destructor TJSObject.Destroy;
 begin
+  if Assigned(_ImplementingInterfaces) then
+    _ImplementingInterfaces.Free;
+    
+  if (_ctx <> nil) and IsQuickJSLoaded then
+    JS_FreeValue(_ctx, _value);
+    
   inherited;
-  _ImplementingInterfaces.Free;
-  JS_FreeValue(_ctx, _value);
 end;
 
 function TJSObject.get_Ctx: JSContext;
@@ -538,8 +464,8 @@ begin
     var prop_name := JSConverter.Instance.JSValueToTValue(_ctx, argv[0], TypeInfo(string));
     if not prop_name.IsEmpty then
     begin
-      var prop_name_ansi: AnsiString := AnsiString(prop_name.ToString);
-      Result := JS_GetPropertyStr(_ctx, js_obj, PAnsiChar(prop_name_ansi));
+      var prop_name_utf8: UTF8String := UTF8Encode(prop_name.ToString);
+      Result := JS_GetPropertyStr(_ctx, js_obj, PAnsiChar(prop_name_utf8));
       TJSRuntime.Check(_ctx, Result);
       Result := TJSRuntime.WaitForJobs(_ctx, Result);
       TJSRuntime.Check(_ctx, Result);
@@ -760,7 +686,7 @@ begin
   var propertyIndex := JS_ToCString(ctx, func_data^);
   var prop_access := TJSIndexedPropertyAccessor(TJSRegister.GetObjectFromJSValue(this_val, True));
   var ptr := TJSRegister.GetObjectFromJSValue(prop_access._this_obj, not prop_access._prop.IsInterface {Ptr is an IInterface} );
-  var vt := prop_access._prop.GetValue(ptr, [string(propertyIndex)]);
+  var vt := prop_access._prop.GetValue(ptr, [UTF8ToString(propertyIndex)]);
   JS_FreeValue(ctx, func_data^);
   Result := JSConverter.Instance.TValueToJSValue(ctx, vt);
 end;
@@ -805,7 +731,7 @@ begin
       var prop_name := JS_ToCString(ctx, func_data^);
       if Assigned(prop_name) then
       begin
-        Result := ext.GetValue(ctx, string(prop_name));
+        Result := ext.GetValue(ctx, UTF8ToString(prop_name));
         JS_FreeCString(ctx, prop_name);
       end;
     end;
@@ -834,7 +760,7 @@ begin
       var prop_name := JS_ToCString(ctx, func_data^);
       if Assigned(prop_name) then
       begin
-        ext.SetValue(ctx, string(prop_name), PJSValueConstArr(argv)[0]);
+        ext.SetValue(ctx, UTF8ToString(prop_name), PJSValueConstArr(argv)[0]);
         JS_FreeCString(ctx, prop_name);
       end;
     end;
@@ -867,7 +793,7 @@ var
 
   procedure SetIndexedPropertyCallBack(const Index: string);
   begin
-    var s := AnsiString(Index);
+    var s := UTF8Encode(Index);
     var data: JSValue := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
 
     desc^.flags := JS_PROP_GETSET or JS_PROP_HAS_GET or JS_PROP_HAS_SET or JS_PROP_ENUMERABLE;
@@ -914,7 +840,7 @@ var
   procedure SetExtendableObjectGetterSetter(const PropertyName: string);
   begin
     // data holds the name of the property
-    var s := AnsiString(PropertyName);
+    var s := UTF8Encode(PropertyName);
     var data: JSValue := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
 
     desc^.flags := JS_PROP_GETSET or JS_PROP_HAS_GET or JS_PROP_HAS_SET or JS_PROP_ENUMERABLE;
@@ -995,7 +921,14 @@ begin
 
     if not reg.TryGetRttiDescriptor(member_name, rtti_descriptor) then
     begin
-      rtti_descriptor := reg.GetMemberByName(member_name, [TMemberType.Methods, TMemberType.Property]);
+      // First try ObjectBridge resolver
+      var handled := False;
+      if Assigned(FObjectBridgeResolver) then
+        rtti_descriptor := FObjectBridgeResolver.OnGetMemberByName(reg, member_name, [TMemberType.Methods, TMemberType.Property], handled);
+
+      // If ObjectBridge resolver didn't handle it, use standard resolution
+      if not handled then
+        rtti_descriptor := reg.GetMemberByName(member_name, [TMemberType.Methods, TMemberType.Property]);
 
       if rtti_descriptor = nil then
       begin
@@ -1046,7 +979,8 @@ begin
     for name in names do
     begin
       p^.is_enumerable := False; // Not used?
-      p^.atom := JS_NewAtom(ctx, PAnsiChar(AnsiString(name)));
+      var name_utf8 := UTF8Encode(name);
+      p^.atom := JS_NewAtom(ctx, PAnsiChar(name_utf8));
       inc(p);
     end;
 
@@ -1063,26 +997,28 @@ end;
 
 class function TJSRegister.JS_NewDate(ctx: JSContext; epoch_ms: Double) : JSValue;
 begin
-  if JS_IsNull(JS_DATE_CONSTRUCTOR) then
-  begin
-    var global := JS_NULL;
+  // Always get the Date constructor from the current context, not from a cached global
+  // Each context (including sandboxes) has its own Date constructor
+  // If this is not done, the "instanceOf Date" operator will return false
+  var dateConstructor := JS_NULL;
+  var global := JS_NULL;
 
-    try
-      global := JS_GetGlobalObject(ctx);
-      JS_DATE_CONSTRUCTOR := JS_GetPropertyStr(ctx, global, 'Date');
-      if not JS_IsConstructor(ctx, JS_DATE_CONSTRUCTOR) then
-        raise Exception.Create('Date constructor not found');
-    finally
-      JS_FreeValue(ctx, global);
-    end;
+  try
+    global := JS_GetGlobalObject(ctx);
+    dateConstructor := JS_GetPropertyStr(ctx, global, 'Date');
+    if not JS_IsConstructor(ctx, dateConstructor) then
+      raise Exception.Create('Date constructor not found');
+
+    var argc := 1;
+    var argv: array of JSValueConst;
+    SetLength(argv, 1);
+    argv[0] := JS_NewFloat64(ctx, epoch_ms);
+    Result := JS_CallConstructor(ctx, dateConstructor, argc, PJSValueConst(argv));
+    JS_FreeValue(ctx, argv[0]);
+  finally
+    JS_FreeValue(ctx, global);
+    JS_FreeValue(ctx, dateConstructor);
   end;
-
-  var argc := 1;
-  var argv: array of JSValueConst;
-  SetLength(argv, 1);
-  argv[0] := JS_NewFloat64(ctx, epoch_ms);
-  Result := JS_CallConstructor(ctx, JS_DATE_CONSTRUCTOR, argc, PJSValueConst(argv));
-  JS_FreeValue(ctx, argv[0]);
 end;
 
 class function TJSRegister.GetClassID(Value: JSValueConst): JSClassID;
@@ -1219,8 +1155,6 @@ class constructor TJSRegister.Create;
 begin
   FInstance := TJSRegister.Create;
 
-  JS_DATE_CONSTRUCTOR := JS_Null;
-
   FAutoRegister := True;
 
   FRegisteredObjectsByClassID := TDictionary<JSClassID, IRegisteredObject>.Create;
@@ -1228,6 +1162,15 @@ begin
   FRegisteredObjectsByConstructor := TDictionary<JSValueConst, IRegisteredObject>.Create;
   FRegisteredJSObjects := TDictionary<JSValueConst, IRegisteredObject>.Create;
   FRegisteredInterfaces := TDictionary<TGuid, IRegisteredObject>.Create;
+  FAllContexts := TList<Pointer>.Create;
+  FPendingRegistrations := TList<TRegistrationInfo>.Create;
+  FRegisteredEnums := TDictionary<PTypeInfo, string>.Create;
+
+  // Initialize ObjectBridge resolver
+  FObjectBridgeResolver := TObjectBridgeResolver.Create;
+
+  // Register default ObjectBridge mappings (e.g. forEach)
+  TObjectBridgeDefaultDefinitions.Initialize(FObjectBridgeResolver);
 
   FExotics.get_own_property := get_own_property;
   FExotics.get_own_property_names := get_own_property_names;
@@ -1236,6 +1179,11 @@ begin
   FExotics.has_property := nil; // has_property;
   FExotics.get_property := nil; // get_property;
   FExotics.set_property := nil; // set_property;
+
+  // Hook up converter indirection to avoid circular references
+  JSConverterFuncs.JSValueToTValue := _JSValueToTValue;
+  JSConverterFuncs.TValueToJSValue := _TValueToJSValue;
+  JSConverterFuncs.GetDefaultValue := _GetDefaultValue;
 end;
 
 class function TJSRegister.Describe(ctx: JSContext; Value: JSValue): string;
@@ -1247,7 +1195,7 @@ type
   begin
     var n := JS_GetPropertyStr(ctx, c, 'name');
     var name := JS_ToCString(ctx, n);
-    Result := string(name);
+    Result := UTF8ToString(name);
     JS_FreeCString(ctx, name);
     JS_FreeValue(ctx, n);
   end;
@@ -1296,18 +1244,23 @@ begin
   FRegisteredObjectsByType.Free;
   FRegisteredObjectsByConstructor.Free;
   FRegisteredJSObjects.Free;
+  FRegisteredInterfaces.Free;
+  FAllContexts.Free;
+  FPendingRegistrations.Free;
+  FRegisteredEnums.Free;
 end;
 
-class procedure TJSRegister.InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
+procedure TJSRegister.InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
 var
   obj,global : JSValue;
   JClass : JSClassDef;
   classID: JSClassID;
   classProto: JSValue;
   jsctx: JSContext;
+  needsRuntimeRegistration: Boolean;
 
 begin
-  var s: AnsiString := AnsiString(ClassName);
+  var s: UTF8String := UTF8Encode(ClassName);
   JClass.class_name := PAnsiChar(s);
   JClass.finalizer := @CFinalize;
   JClass.gc_mark := nil;
@@ -1316,16 +1269,28 @@ begin
 
   jsctx := ctx.ctx;
 
-  // Create New Class id.
-  classID := 0;
-  JS_NewClassID(JS_GetRuntime(jsctx), @classID);
+  // Check if this needs runtime-level registration (first time only)
+  needsRuntimeRegistration := Reg.ClassID = 0;
+  
+  if needsRuntimeRegistration then
+  begin
+    // Runtime-level registration (only once)
+    // Create New Class ID
+    classID := 0;
+    JS_NewClassID(JS_GetRuntime(jsctx), @classID);
 
-  if First_ClassID = 0 then
-    First_ClassID := classID;
+    if First_ClassID = 0 then
+      First_ClassID := classID;
 
-  // Create the Class Name and other stuff.
-  JS_NewClass(JS_GetRuntime(jsctx), classID, @JClass);
+    Reg.ClassID := classID;
+    
+    // Register the class at runtime level (only once per ClassID)
+    JS_NewClass(JS_GetRuntime(jsctx), classID, @JClass);
+  end
+  else
+    classID := Reg.ClassID;
 
+  // Context-level registration (once per context)
   // New Object act as Prototype for the Class.
   classProto := JS_NewObject(jsctx);
 
@@ -1340,14 +1305,15 @@ begin
   JS_SetPropertyStr(jsctx, global, JClass.class_name, obj);
   JS_FreeValue(jsctx, global);
 
-  Reg.JSConstructor := JS_DupValue(jsctx, obj);
-  Reg.ClassID := classID;
+  // Store JSConstructor only on first registration
+  if needsRuntimeRegistration then
+    Reg.JSConstructor := JS_DupValue(jsctx, obj);
 
   if Reg.IsInterface then
     InternalRegisterInterface(ctx, Reg, ClassName);
 end;
 
-class procedure TJSRegister.InternalRegisterInterface(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
+procedure TJSRegister.InternalRegisterInterface(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
 begin
   var g := Reg.GetTypeInfo.TypeData.GUID;
   if not g.IsEmpty then
@@ -1366,6 +1332,37 @@ begin
   end;
 end;
 
+procedure TJSRegister.InternalRegisterEnum(const ctx: IJSContext; EnumTypeInfo: PTypeInfo; const EnumJSName: string);
+begin
+  var jsctx := ctx.ctx;
+  var global := JS_GetGlobalObject(jsctx);
+  
+  // Create a plain JavaScript object to hold enum values
+  var enumObj := JS_NewObject(jsctx);
+  
+  // Get enum type data
+  var typeData := GetTypeData(EnumTypeInfo);
+  var minValue := typeData.MinValue;
+  var maxValue := typeData.MaxValue;
+  
+  // Add each enum value as a property
+  for var i := minValue to maxValue do
+  begin
+    var enumName := GetEnumName(EnumTypeInfo, i);
+    if enumName <> '' then
+    begin
+      var propName := UTF8Encode(enumName);
+      var enumValue := JS_NewInt32(jsctx, i);
+      JS_SetPropertyStr(jsctx, enumObj, PAnsiChar(propName), enumValue);
+    end;
+  end;
+  
+  // Add the enum object to global scope
+  var globalName := UTF8Encode(EnumJSName);
+  JS_SetPropertyStr(jsctx, global, PAnsiChar(globalName), enumObj);
+  JS_FreeValue(jsctx, global);
+end;
+
 function TJSRegister.CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject;
 begin
   Result := TRegisteredObject.Create(ATypeInfo, AConstructor);
@@ -1381,40 +1378,138 @@ begin
   FRegisteredObjectsByClassID.Add(RegisteredObject.ClassID, RegisteredObject);
 end;
 
-class function TJSRegister.RegisterObject(const ctx: IJSContext; ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject;
+class procedure TJSRegister.RegisterContext(const Context: IJSContext);
 begin
-  TMonitor.Enter(FRegisteredObjectsByType);
+  TMonitor.Enter(FAllContexts);
   try
-    // Check if type is already registered
-    if FRegisteredObjectsByType.TryGetValue(TypeInfo, Result) then
-      Exit; // Already registered, return existing registration
+    FAllContexts.Add(Pointer(Context));
   finally
-    TMonitor.Exit(FRegisteredObjectsByType);
+    TMonitor.Exit(FAllContexts);
   end;
 
-  var instance := TJSRegister.Instance;
-
-  Result := Instance.CreateRegisteredObject(TypeInfo, nil);
-  Instance.InternalRegisterType(ctx, Result, ClassName);
-  Instance.AddRegisteredObjectWithClassID(Result);
-
-  TMonitor.Enter(FRegisteredObjectsByType);
+  // Apply all registered enums to this new context
+  TMonitor.Enter(FRegisteredEnums);
   try
-    FRegisteredObjectsByType.Add(TypeInfo, Result);
+    for var kvp in FRegisteredEnums do
+    begin
+      var instance := TJSRegister.Instance;
+      instance.InternalRegisterEnum(Context, kvp.Key, kvp.Value);
+    end;
   finally
-    TMonitor.Exit(FRegisteredObjectsByType);
+    TMonitor.Exit(FRegisteredEnums);
   end;
 
-  TMonitor.Enter(FRegisteredObjectsByConstructor);
+  // Apply all pending registrations to this new context
+  TMonitor.Enter(FPendingRegistrations);
   try
-    FRegisteredObjectsByConstructor.Add(Result.JSConstructor, Result);
+    for var i := 0 to FPendingRegistrations.Count - 1 do
+    begin
+      var regInfo := FPendingRegistrations[i];
+      var instance := TJSRegister.Instance;
+      var reg: IRegisteredObject;
+      
+      // Check if this type was already registered at the global level
+      if not FRegisteredObjectsByType.TryGetValue(regInfo.TypeInfo, reg) then
+      begin
+        // First time registering this type globally - create the registered object
+        reg := instance.CreateRegisteredObject(regInfo.TypeInfo, regInfo.ConstructorFunc);
+        FRegisteredObjectsByType.Add(regInfo.TypeInfo, reg);
+      end;
+      
+      // Always register the type in this new context (each context needs its own JS constructor)
+      instance.InternalRegisterType(Context, reg, regInfo.ClassName);
+      
+      // Add to global collections only once
+      if not FRegisteredObjectsByClassID.ContainsKey(reg.ClassID) then
+        instance.AddRegisteredObjectWithClassID(reg);
+      
+      if not FRegisteredObjectsByConstructor.ContainsKey(reg.JSConstructor) then
+        FRegisteredObjectsByConstructor.Add(reg.JSConstructor, reg);
+    end;
+    
+    // Do NOT clear FPendingRegistrations - we need it for future contexts
+    // Each new context needs these registrations applied
   finally
-    TMonitor.Exit(FRegisteredObjectsByConstructor);
+    TMonitor.Exit(FPendingRegistrations);
   end;
 end;
 
-class function TJSRegister.RegisterObject(const ctx: IJSContext; ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject;
+class procedure TJSRegister.UnregisterContext(const Context: IJSContext);
 begin
+  TMonitor.Enter(FAllContexts);
+  try
+    FAllContexts.Remove(Pointer(Context));
+  finally
+    TMonitor.Exit(FAllContexts);
+  end;
+end;
+
+class function TJSRegister.CreateContext: IJSContext;
+begin
+  Result := TJSContext.Create(TJSRuntime.Shared);
+  RegisterContext(Result);
+end;
+
+class function TJSRegister.TryLoadQuickJS: Boolean;
+begin
+  Result := False;
+  
+  // Try to load QuickJS library
+  if not IsQuickJSLoaded then
+  begin
+    if not LoadQuickJS then
+      Exit(False);
+  end;
+  
+  // Ensure global runtime is created
+  if TJSRuntime._GlobalRuntime = nil then
+  begin
+    TJSRuntime._GlobalRuntime := TJSRuntime.Create;
+    // Check if runtime was actually created (will be nil if QuickJS failed to load)
+    if (TJSRuntime._GlobalRuntime = nil) or ((TJSRuntime._GlobalRuntime as TJSRuntime)._rt = nil) then
+      Exit(False);
+  end;
+  
+  Result := True;
+end;
+
+class function TJSRegister.RegisterObject(ClassName: string; TypeInfo: PTypeInfo) : IRegisteredObject;
+begin
+  Result := RegisterObject(ClassName, TypeInfo, nil);
+end;
+
+class function TJSRegister.RegisterObject(ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor) : IRegisteredObject;
+begin
+  // Handle enum types specially
+  if TypeInfo.Kind = tkEnumeration then
+  begin
+    TMonitor.Enter(FRegisteredEnums);
+    try
+      // Check if enum is already registered
+      if FRegisteredEnums.ContainsKey(TypeInfo) then
+        Exit(nil); // Already registered
+      
+      // Store enum registration
+      FRegisteredEnums.Add(TypeInfo, ClassName);
+    finally
+      TMonitor.Exit(FRegisteredEnums);
+    end;
+    
+    // Apply to all existing contexts
+    TMonitor.Enter(FAllContexts);
+    try
+      for var i := 0 to FAllContexts.Count - 1 do
+      begin
+        var ctx: IJSContext := IJSContext(FAllContexts[i]);
+        TJSRegister.Instance.InternalRegisterEnum(ctx, TypeInfo, ClassName);
+      end;
+    finally
+      TMonitor.Exit(FAllContexts);
+    end;
+    
+    Exit(nil); // Enums don't return a registered object
+  end;
+
   TMonitor.Enter(FRegisteredObjectsByType);
   try
     // Check if type is already registered
@@ -1424,12 +1519,22 @@ begin
     TMonitor.Exit(FRegisteredObjectsByType);
   end;
 
+  // Store registration info for future contexts
+  var regInfo: TRegistrationInfo;
+  regInfo.ClassName := ClassName;
+  regInfo.TypeInfo := TypeInfo;
+  regInfo.ConstructorFunc := AConstructor;
+  
+  TMonitor.Enter(FPendingRegistrations);
+  try
+    FPendingRegistrations.Add(regInfo);
+  finally
+    TMonitor.Exit(FPendingRegistrations);
+  end;
+
   var instance := TJSRegister.Instance;
-
   Result := instance.CreateRegisteredObject(TypeInfo, AConstructor);
-  instance.InternalRegisterType(ctx, Result, ClassName);
-  instance.AddRegisteredObjectWithClassID(Result);
-
+  
   TMonitor.Enter(FRegisteredObjectsByType);
   try
     FRegisteredObjectsByType.Add(TypeInfo, Result);
@@ -1437,11 +1542,22 @@ begin
     TMonitor.Exit(FRegisteredObjectsByType);
   end;
 
-  TMonitor.Enter(FRegisteredObjectsByConstructor);
+  // Apply to all existing contexts
+  TMonitor.Enter(FAllContexts);
   try
-    FRegisteredObjectsByConstructor.Add(Result.JSConstructor, Result);
+    for var i := 0 to FAllContexts.Count - 1 do
+    begin
+      var ctx: IJSContext := IJSContext(FAllContexts[i]);
+      instance.InternalRegisterType(ctx, Result, ClassName);
+      
+      if not FRegisteredObjectsByClassID.ContainsKey(Result.ClassID) then
+        instance.AddRegisteredObjectWithClassID(Result);
+      
+      if not FRegisteredObjectsByConstructor.ContainsKey(Result.JSConstructor) then
+        FRegisteredObjectsByConstructor.Add(Result.JSConstructor, Result);
+    end;
   finally
-    TMonitor.Exit(FRegisteredObjectsByConstructor);
+    TMonitor.Exit(FAllContexts);
   end;
 end;
 
@@ -1469,7 +1585,7 @@ begin
 
     if not FRegisteredObjectsByType.TryGetValue(tp, reg) then
     begin
-      TJSRegister.RegisterObject(ctx, ClassName, tp);
+      TJSRegister.RegisterObject(ClassName, tp);
       reg := FRegisteredObjectsByType[tp];
     end;
 
@@ -1482,7 +1598,7 @@ begin
       ptr := TObjectReference.Create(TObject(AObject));
 
     JS_SetOpaque(jsval, ptr);
-    var s: AnsiString := AnsiString(ObjectName);
+    var s: UTF8String := UTF8Encode(ObjectName);
     JS_SetPropertyStr(ctx, global, PAnsiChar(s), jsval);
     JS_FreeValue(ctx, global);
   finally
@@ -1498,7 +1614,7 @@ begin
 
     if not FRegisteredObjectsByType.TryGetValue(TypeInfo, reg) then
     begin
-      TJSRegister.RegisterObject(ctx, string(TypeInfo.Name), TypeInfo);
+      TJSRegister.RegisterObject(string(TypeInfo.Name), TypeInfo);
       reg := FRegisteredObjectsByType[TypeInfo];
     end;
 
@@ -1509,7 +1625,7 @@ begin
     // Bump ref count required
     AInterface._AddRef;
     JS_SetOpaque(jsval, Pointer(AInterface));
-    var s: AnsiString := AnsiString(ObjectName);
+    var s: UTF8String := UTF8Encode(ObjectName);
     JS_SetPropertyStr(jsctx, global, PAnsiChar(s), jsval);
     JS_FreeValue(jsctx, global);
   finally
@@ -1651,18 +1767,29 @@ begin
 
   if Result <> nil then
   begin
-    if not get_IsInterface then
+    if get_IsInterface then
+      Exit;
+      
+    // For records, wrap in TRecordReference
+    if FTypeInfo.Kind = tkRecord then
     begin
-      var ii: IInterface;
-      if Supports(TObject(Result), IInterface, ii) then
-        ii._AddRef;
+      var rec_val: TValue;
+      TValue.Make(Result, FTypeInfo, rec_val);
+      Result := TRecordReference.Create(rec_val);
+      Exit;
     end;
+    
+    // For classes
+    var ii: IInterface;
+    if Supports(TObject(Result), IInterface, ii) then
+      ii._AddRef;
   end
   else
   begin
     var rttiType := TRttiContext.Create.GetType(FTypeInfo);
     var rtti_method: TRttiMethod := nil;
 
+    // For records, look for constructor (Create) methods
     for var method in rttiType.GetMethods do
     begin
       if method.IsConstructor and (Length(method.GetParameters) = argc) then
@@ -1688,11 +1815,35 @@ begin
       end;
     end;
 
-    Result := rtti_method.Invoke(PTypeInfo(FTypeInfo)^.TypeData.ClassType, arr).AsObject;
+    if FTypeInfo.Kind = tkRecord then
+    begin
+      // For records, create uninitialized record and invoke constructor
+      var rec_ptr: Pointer;
+      GetMem(rec_ptr, FTypeInfo.TypeData.RecSize);
+      try
+        FillChar(rec_ptr^, FTypeInfo.TypeData.RecSize, 0);
+        var rec_val: TValue;
+        TValue.Make(rec_ptr, FTypeInfo, rec_val);
+        
+        // Invoke constructor on the record (modifies rec_val in place)
+        rtti_method.Invoke(rec_val, arr);
+        
+        // Wrap in TRecordReference (TValue contains a copy of the record)
+        Result := TRecordReference.Create(rec_val);
+      finally
+        // Free the temporary memory (TValue has made a copy)
+        FreeMem(rec_ptr);
+      end;
+    end
+    else
+    begin
+      // For classes, invoke constructor
+      Result := rtti_method.Invoke(PTypeInfo(FTypeInfo)^.TypeData.ClassType, arr).AsObject;
 
-    var ii: IInterface;
-    if Supports(TObject(Result), IInterface, ii) then
-      ii._AddRef;
+      var ii: IInterface;
+      if Supports(TObject(Result), IInterface, ii) then
+        ii._AddRef;
+    end;
   end;
 end;
 
@@ -1769,21 +1920,37 @@ begin
 
   if TMemberType.Property in MemberTypes then
   begin
-    if FTypeInfo.Kind = tkInterface then
+    if FTypeInfo.Kind in [tkInterface, tkRecord, tkClass] then
     begin
+      // First check for accessor methods (get_/set_)
       var getter := rttiType.GetMethod('get_' + AName);
       var setter := rttiType.GetMethod('set_' + AName);
 
       if ((getter <> nil) and (Length(getter.GetParameters) > 0)) or ((setter <> nil) and (Length(setter.GetParameters) > 1)) then
-        Result := TRttiIndexedInterfacePropertyDescriptor.Create(FTypeInfo, getter, setter)
+      begin
+        Result := TRttiIndexedAccessorPropertyDescriptor.Create(FTypeInfo, getter, setter);
+        Exit;
+      end
       else if (getter <> nil) or (setter <> nil) then
-        Result := TRttiInterfacePropertyDescriptor.Create(FTypeInfo, getter, setter);
-    end
-    else if FTypeInfo.Kind in [tkRecord, tkClass] then
-    begin
-      var field := rttiType.GetField(AName);
-      if field <> nil then
-        Result := TRttiStandardPropertyDescriptor.Create(FTypeInfo, field);
+      begin
+        Result := TRttiAccessorPropertyDescriptor.Create(FTypeInfo, getter, setter);
+        Exit;
+      end;
+      
+      // If no accessor methods found, check for regular properties (for tkRecord and tkClass)
+      if FTypeInfo.Kind in [tkRecord, tkClass] then
+      begin
+        var prop := rttiType.GetProperty(AName);
+        if prop <> nil then
+        begin
+          Result := TRttiStandardPropertyDescriptor.Create(FTypeInfo, prop);
+          Exit;
+        end;
+
+        var field := rttiType.GetField(AName);
+        if field <> nil then
+          Result := TRttiStandardPropertyDescriptor.Create(FTypeInfo, field);
+      end;
     end
     else
     begin
@@ -1943,16 +2110,10 @@ begin
     begin
       if JS_IsNumber(Value) then
       begin
-        var v: Integer;
-        TJSRuntime.Check(JS_ToInt32(ctx, @v, Value));
-        Result := TValue.From<Double>(Double(v));
-      end
-//      else if JS_IsFloat64(Value) then
-//      begin
-//        var v: Double;
-//        TJSRuntime.Check(JS_ToFloat64(ctx, @v, Value));
-//        Result := TValue.From<Double>(v);
-//      end;
+        var v: Double;
+        TJSRuntime.Check(JS_ToFloat64(ctx, @v, Value));
+        Result := TValue.From<Double>(v);
+      end;
     end;
 
     tkString, tkUString:
@@ -1960,7 +2121,7 @@ begin
       var str: PAnsiChar := JS_ToCString(ctx, Value);
       if Assigned(str) then
       try
-        Result := TValue.From<string>(string(str));
+        Result := TValue.From<string>(UTF8ToString(str));
       finally
         JS_FreeCString(ctx, str);
       end;
@@ -2066,7 +2227,7 @@ function JSConverter.TValueToJSValue(ctx: JSContext; const Value: TValue): JSVal
       begin
         if not TJSRegister.AutoRegister then Exit(nil); // Result = undefined
 
-        TJSRegister.RegisterObject(TJSRuntime.Context[ctx], TJSRegister.GetClassName(PInfo), PInfo);
+        TJSRegister.RegisterObject(TJSRegister.GetClassName(PInfo), PInfo);
         TJSRegister.FRegisteredObjectsByType.TryGetValue(PInfo, Result);
       end;
     finally
@@ -2082,11 +2243,26 @@ begin
     tkInteger:
       Result := JS_NewInt32(ctx, Value.AsInteger);
 //    tkChar:
-//    tkEnumeration:
-//    tkFloat:
+    tkEnumeration:
+    begin
+      if Value.TypeInfo = TypeInfo(Boolean) then
+        Result := JS_NewBool(ctx, Value.AsBoolean)
+      else
+      begin
+        // Handle other enumerations as integers
+        var v: Integer := Value.AsOrdinal;
+        Result := JS_NewInt32(ctx, v);
+      end;
+    end;
+    
+    tkFloat:
+    begin
+      Result := JS_NewFloat64(ctx, Value.AsExtended);
+    end;
+    
     tkString, tkUString:
     begin
-      var s := AnsiString(Value.AsString);
+      var s := UTF8Encode(Value.AsString);
       Result := JS_NewStringLen(ctx, PAnsiChar(s), Length(s));
     end;
 //    tkSet:
@@ -2134,13 +2310,21 @@ begin
         end
         else
         begin
-          var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
+          // Resolve interface mapping if available
+          var typeInfoToUse := Value.TypeInfo;
+          var ptr: Pointer;
+          Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
+          
+          if Assigned(TJSRegister.FObjectBridgeResolver) then
+            typeInfoToUse := TJSRegister.FObjectBridgeResolver.ResolveInterfaceMapping(Value.TypeInfo, ptr);
+          
+          var reg := GetRegisteredObjectFromTypeInfo(typeInfoToUse);
           if reg <> nil then
           begin
             Result := JS_NewObjectClass(ctx, reg.ClassID);
-            var ptr: Pointer;
             // No need to call _AddRef, Supports will bump reference count
-            Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
+            // Re-cast to the resolved interface type
+            Supports(Value.AsInterface, typeInfoToUse.TypeData.Guid, ptr);
             JS_SetOpaque(Result, ptr);
           end;
         end;
@@ -2171,10 +2355,11 @@ begin
 //    tkChar:
     tkEnumeration:
       if Param.ParamType.Handle = System.TypeInfo(Boolean) then
-        Result := JS_IsBool(Value) else
-        Result := False;
+        Result := JS_IsBool(Value) or JS_IsNumber(Value) or JS_IsString(Value) else
+        Result := JS_IsNumber(Value);
 
-//    tkFloat:
+    tkFloat:
+      Result := JS_IsNumber(Value);
     tkString, tkUString:
       Result := JS_IsString(Value);
 
@@ -2249,223 +2434,6 @@ begin
   inherited;
 end;
 
-{ TPropertyDescriptor }
-constructor TPropertyDescriptor.Create(AInfo: PTypeInfo);
-begin
-  FTypeInfo := AInfo;
-end;
-
-function TPropertyDescriptor.GetValue(const Ptr: Pointer; const Index: array of TValue): TValue;
-begin
-  raise ENotImplemented.Create('GetValue not implemented');
-end;
-
-function TPropertyDescriptor.get_MemberType: TMemberType;
-begin
-  Result := TMemberType.None;
-end;
-
-function TPropertyDescriptor.get_PropertyType: PTypeInfo;
-begin
-  raise ENotImplemented.Create('PropertyType not implemented');
-end;
-
-function TPropertyDescriptor.get_TypeInfo: PTypeInfo;
-begin
-  Result := FTypeInfo;
-end;
-
-function TPropertyDescriptor.IsInterface: Boolean;
-begin
-  Result := (FTypeInfo <> nil) and (FTypeInfo.Kind = tkInterface);
-end;
-
-procedure TPropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
-begin
-  raise ENotImplemented.Create('SetValue not implemented');
-end;
-
-{ TRttiStandardPropertyDescriptor }
-
-constructor TRttiStandardPropertyDescriptor.Create(AInfo: PTypeInfo; const RttiProp: TRttiMember);
-begin
-  inherited Create(AInfo);
-  FProp := RttiProp;
-end;
-
-function TRttiStandardPropertyDescriptor.GetValue(const Ptr: Pointer; const Index: array of TValue): TValue;
-begin
-  if FProp is TRttiIndexedProperty then
-    Result := (FProp as TRttiIndexedProperty).GetValue(Ptr, Index)
-  else if FProp is TRttiProperty then
-    Result := (FProp as TRttiProperty).GetValue(Ptr)
-  else if FProp is TRttiField then
-    Result := (FProp as TRttiField).GetValue(Ptr);
-end;
-
-function TRttiStandardPropertyDescriptor.get_MemberType: TMemberType;
-begin
-  Result := TMemberType.Property;
-end;
-
-function TRttiStandardPropertyDescriptor.get_PropertyType: PTypeInfo;
-begin
-  Result := FProp.Handle;
-end;
-
-procedure TRttiStandardPropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
-begin
-  if FProp is TRttiIndexedProperty then
-    (FProp as TRttiIndexedProperty).SetValue(Ptr, Index, Value)
-  else if FProp is TRttiProperty then
-    (FProp as TRttiProperty).SetValue(Ptr, Value)
-  else if FProp is TRttiField then
-    (FProp as TRttiField).SetValue(Ptr, Value);
-end;
-
-{ TRttiMethodPropertyDescriptor }
-
-function TRttiMethodPropertyDescriptor.Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
-begin
-  var method := SelectMethodMatchArguments(ctx, argc, argv);
-
-  {$IFDEF DEBUG}
-  var s := Method.Name;
-  {$ENDIF}
-
-  try
-    var params := Method.GetParameters;
-    var arr: array of TValue;
-
-    if Length(params) > 0 then
-    begin
-      SetLength(arr, Length(params));
-      for var i := 0 to High(params) do
-      begin
-        if i < argc then
-          arr[i] := JSConverter.Instance.JSValueToTValue(ctx, PJSValueConstArr(argv)[i], params[i].ParamType.Handle) else
-          arr[i] := JSConverter.GetDefaultValue(params[i]);
-      end;
-    end;
-
-    var v: TValue;
-    var vt: TValue;
-    // Reference type?
-    if FTypeInfo.Kind in [tkInterface, tkClass] then
-      TValue.Make(@Ptr, FTypeInfo, vt) else
-      // Value types (aka Records)
-      TValue.Make(Ptr, FTypeInfo, vt);
-
-    v := Method.Invoke(vt, arr);
-    Result := JSConverter.Instance.TValueToJSValue(ctx, v);
-  except
-    on E: Exception do
-    begin
-      Result := JS_EXCEPTION;
-      IJSContext(TJSRuntime._ActiveContexts[ctx]).Runtime.OutputLog(
-        string.Format('Calling ''%s'' on type ''%s'' raised exception: %s', [Method.name, FTypeInfo.Name, E.Message]));
-    end;
-  end;
-end;
-
-function TRttiMethodPropertyDescriptor.SelectMethodMatchArguments(ctx: JSContext; argc: Integer; argv: PJSValueConst): TRttiMethod;
-begin
-  if Length(Methods) = 0 then Exit(nil);
-  if Length(Methods) = 1 then Exit(FMethods[0]);
-
-  for var m in FMethods do
-  begin
-    var params := m.GetParameters;
-    if argc = Length(params) then
-      Exit(m);
-
-//    // Skip method when there are more arguments passed from JS than method accepts
-//    if argc > Length(params) then
-//      continue;
-//
-//    var match := True;
-//    var genericParamCount := 0; // Counts number of TValue/CObject params
-//    for var i := 0 to argc - 1 do
-//    begin
-//      var param := params[i];
-//      var paramIsGenericValue: Boolean;
-//      match := JSConverter.Instance.TestParamsAreCompatible(ctx, param, PJSValueConstArr(argv)[i], paramIsGenericValue);
-//      if match and paramIsGenericValue then
-//        inc(genericParamCount);
-//      if not match then
-//        break;
-//    end;
-//
-//    if match and ((firstmatch = nil) or (genericParamCount <= firstmatchParamCount)) then
-//    begin
-//      firstmatch := m;
-//      firstmatchParamCount := genericParamCount;
-//    end;
-  end;
-
-  Exit(nil);
-end;
-
-constructor TRttiMethodPropertyDescriptor.Create(AInfo: PTypeInfo; const RttiMethods: TArray<TRttiMethod>; IsInterface: Boolean);
-begin
-  inherited Create(AInfo);
-  FMethods := RttiMethods;
-  FIsInterface := IsInterface;
-end;
-
-function TRttiMethodPropertyDescriptor.get_MemberType: TMemberType;
-begin
-  Result := TMemberType.Methods;
-end;
-
-function TRttiMethodPropertyDescriptor.Methods: TArray<TRttiMethod>;
-begin
-  Result := FMethods;
-end;
-
-{ TRttiInterfacePropertyDescriptor }
-
-constructor TRttiInterfacePropertyDescriptor.Create(AInfo: PTypeInfo; const RttiGetter, RttiSetter: TRttiMethod);
-begin
-  inherited Create(AInfo);
-  FGetter := RttiGetter;
-  FSetter := RttiSetter;
-end;
-
-function TRttiInterfacePropertyDescriptor.GetValue(const Ptr: Pointer; const Index: array of TValue): TValue;
-begin
-  if FGetter <> nil then
-  begin
-    var vt := TValue.From<IInterface>(IInterface(ptr));
-    Result := FGetter.Invoke(vt, Index);
-  end else
-    raise Exception.Create('Property cannot be read');
-end;
-
-function TRttiInterfacePropertyDescriptor.get_MemberType: TMemberType;
-begin
-  Result := TMemberType.Property;
-end;
-
-function TRttiInterfacePropertyDescriptor.get_PropertyType: PTypeInfo;
-begin
-  Result := FGetter.ReturnType.Handle;
-end;
-
-procedure TRttiInterfacePropertyDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
-begin
-  if FSetter <> nil then
-  begin
-    var vt := TValue.From<IInterface>(IInterface(ptr));
-
-    var args: array of TValue;
-    SetLength(args, 1);
-    args[0] := Value;
-
-    FSetter.Invoke(vt, args);
-  end else
-    raise Exception.Create('Property cannot be set');
-end;
 
 { TJSRuntime }
 
@@ -2473,11 +2441,14 @@ procedure TJSRuntime.BeforeDestruction;
 begin
   inherited;
 
-  try
-    js_std_free_handlers(_rt);
-    JS_FreeRuntime(_rt);
-  except
+  if (_rt <> nil) and IsQuickJSLoaded then
+  begin
+    try
+      js_std_free_handlers(_rt);
+      JS_FreeRuntime(_rt);
+    except
 
+    end;
   end;
 end;
 
@@ -2500,7 +2471,7 @@ begin
     if not JS_IsUndefined(name) then
     begin
       var str: PAnsiChar := JS_ToCString(ctx, name);
-      err := string(str);
+      err := UTF8ToString(str);
       JS_FreeCString(ctx, str);
       JS_FreeValue(ctx, name);
     end;
@@ -2509,7 +2480,7 @@ begin
     if not JS_IsUndefined(msg) then
     begin
       var str: PAnsiChar := JS_ToCString(ctx, msg);
-      err := err + ': ' + string(str);
+      err := err + ': ' + UTF8ToString(str);
       JS_FreeCString(ctx, str);
       JS_FreeValue(ctx, msg);
     end;
@@ -2518,7 +2489,7 @@ begin
     if not JS_IsUndefined(stack) then
     begin
       var str: PAnsiChar := JS_ToCString(ctx, stack);
-      err := err + #13#10 + string(str);
+      err := err + #13#10 + UTF8ToString(str);
       JS_FreeCString(ctx, str);
       JS_FreeValue(ctx, stack);
     end;
@@ -2537,7 +2508,7 @@ begin
     var exp := JS_GetException(ctx);
 
     var str := JS_ToCString(ctx, exp);
-    var s: string := str;
+    var s: string := UTF8ToString(str);
     JS_FreeCString(ctx, str);
 
     var rt := IJSContext(_ActiveContexts[ctx]).Runtime;
@@ -2550,21 +2521,58 @@ end;
 class constructor TJSRuntime.Create;
 begin
   _ActiveContexts := TDictionary<JSContext, Pointer {Unsafe IJSContext pointer}>.Create;
+
+  // Load QuickJS library if not already loaded
+  // Note: Cannot use Exit in class constructors - must complete
+  if not IsQuickJSLoaded then
+    LoadQuickJS; // Will set QuickJSLoaded flag if successful
+
+  // Only proceed with registration if QuickJS loaded successfully
+  if IsQuickJSLoaded then
+  begin
+    // Register internal QuickJS types globally
+    TJSRegister.RegisterObject('JSIterator', TypeInfo(TJSIterator), nil);
+    TJSRegister.RegisterObject('JSIndexedPropertyAccessor', TypeInfo(TJSIndexedPropertyAccessor), nil);
+
+    // Create shared runtime instance
+    if _GlobalRuntime = nil then
+      _GlobalRuntime := TJSRuntime.Create;
+  end;
 end;
 
 class destructor TJSRuntime.Destroy;
 begin
-  _ActiveContexts.Free;
+  if (_ActiveContexts <> nil) then
+    _ActiveContexts.Free;
 end;
 
 constructor TJSRuntime.Create;
 begin
+  if not IsQuickJSLoaded then
+  begin
+    _rt := nil;
+    Exit;
+  end;
+  
   _rt := JS_NewRuntime;
 end;
 
 function TJSRuntime.CreateContext: IJSContext;
 begin
+  if (_rt = nil) or not IsQuickJSLoaded then
+  begin
+    Result := nil;
+    Exit;
+  end;
+  
   Result := TJSContext.Create(Self);
+end;
+
+class function TJSRuntime.Shared: IJSRuntime;
+begin
+  Result := _GlobalRuntime;
+  if Result = nil then
+    Result := TJSRuntime.Create; // Fallback safety
 end;
 
 function TJSRuntime.get_LogString: TProc<string>;
@@ -2641,20 +2649,37 @@ end;
 
 procedure TJSContext.BeforeDestruction;
 begin
-  TJSRuntime.UnRegisterContext(_ctx);
-  try
-    JS_FreeContext(_ctx);
-  except
+  if _ctx <> nil then
+  begin
+    TJSRuntime.UnRegisterContext(_ctx);
+    TJSRegister.UnregisterContext(Self);
+    
+    if IsQuickJSLoaded then
+    begin
+      try
+        JS_FreeContext(_ctx);
+      except
 
+      end;
+    end;
   end;
+  
   inherited;
 end;
 
 constructor TJSContext.Create(const Runtime: IJSRuntime);
 begin
   _runtime := Runtime;
-  Initialize;
+  
+  if (_runtime = nil) or (_runtime.rt = nil) or not IsQuickJSLoaded then
+  begin
+    _ctx := nil;
+    Exit;
+  end;
+  
+  _ctx := JS_NewContext(_runtime.rt);
   TJSRuntime.RegisterContext(_ctx, IJSContext(Self));
+  Initialize;
 end;
 
 function TJSContext.eval_internal(Buf: PAnsiChar; buf_len: Integer; FileName: PAnsiChar; eval_flags: Integer): Integer;
@@ -2668,16 +2693,16 @@ end;
 
 procedure TJSContext.eval(const Code: string; const CodeContext: string);
 begin
-  var buf: AnsiString := AnsiString(Code);
-  var filename: AnsiString := AnsiString(CodeContext) + #0;
+  var buf: UTF8String := UTF8Encode(Code);
+  var filename: UTF8String := UTF8Encode(CodeContext) + #0;
   eval_internal(PAnsiChar(buf), Length(buf), PAnsiChar(filename), JS_EVAL_TYPE_MODULE);
 end;
 
 function TJSContext.eval_with_result(const Code: string; const CodeContext: string): TValue;
 begin
 //  var buf: AnsiString := 'export function __run__() {return ' + AnsiString(Code) + ';}';
-   var buf: AnsiString := AnsiString(Code)  + ' ;export function __run__() { return resultValue; }';
-   var filename: AnsiString := AnsiString(CodeContext) + #0;
+   var buf: UTF8String := UTF8Encode(Code + #13#10 + ';export function __run__() { return typeof resultValue !== "undefined" ? resultValue : "resultValue is undefined"; }');
+   var filename: UTF8String := UTF8Encode(CodeContext) + #0;
 
   // var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(CodeContext), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
   var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(filename), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
@@ -2741,7 +2766,7 @@ begin
      if not Assigned(str) then
         exit(JS_EXCEPTION);
 
-     var s: string := str;
+     var s: string := UTF8ToString(str);
      if Assigned(OutputLogString) then
       OutputLogString(s) else
       Write(s);
@@ -2785,12 +2810,20 @@ const
 
   add_fetch: PAnsiChar =
     'import fetch from ''./fetch.js'';'#10+
-    'globalThis.fetch = fetch;'#10;
+//    'import { DateTime, Duration, Interval, Settings } from ''./luxon.js'';'#10+
+
+    'globalThis.fetch = fetch;'#10
+//    + 'globalThis.DateTime = DateTime;'#10+
+//    'globalThis.Duration = Duration;'#10+
+//    'globalThis.Interval = Interval;'#10+
+//    'globalThis.Settings = Settings;'#10
+;
 
 begin
-  js_std_init_handlers(_runtime.rt);
+  if (_ctx = nil) or not IsQuickJSLoaded then
+    Exit;
 
-  _ctx := JS_NewContext(_runtime.rt);
+  js_std_init_handlers(_runtime.rt);
 
   // ES6 Module loader.
   JS_SetModuleLoaderFunc(_runtime.rt, nil, @js_module_loader, nil);
@@ -2814,9 +2847,6 @@ begin
   eval_internal(console_log, Length(console_log), 'initialize', JS_EVAL_TYPE_MODULE);
   eval_internal(add_fetch, Length(add_fetch), 'initialize', JS_EVAL_TYPE_MODULE);
 
-  TJSRegister.RegisterObject(Self, 'JSIterator', TypeInfo(TJSIterator));
-  TJSRegister.RegisterObject(Self, 'JSIndexedPropertyAccessor', TypeInfo(TJSIndexedPropertyAccessor));
-
   JS_FreeValue(_ctx, global);
 
   js_std_loop(_ctx);
@@ -2833,47 +2863,11 @@ end;
 destructor TJSIndexedPropertyAccessor.Destroy;
 begin
   inherited;
-  JS_FreeValue(_ctx, _this_obj);
+  
+  if (_ctx <> nil) and IsQuickJSLoaded then
+    JS_FreeValue(_ctx, _this_obj);
 end;
 
-{ JSIterator }
-class function TJSObjectIterator.CreateIterator(const Obj: TObject) : TJSIterator;
-begin
-  Result := nil;
-
-  var tp := _RttiContext.GetType(Obj.ClassType);
-  var getEnumerator := tp.GetMethod('GetEnumerator');
-  if getEnumerator = nil then Exit;
-  var enumarator := getEnumerator.Invoke(Obj, []).AsObject;
-  if enumarator = nil then Exit;
-  var tp_enum := _RttiContext.GetType(enumarator.ClassType);
-  var move_next := tp_enum.GetMethod('MoveNext');
-  if move_next = nil then Exit;
-  var get_current := tp_enum.GetProperty('Current');
-  if get_current = nil then Exit;
-
-  var iter := TJSObjectIterator.Create;
-  iter._instance := enumarator;
-  iter._move_next := move_next;
-  iter._get_current := get_current;
-
-  Result := iter;
-end;
-
-function TJSObjectIterator.Current: TValue;
-begin
-  Result := TRttiProperty(_get_current).GetValue(_instance);
-end;
-
-destructor TJSObjectIterator.Destroy;
-begin
-  inherited;
-end;
-
-function TJSObjectIterator.MoveNext: Boolean;
-begin
-  Result := TRttiMethod(_move_next).Invoke(_instance, []).AsBoolean;
-end;
 
 procedure _InitRttiPool;
 begin
@@ -2881,80 +2875,14 @@ begin
  _RttiContext.FindType('');
 end;
 
-{ TRttiIteratorDescriptor }
-function TRttiIteratorDescriptor.GetValue(const Ptr: Pointer; const Index: array of TValue): TValue;
-begin
-  var obj: TObject;
-
-  if FTypeInfo.Kind = tkInterface then
-    obj := TObject(IInterface(ptr)) else
-    obj := TObject(ptr);
-
-  Result := TJSObjectIterator.CreateIterator(obj);
-end;
-
-function TRttiIteratorDescriptor.get_MemberType: TMemberType;
-begin
-  Result := TMemberType.Iterator;
-end;
-
-{ TRttiIteratorNextDescriptor }
-
-function TRttiIteratorNextDescriptor.get_MemberType: TMemberType;
-begin
-  Result := TMemberType.IteratorNext;
-end;
-
-{ TRttiExtensionPropertyDescriptor }
-constructor TRttiExtensionPropertyDescriptor.Create(const PropertyName: string);
-begin
-  _propertyName := PropertyName;
-end;
-
-function TRttiExtensionPropertyDescriptor.get_MemberType: TMemberType;
-begin
-  Result := TMemberType.ExtensionProperty;
-end;
-
-{ TRttiArrayIndexDescriptor }
-
-constructor TRttiArrayIndexDescriptor.Create(AInfo: PTypeInfo);
-begin
-  inherited Create(AInfo);
-end;
-
-function TRttiArrayIndexDescriptor.GetValue(const Ptr: Pointer; const Index: array of TValue): TValue;
-begin
-  Result := TValue.Empty;
-end;
-
-function TRttiArrayIndexDescriptor.get_MemberType: TMemberType;
-begin
-  Result := TMemberType.ArrayIndexer;
-end;
-
-function TRttiArrayIndexDescriptor.get_PropertyType: PTypeInfo;
-begin
-
-end;
-
-procedure TRttiArrayIndexDescriptor.SetValue(const Ptr: Pointer; const Index: array of TValue; const Value: TValue);
-begin
-  inherited;
-end;
-
-{ TRttiIndexedInterfacePropertyDescriptor }
-
-function TRttiIndexedInterfacePropertyDescriptor.get_MemberType: TMemberType;
-begin
-  Result := TMemberType.IndexedProperty;
-end;
 
 initialization
   _InitRttiPool;
+
 
 finalization
   _RttiContext.Free();
 
 end.
+
 

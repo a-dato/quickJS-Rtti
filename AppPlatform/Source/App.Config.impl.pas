@@ -83,6 +83,7 @@ end;
 
 function TAppConfig.AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
 begin
+  {$IFDEF APP_PLATFORM}
   if ExtensionManager <> nil then
   begin
     var prop: _PropertyInfo := CustomProperty.Create(OwnerType, Name, ALabel, PropType);
@@ -116,6 +117,7 @@ begin
 
     Result := prop;
   end;
+  {$ENDIF}
 end;
 
 procedure TAppConfig.RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);

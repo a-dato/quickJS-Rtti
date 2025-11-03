@@ -210,7 +210,7 @@ implementation
 
 uses
   {$IFDEF NG}
-  quickjs_ng,
+  
   {$ELSE}
   quickjs,
   {$ENDIF}

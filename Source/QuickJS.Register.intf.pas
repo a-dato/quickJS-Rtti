@@ -5,30 +5,20 @@ interface
 uses
   System.Variants,
   System.Rtti,
-  System.TypInfo,
-  quickjs_ng,
-  System.SysUtils;
+  System.TypInfo, quickjs_ng, System.SysUtils;
+
 
 type
-  IJSExtendableObject = interface;
+  TObjectConstuctor = function : Pointer;
 
-  TObjectConstuctor = reference to function: Pointer;
-
-  DefaultValueAttribute = class(TCustomAttribute)
-  protected
-    FValue: Variant;
-  public
-    constructor Create(Value: Boolean); overload;
-    constructor Create(Value: string); overload;
-    property Value: Variant read FValue;
-  end;
+  TObjectSupportsExtension = (Unknown, Supported, NotSupported);
+  
+  // Forward declarations
+  IJSContext = interface;
+  IJSRuntime = interface;
 
   TMemberType = (None, Methods, &Property, Iterator, IteratorNext, ArrayIndexer, ExtensionProperty, IndexedProperty);
   TMemberTypes = set of TMemberType;
-  TObjectSupportsExtension = (Unknown, Supported, NotSupported);
-
-  PObjectMember = Pointer;  // Generic pointer to TRttiMember/TRttiMethod/TrriProperty/_PropertyInfo
-  PRttiMember = ^TRttiMember;
 
   TInterfaceRef = record
     IID: TGuid;
@@ -49,6 +39,7 @@ type
   end;
 
   IPropertyDescriptor = interface
+    ['{41133217-8E74-455D-953A-4FB4723A4EBE}']
     function  get_MemberType: TMemberType;
     function  get_TypeInfo: PTypeInfo;
     function  get_PropertyType: PTypeInfo;
@@ -63,13 +54,8 @@ type
     property PropertyType: PTypeInfo read get_PropertyType;
   end;
 
-  IMethodsPropertyDescriptor = interface
-    ['{3D51ABCB-4C43-482A-8AE4-0749F56CD1CA}']
-    function Methods: TArray<TRttiMethod>;
-    function Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
-  end;
-
   IRegisteredObject = interface
+    ['{A4D3F263-C1BE-4550-B460-87CD6F8EEA38}']
     function  get_IsObject: Boolean;
     function  get_IsInterface: Boolean;
     function  get_IsIterator: Boolean;
@@ -120,6 +106,7 @@ type
     function  get_LogString: TProc<string>;
     procedure set_LogString(const Value: TProc<string>);
 
+    function  CreateContext: IJSContext;
     procedure OutputLog(const Value: string);
 
     property rt: JSRuntime read get_rt;
@@ -147,19 +134,23 @@ type
   TOnGetMemberByName = function(const AObject: IRegisteredObject; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean) : IPropertyDescriptor of Object;
   TOnGetMemberNames = function(const AObject: IRegisteredObject; MemberTypes: TMemberTypes; var Handled: Boolean) : TArray<string> of Object;
 
+type
+  TJSValueToTValueFunc = function(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
+  TTValueToJSValueFunc = function(ctx: JSContext; const Value: TValue): JSValue;
+  TGetDefaultValueFunc = function(const Param: TRttiParameter): TValue;
+
+  TJSConverterFuncs = record
+    JSValueToTValue: TJSValueToTValueFunc;
+    TValueToJSValue: TTValueToJSValueFunc;
+    GetDefaultValue: TGetDefaultValueFunc;
+  end;
+
+var
+  JSConverterFuncs: TJSConverterFuncs;
+  // Shared RTTI context for performance (initialized in QuickJS.Register.impl)
+  _RttiContext: TRttiContext;
+
 implementation
-
-{ DefaultValueAttribute }
-
-constructor DefaultValueAttribute.Create(Value: Boolean);
-begin
-  FValue := Value;
-end;
-
-constructor DefaultValueAttribute.Create(Value: string);
-begin
-  FValue := Value;
-end;
 
 end.
 

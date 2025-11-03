@@ -6,11 +6,13 @@ uses
   System_,
   System.TypInfo,
   System.Rtti,
-  quickjs_ng,
+  
   QuickJS.Register.intf,
   QuickJS.Register.impl,
   QuickJS.Register.dn4d.intf,
-  System.Generics.Collections, System.Collections, System.Collections.Generic;
+  System.Generics.Collections, System.Collections, System.Collections.Generic,
+  QuickJS.Register.PropertyDescriptors.intf,
+  QuickJS.Register.PropertyDescriptors.impl, System.Reflection, quickjs_ng;
 
 type
   TJSBaseObject = class(TJSObject, IBaseInterface)
@@ -30,9 +32,12 @@ type
   protected
     function CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; override;
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject; override;
+    procedure InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); override;
+    
+    procedure RegisterEnumConstants(const ctx: IJSContext; const Reg: IRegisteredObject; const EnumInfo: EnumInformation);
 
   public
-    class procedure Initialize(const Context: IJSContext);
+    class procedure Initialize; // Context parameter removed - not needed
   end;
 
   TJSTypedConverter = class(JSConverter)
@@ -137,17 +142,7 @@ type
     function Current: TValue; override;
   end;
 
-  TTypedForEachDescriptor = class(TPropertyDescriptor, IMethodsPropertyDescriptor)
-  protected
-    FIsInterface: Boolean;
-
-    function  get_MemberType: TMemberType; override;
-    function  Methods: TArray<TRttiMethod>;
-    function  Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
-
-  public
-    constructor Create(AInfo: PTypeInfo; IsInterface: Boolean); reintroduce;
-  end;
+  
 
 implementation
 
@@ -198,12 +193,19 @@ end;
 
 { TJSRegisterTypedObjects }
 
-class procedure TJSRegisterTypedObjects.Initialize(const Context: IJSContext);
+class procedure TJSRegisterTypedObjects.Initialize;
 begin
-  JSConverter.Instance := TJSTypedConverter.Create;
-  TJSRegister.Instance := TJSRegisterTypedObjects.Create;
+  // Only initialize once - avoid recreating instances on every context creation
+  if not (TJSRegister.Instance is TJSRegisterTypedObjects) then
+  begin
+    JSConverter.Instance := TJSTypedConverter.Create;
+    TJSRegister.Instance := TJSRegisterTypedObjects.Create;
+  end;
 
-  TJSRegister.RegisterObject(Context, 'JSIEnumerableIterator', TypeInfo(TJSIEnumerableIterator));
+  // These registrations are safe to call multiple times (they check if already registered)
+  TJSRegister.RegisterObject('JSIEnumerableIterator', TypeInfo(TJSIEnumerableIterator));
+  // Register CTimeSpan record so it can be constructed in JS
+  TJSRegister.RegisterObject('TimeSpan', TypeInfo(CTimeSpan));
 end;
 
 function TJSRegisterTypedObjects.CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject;
@@ -216,9 +218,93 @@ begin
   Result := TRegisteredJSObject.Create(ctx, JSConstructor, ATypeInfo);
 end;
 
+procedure TJSRegisterTypedObjects.InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
+begin
+  // Call base implementation to register the type
+  inherited InternalRegisterType(ctx, Reg, ClassName);
+  
+  // Check if this type has registered enum information
+  if Reg.GetTypeInfo.Kind = tkRecord then
+  begin
+    var tp := &Type.Create(Reg.GetTypeInfo);
+    if &Assembly.IsRegisteredEnum(tp) then
+    begin
+      var enumInfo := &Assembly.GetRegisteredEnum(tp);
+      if Assigned(enumInfo) then
+        RegisterEnumConstants(ctx, Reg, enumInfo);
+    end;
+  end;
+end;
+
+procedure TJSRegisterTypedObjects.RegisterEnumConstants(const ctx: IJSContext; const Reg: IRegisteredObject; const EnumInfo: EnumInformation);
+begin
+  // Get the constructor function from global object
+  var jsctx := ctx.ctx;
+  var global := JS_GetGlobalObject(jsctx);
+  var className := AnsiString(string(Reg.GetTypeInfo.Name));
+  var constructorFunc := JS_GetPropertyStr(jsctx, global, PAnsiChar(className));
+  
+  if not JS_IsUndefined(constructorFunc) then
+  begin
+    var names := EnumInfo.Names;
+    var values := EnumInfo.Values;
+    
+    // If no explicit values array, use indices or bit flags
+    var hasExplicitValues := Length(values) > 0;
+    
+    for var i := 0 to High(names) do
+    begin
+      var enumValue: Int64;
+      if hasExplicitValues then
+        enumValue := values[i]
+      else if EnumInfo.Flags then
+        enumValue := Int64(1) shl i  // Bit flag: 1, 2, 4, 8, etc.
+      else
+        enumValue := i;  // Sequential: 0, 1, 2, 3, etc.
+      
+      // Create a record instance with this value using implicit conversion
+      var recordPtr: Pointer;
+      GetMem(recordPtr, Reg.GetTypeInfo.TypeData.RecSize);
+      try
+        // Initialize record memory
+        FillChar(recordPtr^, Reg.GetTypeInfo.TypeData.RecSize, 0);
+        
+        // For StatusCode, the Value field is an Integer at offset 0 (after any RTTI dummy)
+        // Copy the enumValue into the record
+        if EnumInfo.Size = 1 then
+          PByte(recordPtr)^ := enumValue
+        else if EnumInfo.Size = 2 then
+          PWord(recordPtr)^ := enumValue
+        else if EnumInfo.Size = 4 then
+          PInteger(recordPtr)^ := enumValue
+        else if EnumInfo.Size = 8 then
+          PInt64(recordPtr)^ := enumValue;
+        
+        // Wrap in TRecordReference and create JS object
+        var rec_val: TValue;
+        TValue.Make(recordPtr, Reg.GetTypeInfo, rec_val);
+        var recordRef := TRecordReference.Create(rec_val);
+        
+        var jsObject := JS_NewObjectClass(jsctx, Reg.ClassID);
+        JS_SetOpaque(jsObject, recordRef);
+        
+        // Add as static property on constructor
+        var propName := AnsiString(names[i]);
+        JS_SetPropertyStr(jsctx, constructorFunc, PAnsiChar(propName), jsObject);
+      finally
+        FreeMem(recordPtr);
+      end;
+    end;
+  end;
+  
+  JS_FreeValue(jsctx, constructorFunc);
+  JS_FreeValue(jsctx, global);
+end;
+
 { JSIEnumerableIterator }
 destructor TJSIEnumerableIterator.Destroy;
 begin
+  _enumerator := nil; // Explicitly release the enumerator interface
   inherited;
 end;
 
@@ -274,15 +360,6 @@ begin
   begin
     Result := inherited;
     Exit;
-  end;
-
-  if AName = 'forEach' then
-  begin
-    if get_ObjectSupportsEnumeration then
-    begin
-      Result := TTypedForEachDescriptor.Create(FTypeInfo, True);
-      Exit;
-    end;
   end;
 
   if (FTypeInfo.Kind in [tkClass, tkInterface]) and (TMemberType.Property in MemberTypes) then
@@ -452,7 +529,7 @@ begin
     else if JS_IsString(Value) then
     begin
       var str: PAnsiChar := JS_ToCString(ctx, Value);
-      Result := string(str);
+      Result := UTF8ToString(str);
       JS_FreeCString(ctx, str);
     end
 
@@ -486,8 +563,11 @@ begin
   if Target.Kind = tkInterface then
   begin
     if JS_IsNull(Value) then
-      // Exit(TValue.From<JSObjectReference>(JSObjectReference.Empty));
-      Exit(TValue.From<IJSObject>(nil));
+    begin
+      var nullPtr: Pointer := nil;
+      TValue.Make(@nullPtr, Target, Result);
+      Exit(Result);
+    end;
 
     if JS_IsFunction(ctx, Value) then
       Exit(inherited);
@@ -535,7 +615,7 @@ begin
       else if JS_IsString(Value) then
       begin
         var str: PAnsiChar := JS_ToCString(ctx, Value);
-        Result := TValue.From<CString>(string(str));
+        Result := TValue.From<CString>(UTF8ToString(str));
         JS_FreeCString(ctx, str);
       end
 
@@ -565,7 +645,7 @@ begin
       else if JS_IsString(Value) then
       begin
         var str: PAnsiChar := JS_ToCString(ctx, Value);
-        Result := TValue.From<CObject>(string(str));
+        Result := TValue.From<CObject>(UTF8ToString(str));
         JS_FreeCString(ctx, str);
       end
 
@@ -602,6 +682,12 @@ begin
     end
     else if Target = TypeInfo(CDateTime) then
     begin
+      if JS_IsNull(Value) or JS_IsUndefined(Value) then
+      begin
+        Result := TValue.From<CDateTime>(CDateTime.MinValue);
+        Exit;
+      end;
+
       var cd := CDateTime.MinValue;
 
       if JS_IsObject(Value) then
@@ -610,7 +696,7 @@ begin
         var constructor_val := JS_GetPropertyStr(ctx, Value, 'constructor');
         var name_val := JS_GetPropertyStr(ctx, constructor_val, 'name');
         var name_str := JS_ToCString(ctx, name_val);
-        var is_date := name_str = 'Date';
+        var is_date := UTF8ToString(name_str) = 'Date';
         JS_FreeCString(ctx, name_str);
         JS_FreeValue(ctx, name_val);
         JS_FreeValue(ctx, constructor_val);
@@ -636,6 +722,12 @@ begin
     end
     else if Target = TypeInfo(CTimeSpan) then
     begin
+      if JS_IsNull(Value) or JS_IsUndefined(Value) then
+      begin
+        Result := TValue.From<CTimeSpan>(CTimeSpan.Create(0));
+        Exit;
+      end;
+
       var v: Int64;
       JS_ToBigInt64(ctx, @v, Value);
       Result := TValue.From<CTimeSpan>(CTimeSpan.Create(v));
@@ -643,7 +735,19 @@ begin
     else if Target = TypeInfo(&Type) then
       Result := TValue.From<&Type>(GetTypeFromJSObject(ctx, Value))
     else
+    begin
+      // Generic record unwrap: if JS value is a registered record wrapper, unwrap to record pointer
+      if JS_IsObject(Value) then
+      begin
+        var recPtr := TJSRegister.GetObjectFromJSValue(Value, True {PointerIsAnObject to unwrap TRecordReference});
+        if recPtr <> nil then
+        begin
+          TValue.Make(recPtr, Target, Result);
+          Exit;
+        end;
+      end;
       Result := inherited;
+    end;
   end else
     Result := inherited;
 end;
@@ -667,13 +771,14 @@ begin
 
     if Value.TypeInfo = TypeInfo(CDateTime) then
     begin
-      var u_milis := DateTimeOffset.ToUnixTimeMiliSeconds(CDateTime(Value.GetReferenceToRawData^).Ticks);
+      var dt := CDateTime(Value.GetReferenceToRawData^);
+      if dt = CDateTime.MinValue then
+        Exit(JS_NULL);
+
+      var u_milis := DateTimeOffset.ToUnixTimeMiliSeconds(dt.Ticks);
       Exit(TJSRegister.JS_NewDate(ctx, u_milis));
     end;
 
-    // TimeSpan are handled as Int64
-    if Value.TypeInfo = TypeInfo(CTimeSpan) then
-      Exit(JS_NewBigInt64(ctx, CTimeSpan(Value.GetReferenceToRawData^).Ticks));
 
     if Value.TypeInfo = TypeInfo(&Type) then
     begin
@@ -737,45 +842,6 @@ begin
   Result := TypeInfo(CObject);
 end;
 
-{ TTypedForEachDescriptor }
-
-function TTypedForEachDescriptor.Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
-begin
-  if argc <> 1 then
-    raise Exception.Create('Invalid number of arguments');
-
-  var e: IEnumerable;
-  if Interfaces.Supports<IEnumerable>(IInterface(Ptr), e) and JS_IsFunction(ctx, PJSValueConstArr(argv)[0]) then
-  begin
-    var func := PJSValueConstArr(argv)[0];
-    var enum := e.GetEnumerator;
-    while enum.MoveNext do
-    begin
-      var target: JSValue := JSConverter.Instance.TValueToJSValue(ctx, enum.Current.AsType<TValue>);
-      var call_argv: array of JSValueConst;
-      SetLength(call_argv, 1);
-      call_argv[0] := target;
-      Result := JS_Call(ctx, func, JS_Null, argc, PJSValueConstArr(call_argv));
-      JS_FreeValue(ctx, call_argv[0]);
-    end;
-  end;
-end;
-
-constructor TTypedForEachDescriptor.Create(AInfo: PTypeInfo; IsInterface: Boolean);
-begin
-  FTypeInfo := AInfo;
-  FIsInterface := IsInterface;
-end;
-
-function TTypedForEachDescriptor.get_MemberType: TMemberType;
-begin
-  Result := TMemberType.Methods;
-end;
-
-function TTypedForEachDescriptor.Methods: TArray<TRttiMethod>;
-begin
-  Result := nil;
-end;
 
 { TRegisteredJSObject }
 
