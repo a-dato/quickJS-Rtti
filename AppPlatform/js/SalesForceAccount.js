@@ -27,7 +27,6 @@ export class SFAccountType {
 
 	constructor() {
 		this.Binder = new JSBinder();			// IContentBinder
-		this.Builder = new JSFrameBuilder();	// IContentBuilder
 		this.Provider = new SFAccountProvider();	// IContentProvider
 		this.PropertyDescriptor = {
 			// Object descriptor

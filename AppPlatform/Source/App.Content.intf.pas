@@ -7,11 +7,6 @@ uses
 
 type
   {$M+}
-  IContentBuilder = interface(IBaseInterface)
-    function Build(const AOwner: CObject): CObject;
-  end;
-
-  {$M+}
   IContentBinder = interface(IBaseInterface)
     procedure Bind(const AType: &Type; const Control: TObject; const Storage: IStorage);
   end;

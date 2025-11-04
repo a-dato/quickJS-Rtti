@@ -9,7 +9,8 @@ uses
   FMX.ScrollBox, FMX.Memo,
   App.intf, System.Actions, FMX.ActnList, FMX.StdCtrls, System.Net.URLClient,
   System.Net.HttpClient, System.Net.HttpClientComponent, System_,
-  Project.intf, System.Collections, System.Collections.Generic, System.Rtti;
+  Project.intf, System.Collections, System.Collections.Generic, System.Rtti,
+  App.Environment.intf;
 
 type
   {$M+}
@@ -17,7 +18,7 @@ type
   TTestFunc = reference to function(const Param: string) : string;
   TGenFunc<T> = reference to function : T;
 
-  TForm1 = class(TForm)
+  TForm1 = class(TForm, IAppIntegration)
     Layout1: TLayout;
     mmCode: TMemo;
     mmLog: TMemo;
@@ -60,6 +61,10 @@ type
 
     function CreateTestFunc : TTestFunc;
     { Private declarations }
+
+  protected
+    // IAppIntegration
+    function OpenObject(const AObject: CObject) : Boolean;
 
   public
     _context: IJSContext;
@@ -158,7 +163,8 @@ uses
   App.Factory.impl,
   System.TypInfo,
   QuickJS.VirtualMethod.impl, App.Storage.intf, App.Storage.impl,
-  App.Config.intf, App.Windows.intf, App.Windows.impl;
+  App.Config.intf, App.Windows.intf, App.Windows.impl, App.Component.intf,
+  ProjectSelection.frame;
 
 {$R *.fmx}
 
@@ -187,9 +193,10 @@ end;
 
 procedure TForm1.btnCustomerClick(Sender: TObject);
 begin
-  _app.Windows.CreateWindow(TProject.Type, Self, 'Projects')
-    .Bind(_app.Storage[TProject.TypeDescriptor.StorageName])
-      .Show(nil);
+  _app.Environment.CreateWindow(TProject.Type, _app.Environment.MainWindow)
+    .CreateFrame('Projects')
+      .Bind(_app.Storage[TProject.TypeDescriptor.StorageName])
+        .Show(nil);
 
 //  _app.Windows.CreateWindow(TProject.Type, Self, 'Projects').
 //    Build.
@@ -318,13 +325,21 @@ begin
   App.Environment.impl.Environment.FormClass := TfrmObjectWindow;
 
   {$IFDEF FRAMEWORK_FMX}
-  _app := TAppObject.Create(App.Environment.impl.Environment.Create);
+  _app := TAppObject.Create(App.Environment.impl.Environment.Create(Self));
   {$ENDIF}
 
   _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
 
-  _app.Config.RegisterWindow(TProject.Type, 'Projects', function(const AOwner: CObject) : IWindowFrame begin
-    Result := TWindowFrame.Create(AOwner, TProjectFrame.Create(AOwner.AsType<TComponent>));
+  _app.Config.RegisterWindow('Projects', function(const Window: IWindow) : IWindowFrame begin
+    Result := TWindowFrame.Create(Window, TProjectFrame.Create(Window.Control as TComponent));
+  end);
+
+  _app.Config.RegisterWindow('ProjectSelection', function(const Window: IWindow) : IWindowFrame begin
+    Result := TWindowFrame.Create(Window, TProjectSelectionFrame.Create(Window.Control as TComponent));
+  end);
+
+  _app.Config.RegisterWindow('Customers', function(const Window: IWindow) : IWindowFrame begin
+    Result := TWindowFrame.Create(Window, TCustomerFrame.Create(Window.Control as TComponent));
   end);
 
   // TProject.TypeDescriptor.Builder := TFrameBuilder.Create(TProjectFrame);
@@ -368,18 +383,13 @@ begin
         Result := TFrameBinder.Create();
       end);
 
-    TJSRegister.RegisterObject('JSFrameBuilder', TypeInfo(IContentBuilder),
-      function : Pointer begin
-        // Result := TFrameBuilder.Create(TCustomerFrame);
-        Result := TFrameBuilder.Create(nil);
-      end);
-
     TJSRegister.RegisterObject('XMLHttpRequest', TypeInfo(IXMLHttpRequest),
       function : Pointer begin
         Result := TXMLHttpRequest.Create;
       end);
 
     TJSRegister.RegisterObject('IBaseInterface', TypeInfo(IBaseInterface), nil);
+    TJSRegister.RegisterObject('IComponent', TypeInfo(IComponent), nil);
     TJSRegister.RegisterObject('IAddingNew', TypeInfo(IAddingNew), nil);
     TJSRegister.RegisterObject('IAddRange', TypeInfo(IAddRange), nil);
     TJSRegister.RegisterObject('ICloneable', TypeInfo(ICloneable), nil);
@@ -419,6 +429,11 @@ begin
   TThread.Queue(nil, procedure begin
     mmLog.Lines.Add(s);
   end);
+end;
+
+function TForm1.OpenObject(const AObject: CObject): Boolean;
+begin
+  Result := True;
 end;
 
 procedure TForm1.TestFunc2Click(Sender: TObject);

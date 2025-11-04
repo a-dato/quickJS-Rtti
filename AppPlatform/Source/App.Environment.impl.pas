@@ -5,56 +5,64 @@ interface
 uses
   System_,
   System.Collections.Generic,
-  FMX.Forms,
-  FMX.Types,
 
+  App.intf,
+  App.Component.intf,
   App.Environment.intf,
   App.TypeDescriptor.intf,
   App.Windows.intf,
   ADato.ObjectModel.List.intf,
-  App.intf,
   App.Config.intf,
   App.Content.intf,
-  App.Storage.intf;
+  App.Storage.intf,
+
+  {$IFDEF FRAMEWORK_VCL}
+  VCL.Controls,
+  VCL.Forms
+  {$ELSE}
+  FMX.Forms,
+  FMX.Types
+  {$ENDIF}
+  ;
 
 type
+  {$IFDEF FRAMEWORK_VCL}
+  TChildrenList = List<TControl>;
+  {$ELSE}
+  TChildrenList = TFmxChildrenList;
+  {$ENDIF}
+
   Environment = class(TBaseInterfacedObject, IEnvironment)
   type
     TFormClass = class of TForm;
 
   protected
     class var _FormClass: TFormClass;
+    class var _MainWindow: IWindow;
 
   protected
-    function get_MainForm: IWindow;
+    _appIntegration: IAppIntegration;
+
+    function get_MainWindow: IWindow;
 
     function get_TickCount: Integer;
 
-    function CreateWindow(const AType: &Type; const AOwner: CObject)  : IWindow;
+    function CreateWindow(const AType: &Type; const AOwner: IComponent)  : IWindow;
+    function IsOpen(const AObject: CObject) : Boolean;
+    function Open(const AObject: CObject) : Boolean;
+    function Close(const AObject: CObject) : Boolean;
 
   public
-    class constructor Create;
+    constructor Create(const AppIntegration: IAppIntegration);
     class property FormClass: TFormClass read _FormClass write _FormClass;
-  end;
-
-  TFrameBuilder = class(TBaseInterfacedObject, IContentBuilder)
-  protected
-    _creator: WindowFrameCreateFunc;
-
-    // IContentBuilder
-    function Build(const AOwner: CObject): CObject;
-
-  public
-    constructor Create(const ACreator: WindowFrameCreateFunc);
-
-    property Creator: WindowFrameCreateFunc read _creator;
   end;
 
   TFrameBinder = class(TBaseInterfacedObject, IContentBinder)
   protected
     _handlers: List<IContextChangedHandler>;
 
-    procedure BindChildren(const AType: &Type; const Children: TFmxChildrenList; const AModel: IObjectListModel);
+    function  CreateChildrenList(const AControl: TControl) : TChildrenList;
+    procedure BindChildren(const AType: &Type; const Children: TChildrenList; const AModel: IObjectListModel);
     procedure Bind(const AType: &Type; const Control: TObject; const Storage: IStorage);
 
     function WrapProperty(const AProp: _PropertyInfo) : _PropertyInfo; virtual;
@@ -72,34 +80,39 @@ uses
   ADato.ObjectModel.List.Tracking.impl,
   ADato.ObjectModel.impl,
   ADato.ObjectModel.intf,
-  App.PropertyDescriptor.intf
-  ,App.Windows.FMX.impl
-  ,FMX.Controls
-  ,FMX.ScrollControl.DataControl.Impl
-  , ADato.ObjectModel.List.impl
-  , App.ObjectModelWithDescriptor.impl
-  , App.Windows.impl;
+  App.PropertyDescriptor.intf,
+  ADato.ObjectModel.List.impl,
+  App.ObjectModelWithDescriptor.impl,
+  App.Windows.impl;
 
 { Environment }
 
-class constructor Environment.Create;
+function Environment.Close(const AObject: CObject): Boolean;
 begin
 
 end;
 
-function Environment.CreateWindow(const AType: &Type; const AOwner: CObject) : IWindow;
+constructor Environment.Create(const AppIntegration: IAppIntegration);
 begin
-  var cmp: TComponent := nil;
-  if (AOwner <> nil) and not AOwner.TryAsType<TComponent>(cmp) then
-    raise ArgumentException.Create('AOwner must be of type TComponent');
-
-  var f := FormClass.Create(cmp);
-  Result := TWindow.Create(_app, AType, f);
+  _appIntegration := AppIntegration;
 end;
 
-function Environment.get_MainForm: IWindow;
+function Environment.CreateWindow(const AType: &Type; const AOwner: IComponent) : IWindow;
 begin
-  Result := nil;
+//  var cmp: TComponent := nil;
+//  if (AOwner <> nil) and not AOwner.TryAsType<TComponent>(cmp) then
+//    raise ArgumentException.Create('AOwner must be of type TComponent');
+
+  var f := FormClass.Create(nil);
+  Result := TWindow.Create(AType, f);
+end;
+
+function Environment.get_MainWindow: IWindow;
+begin
+  if _MainWindow = nil then
+    _MainWindow := TWindow.Create(&Type.From<IWindow>, Application.MainForm);
+
+  Result := _MainWindow;
 end;
 
 function Environment.get_TickCount: Integer;
@@ -107,25 +120,29 @@ begin
   Result := System_.Environment.TickCount;
 end;
 
-{ TFrameBuilder }
-
-function TFrameBuilder.Build(const AOwner: CObject): CObject;
+function Environment.IsOpen(const AObject: CObject): Boolean;
 begin
-  var cmp: TComponent := nil;
-  if (AOwner <> nil) and not AOwner.TryAsType<TComponent>(cmp) then
-    raise ArgumentException.Create('AOwner must be of type TComponent');
-//  Result := _frameClass.Create();
-//  (Result as TFrame).Owner
+
 end;
 
-constructor TFrameBuilder.Create(const ACreator: WindowFrameCreateFunc);
+function Environment.Open(const AObject: CObject): Boolean;
 begin
-  _creator := ACreator;
+  Result := _appIntegration.OpenObject(AObject);
 end;
 
 { TFrameBinder }
+function TFrameBinder.CreateChildrenList(const AControl: TControl) : TChildrenList;
+begin
+  {$IFDEF FRAMEWORK_VCL}
+  Result := CList<TControl>.Create(AControl.ChildrenCount);
+  for var i := 0 to AControl.ChildrenCount - 1 do
+    Result.Add(AControl.Children[i]);
+  {$ELSE}
+  Result := AControl.Children;
+  {$ENDIF}
+end;
 
-procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TFmxChildrenList; const AModel: IObjectListModel);
+procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TChildrenList; const AModel: IObjectListModel);
 
   function ConcatNames(var Names: TArray<string>) : string;
   begin
@@ -204,7 +221,7 @@ begin
         begin
           if (c is TDataControl) then
             (c as TDataControl).Model := AModel else
-            BindChildren(mdl.ObjectType, c.Children, mdl);
+            BindChildren(mdl.ObjectType, CreateChildrenList(c), mdl);
         end;
 
         continue;
@@ -216,17 +233,10 @@ begin
         var bind := TPropertyBinding.CreateBindingByControl(c);
         AModel.ObjectModelContext.Bind(propertyName, bind);
       end;
-
-//      var objectProperty := AType.PropertyByName(propertyName);
-//      if objectProperty <> nil then
-//      begin
-//        var bind := TPropertyBinding.CreateBindingByControl(c);
-//        AModel.ObjectModelContext.Bind(WrapProperty(objectProperty), bind);
-//      end;
     end;
 
     if c.ChildrenCount > 0 then
-      BindChildren(AType, c.Children, AModel);
+      BindChildren(AType, CreateChildrenList(c), AModel);
   end;
 end;
 

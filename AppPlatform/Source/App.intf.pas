@@ -19,12 +19,10 @@ type
     function get_Config: IAppConfig;
     function get_Environment: IEnvironment;
     function get_Factory: IAppFactory;
-    function get_Windows: IWindows;
 
     property Config: IAppConfig read get_Config;
     property Environment: IEnvironment read get_Environment;
     property Factory: IAppFactory read get_Factory;
-    property Windows: IWindows read get_Windows;
   end;
 
 var

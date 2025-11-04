@@ -562,7 +562,7 @@ begin
 
   if Target.Kind = tkInterface then
   begin
-    if JS_IsNull(Value) then
+    if JS_IsNull(Value) or JS_IsUndefined(Value) then
     begin
       var nullPtr: Pointer := nil;
       TValue.Make(@nullPtr, Target, Result);

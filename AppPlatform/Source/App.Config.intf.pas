@@ -19,13 +19,13 @@ type
     function AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
 
     procedure RegisterType(const AType: &Type; const ObjectType: ITypeDescriptor);
-    procedure RegisterWindow(const AType: &Type; const Name: string; const CreateFunc: WindowFrameCreateFunc);
+    procedure RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);
 
     function  TypeByName(const Name: string) : &Type;
     function  TypeDescriptorByName(const Name: string) : ITypeDescriptor;
     function  TypeDescriptor(const AType: &Type): ITypeDescriptor;
 
-    function  WindowType(const AType: &Type; const Name: string) : IWindowType;
+    function  TryGetWindowType(const Name: string; out WindowType : IWindowType) : Boolean;
 
     property  Types: List<&Type> read get_Types;
   end;

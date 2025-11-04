@@ -25,8 +25,6 @@ type
     function  get_StorageName: CString;
     function  get_Binder: IContentBinder;
     procedure set_Binder(const Value: IContentBinder);
-    function  get_Builder: IContentBuilder;
-    procedure set_Builder(const Value: IContentBuilder);
     function  get_Provider: IContentProvider;
     procedure set_Provider(const Value: IContentProvider);
     function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor;
@@ -35,7 +33,6 @@ type
 
     property StorageName: CString read get_StorageName;
     property Binder: IContentBinder read get_Binder write set_Binder;
-    property Builder: IContentBuilder read get_Builder write set_Builder;
     property Provider: IContentProvider read get_Provider write set_Provider;
     property PropertyDescriptor[const Name: string]: IPropertyDescriptor read get_PropertyDescriptor;
   end;

@@ -130,9 +130,9 @@ object Form1: TForm1
       'storage.Attach(data);'
       ''
       
-        'const w = app.Windows.CreateWindow(Customer, app.Environment.Mai' +
-        'nWindow);'
-      'w.Build();'
+        'const w = app.Environment.CreateWindow(Customer, app.Environment' +
+        '.MainWindow);'
+      'w.CreateFrame('#39'Projects'#39');'
       'w.Bind(storage);'
       'w.Show();')
     StyledSettings = [Size, Style, FontColor]

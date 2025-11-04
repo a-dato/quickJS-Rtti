@@ -26,7 +26,6 @@ type
     _storageName: CString;
     _type: &Type;
     _binder: IContentBinder;
-    _builder: IContentBuilder;
     _provider: IContentProvider;
     _PropertyDescriptor: Dictionary<string, IPropertyDescriptor>;
 
@@ -37,8 +36,6 @@ type
     function  get_StorageName: CString; virtual;
     function  get_Binder: IContentBinder; virtual;
     procedure set_Binder(const Value: IContentBinder); virtual;
-    function  get_Builder: IContentBuilder; virtual;
-    procedure set_Builder(const Value: IContentBuilder); virtual;
     function  get_Provider: IContentProvider; virtual;
     procedure set_Provider(const Value: IContentProvider); virtual;
 
@@ -75,11 +72,6 @@ begin
   Result := _binder;
 end;
 
-function TTypeDescriptor.get_Builder: IContentBuilder;
-begin
-  Result := _builder;
-end;
-
 function TTypeDescriptor.get_PropertyDescriptor(const Name: string): IPropertyDescriptor;
 begin
   _PropertyDescriptor.TryGetValue(Name, Result);
@@ -98,11 +90,6 @@ end;
 procedure TTypeDescriptor.set_Binder(const Value: IContentBinder);
 begin
   _Binder := Value;
-end;
-
-procedure TTypeDescriptor.set_Builder(const Value: IContentBuilder);
-begin
-  _builder := Value;
 end;
 
 procedure TTypeDescriptor.set_Provider(const Value: IContentProvider);

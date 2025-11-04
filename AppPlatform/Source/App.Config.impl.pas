@@ -18,39 +18,22 @@ type
   TAppConfig = class(TBaseInterfacedObject, IAppConfig)
   protected
     _Types: Dictionary<&Type, ITypeDescriptor>;
-    _WindowTypes: Dictionary<&Type, List<IWindowType>>;
+    _WindowTypes: Dictionary<string {Name}, IWindowType>;
 
     function get_Types: List<&Type>;
 
     function  AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
     procedure RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
-    procedure RegisterWindow(const AType: &Type; const Name: string; const CreateFunc: WindowFrameCreateFunc);
+    procedure RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);
 
     function  TypeByName(const Name: string) : &Type;
     function  TypeDescriptor(const AType: &Type): ITypeDescriptor;
     function  TypeDescriptorByName(const Name: string) : ITypeDescriptor;
 
-    function  WindowType(const AType: &Type; const Name: string) : IWindowType;
+    function  TryGetWindowType(const Name: string; out WindowType : IWindowType) : Boolean;
   public
     constructor Create;
   end;
-
-//  TJSObjectType = class(TTypeDescriptor)
-//  protected
-//    _JSProto: IJSObject;
-//
-//    function  get_Binder: IContentBinder; override;
-//    function  get_Builder: IContentBuilder; override;
-//    function  get_Provider: IContentProvider; override;
-//    function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor; override;
-//
-//    //function  get_PropertyDescriptor: IPropertyDescriptors; override;
-//
-//  public
-//    constructor Create(const JSProto: IJSObject);
-//
-//    function  GetType: &Type; override;
-//  end;
 
 implementation
 
@@ -66,7 +49,7 @@ uses
 constructor TAppConfig.Create;
 begin
   _Types := CDictionary<&Type, ITypeDescriptor>.Create(10, TypeEqualityComparer.Create);
-  _WindowTypes := CDictionary<&Type, List<IWindowType>>.Create;
+  _WindowTypes := CDictionary<string, IWindowType>.Create;
 end;
 
 function TAppConfig.TypeDescriptor(const AType: &Type): ITypeDescriptor;
@@ -135,17 +118,9 @@ begin
       Exit(entry.Key);
 end;
 
-procedure TAppConfig.RegisterWindow(const AType: &Type; const Name: string; const CreateFunc: WindowFrameCreateFunc);
+procedure TAppConfig.RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);
 begin
-  var types: List<IWindowType>;
-
-  if not _WindowTypes.TryGetValue(AType, types) then
-  begin
-    types := CList<IWindowType>.Create;
-    _WindowTypes[AType] := types;
-  end;
-
-  types.Add(TWindowType.Create(AType, Name, CreateFunc));
+  _WindowTypes[Name] := TWindowType.Create(Name, CreateFunc);
 end;
 
 function TAppConfig.TypeDescriptorByName(const Name: string): ITypeDescriptor;
@@ -153,50 +128,10 @@ begin
   Result := TypeDescriptor(TypeByName(Name));
 end;
 
-function TAppConfig.WindowType(const AType: &Type; const Name: string): IWindowType;
+function TAppConfig.TryGetWindowType(const Name: string; out WindowType : IWindowType) : Boolean;
 begin
-  var types: List<IWindowType>;
-  if _WindowTypes.TryGetValue(AType, types) then
-    Result := types.Find(function(const Item: IWindowType) : Boolean begin
-      Result := Item.Name = Name;
-    end);
+  Result := _WindowTypes.TryGetValue(Name, WindowType);
 end;
-
-//{ TJSObjectType }
-//
-//constructor TJSObjectType.Create(const JSProto: IJSObject);
-//begin
-//  _JSProto := JSProto;
-//end;
-//
-//function TJSObjectType.GetType: &Type;
-//begin
-// Result := _JSProto.GetType;
-//end;
-//
-//function TJSObjectType.get_Binder: IContentBinder;
-//begin
-//  var v := _JSProto.Invoke('Binder', nil, TypeInfo(IContentBinder));
-//  Interfaces.Supports<IContentBinder>(v.AsInterface, Result);
-//end;
-//
-//function TJSObjectType.get_Builder: IContentBuilder;
-//begin
-//  var v := _JSProto.Invoke('Builder', nil, TypeInfo(IContentBuilder));
-//  Interfaces.Supports<IContentBuilder>(v.AsInterface, Result);
-//end;
-//
-//function TJSObjectType.get_PropertyDescriptor(const Name: string) : IPropertyDescriptor;
-//begin
-//  var v := _JSProto.Invoke('PropertyDescriptor', [Name], TypeInfo(IPropertyDescriptor));
-//  Interfaces.Supports<IPropertyDescriptor>(v.AsInterface, Result);
-//end;
-//
-//function TJSObjectType.get_Provider: IContentProvider;
-//begin
-//  var v := _JSProto.Invoke('Provider', nil, TypeInfo(IContentProvider));
-//  Interfaces.Supports<IContentProvider>(v.AsInterface, Result);
-//end;
 
 end.
 

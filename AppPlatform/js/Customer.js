@@ -48,7 +48,6 @@ export class AddressType {
 
 	constructor() {
 		this.Binder = new JSBinder();			// IContentBinder
-		this.Builder = new JSFrameBuilder();	// IContentBuilder
 		this.Provider = new AddressProvider();	// IContentProvider
 		this.PropertyDescriptor = {
 			// object property descriptor
@@ -203,7 +202,6 @@ export class CustomerType extends ITypeDescriptor_ {
 	constructor() {
 		super();
 		this.Binder = new JSBinder();			// IContentBinder
-		this.Builder = new JSFrameBuilder();	// IContentBuilder
 		this.Provider = new CustomerProvider();	// IContentProvider
 		this.PropertyDescriptor = {
 			Customer: {

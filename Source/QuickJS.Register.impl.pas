@@ -2172,7 +2172,7 @@ begin
 
     tkInterface:
     begin
-      if JS_IsNull(Value) then
+      if JS_IsNull(Value) or JS_IsUndefined(Value) then
         Exit;
 
       // Assign a JS function to a method reference?

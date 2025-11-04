@@ -6,6 +6,7 @@ uses
   System_,
   System.Collections.Generic,
   App.Intf,
+  App.Component.intf,
   App.Component.impl,
   App.Windows.intf,
   ADato.ObjectModel.List.intf,
@@ -16,21 +17,21 @@ uses
 type
   TWindow = class(TComponent, IWindow)
   protected
-    [weak] _app: IAppObject;
-    _form: TObject;  // TForm or other container
+    _control: TObject;  // TForm or other container
     _Frame: IWindowFrame;
     _Type: &Type;
+
+    function  get_Control: TObject;
 
     function  get_Frame: IWindowFrame;
     procedure set_Frame(const Value: IWindowFrame);
 
-    function  Build: IWindow; overload;
-    function  Build(const Builder: IContentBuilder): IWindow; overload;
+    function  CreateFrame(const Name: string) : IWindow;
     function  Bind(const Storage: IStorage) : IWindow;
-    function  Show(OnClose: WindowClose) : IWindow;
+    function  Show(OnClose: TWindowClose) : IWindow;
 
   public
-    constructor Create(const App: IAppObject; const AType: &Type; Form: TObject);
+    constructor Create(const AType: &Type; Form: TObject);
   end;
 
   TWindowFrame = class(TComponent, IWindowFrame)
@@ -41,60 +42,32 @@ type
     procedure set_Control(const Value: TObject);
 
   public
-    constructor Create(const AOwner: CObject; Control: TObject);
+    constructor Create(const AOwner: IWindow; Control: TObject);
   end;
 
   TWindowType = class(TBaseInterfacedObject, IWindowType)
   protected
     _name: string;
-    _objectType: &Type;
-    _creatorFunc: WindowFrameCreateFunc;
+    _creatorFunc: TFrameCreateFunc;
 
     function get_Name: CString;
-    function get_ObjectType: &Type;
 
-    function CreateFrame(const AOwner: CObject) : IWindowFrame;
+    function CreateFrame(const AOwner: IWindow) : IWindowFrame;
   public
-    constructor Create(const ObjectType: &Type; const Name: string; const CreatorFunc: WindowFrameCreateFunc);
-  end;
-
-  TWindows = class(CList<IWindow>, IWindows)
-  protected
-    function  CreateWindow(const AType: &Type; const AOwner: CObject) : IWindow; overload;
-    function  CreateWindow(const AType: &Type; const AOwner: CObject; const Name: string) : IWindow; overload;
+    constructor Create(const Name: string; const CreatorFunc: TFrameCreateFunc);
   end;
 
 implementation
 
 uses
-  FMX.Controls, FMX.Types, FMX.Forms;
+  {$IFDEF FRAMEWORK_VCL}
+  Vcl.Controls, Vcl.Forms
+  {$ELSE}
+  FMX.Controls, FMX.Types, FMX.Forms
+  {$ENDIF}
+  ;
 
-{ Windows }
 
-function TWindows.CreateWindow(const AType: &Type; const AOwner: CObject): IWindow;
-begin
-  Result := CreateWindow(AType, AOwner, AType.Name);
-//  var ot := _app.Config.TypeDescriptor(AType);
-//  if ot = nil then
-//    raise CException.Create('Unknown type');
-//
-//  var frame := _app.Environment.CreateWindowFrame(AOwner, AType);
-//  Result := TWindow.Create(_app, frame, AType);
-end;
-
-function TWindows.CreateWindow(const AType: &Type; const AOwner: CObject; const Name: string) : IWindow;
-begin
-  var wt := _app.Config.WindowType(AType, Name);
-  if wt = nil then
-    raise CException.Create('Window type not registered for: ' + AType.Name);
-
-  var window := _app.Environment.CreateWindow(AType, AOwner);
-
-  var frame := wt.CreateFrame(AOwner);
-  window.Frame := frame;
-
-  Result := window;
-end;
 { Window }
 
 function TWindow.Bind(const Storage: IStorage): IWindow;
@@ -104,23 +77,27 @@ begin
   Result := Self;
 end;
 
-function TWindow.Build: IWindow;
+constructor TWindow.Create(const AType: &Type; Form: TObject);
 begin
-//  Result := Build(_app.Config.TypeDescriptor(_Type).Builder);
-end;
-
-function TWindow.Build(const Builder: IContentBuilder): IWindow;
-begin
-//  _frame.Content := _app.Config.TypeDescriptor(_Type).Builder.Build(_frame.Owner);
-//  _frame.Content.AsType<TControl>.Align := TAlignLayout.Client;
-//  Result := Self;
-end;
-
-constructor TWindow.Create(const App: IAppObject; const AType: &Type; Form: TObject);
-begin
-  _app := App;
   _type := AType;
-  _form := Form;
+  _control := Form;
+end;
+
+function TWindow.CreateFrame(const Name: string) : IWindow;
+begin
+  var wt: IWindowType;
+  if not _app.Config.TryGetWindowType(Name, wt) then
+    raise CException.Create(CString.Format('Frame not registered: {0}', Name));
+
+  var frame := wt.CreateFrame(Self);
+  set_Frame(frame);
+
+  Result := Self;
+end;
+
+function TWindow.get_Control: TObject;
+begin
+  Result := _control;
 end;
 
 function TWindow.get_Frame: IWindowFrame;
@@ -131,32 +108,42 @@ end;
 procedure TWindow.set_Frame(const Value: IWindowFrame);
 begin
   _frame := Value;
-  if (_form is TFmxObject) and (_frame.Control is TControl) then
+
+  {$IFDEF FRAMEWORK_VCL}
+  if (_control is TWinControl) and (_frame.Control is TWinControl) then
+  begin
+    var c := _frame.Control as TControl;
+    c.Parent := _control as TWinControl;
+    c.Align := TAlign.alClient;
+  end;
+  {$ELSE}
+  if (_control is TFmxObject) and (_frame.Control is TControl) then
   begin
     var c: TControl := _frame.Control as TControl;
-    (_form as TFmxObject).AddObject(c);
+    (_control as TFmxObject).AddObject(c);
     c.Align := TAlignLayout.Client;
   end;
+  {$ENDIF}
 end;
 
-function TWindow.Show(OnClose: WindowClose): IWindow;
+function TWindow.Show(OnClose: TWindowClose): IWindow;
 begin
-  if _form is TForm then
-    (_form as TForm).Show;
+  // Works with VCL and FMX
+  if _control is TForm then
+    (_control as TForm).Show;
 
   Result := Self;
 end;
 
 { WindowType }
 
-constructor TWindowType.Create(const ObjectType: &Type; const Name: string; const CreatorFunc: WindowFrameCreateFunc);
+constructor TWindowType.Create(const Name: string; const CreatorFunc: TFrameCreateFunc);
 begin
-  _objectType := ObjectType;
   _name := Name;
   _creatorFunc := CreatorFunc;
 end;
 
-function TWindowType.CreateFrame(const AOwner: CObject): IWindowFrame;
+function TWindowType.CreateFrame(const AOwner: IWindow): IWindowFrame;
 begin
   Result := _creatorFunc(AOwner);
 end;
@@ -166,14 +153,9 @@ begin
   Result := _Name;
 end;
 
-function TWindowType.get_ObjectType: &Type;
-begin
-  Result := _objectType;
-end;
-
 { TWindowFrame }
 
-constructor TWindowFrame.Create(const AOwner: CObject; Control: TObject);
+constructor TWindowFrame.Create(const AOwner: IWindow; Control: TObject);
 begin
   inherited Create(nil);
   _control := Control;

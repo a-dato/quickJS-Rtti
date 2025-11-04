@@ -23,7 +23,6 @@ type
   protected
     _Config: IAppConfig;
     _Environment: IEnvironment;
-    _Windows: IWindows;
     _typeConverter: ITypeConverter;
     _extendabePropertyValues: Dictionary<string, JSValue>;
 
@@ -33,7 +32,6 @@ type
     function get_Config: IAppConfig;
     function get_Environment: IEnvironment;
     function get_Factory: IAppFactory;
-    function get_Windows: IWindows;
 
     // IConverterSupport
     function  get_Converter: ITypeConverter;
@@ -67,7 +65,6 @@ begin
 
   _Environment := Environment;
   _Config := TAppConfig.Create;
-  _Windows := TWindows.Create;
   _extendabePropertyValues := CDictionary<string, JSValue>.Create;
 end;
 
@@ -108,11 +105,6 @@ end;
 function TAppObject.get_Factory: IAppFactory;
 begin
   Result := TAppFactory.Instance;
-end;
-
-function TAppObject.get_Windows: IWindows;
-begin
-  Result := _Windows;
 end;
 
 procedure TAppObject.SetValue(Ctx: JSContext; const Name: string; Value: JSValue);
