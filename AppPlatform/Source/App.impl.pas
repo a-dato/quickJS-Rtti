@@ -67,7 +67,7 @@ begin
 
   _Environment := Environment;
   _Config := TAppConfig.Create;
-  _Windows := Windows.Create;
+  _Windows := TWindows.Create;
   _extendabePropertyValues := CDictionary<string, JSValue>.Create;
 end;
 

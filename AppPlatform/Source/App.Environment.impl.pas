@@ -30,7 +30,7 @@ type
 
     function get_TickCount: Integer;
 
-    function CreateWindowFrame(const AOwner: CObject; const AType: &Type) : IWindowFrame;
+    function CreateWindow(const AType: &Type; const AOwner: CObject)  : IWindow;
 
   public
     class constructor Create;
@@ -39,15 +39,15 @@ type
 
   TFrameBuilder = class(TBaseInterfacedObject, IContentBuilder)
   protected
-    _creator: WindowCreateFunc;
+    _creator: WindowFrameCreateFunc;
 
     // IContentBuilder
     function Build(const AOwner: CObject): CObject;
 
   public
-    constructor Create(const ACreator: WindowCreateFunc);
+    constructor Create(const ACreator: WindowFrameCreateFunc);
 
-    property Creator: WindowCreateFunc read _creator;
+    property Creator: WindowFrameCreateFunc read _creator;
   end;
 
   TFrameBinder = class(TBaseInterfacedObject, IContentBinder)
@@ -55,7 +55,7 @@ type
     _handlers: List<IContextChangedHandler>;
 
     procedure BindChildren(const AType: &Type; const Children: TFmxChildrenList; const AModel: IObjectListModel);
-    procedure Bind(const AContent: CObject; const AType: &Type; const Storage: IStorage);
+    procedure Bind(const AType: &Type; const Control: TObject; const Storage: IStorage);
 
     function WrapProperty(const AProp: _PropertyInfo) : _PropertyInfo; virtual;
   public
@@ -77,7 +77,8 @@ uses
   ,FMX.Controls
   ,FMX.ScrollControl.DataControl.Impl
   , ADato.ObjectModel.List.impl
-  , App.ObjectModelWithDescriptor.impl;
+  , App.ObjectModelWithDescriptor.impl
+  , App.Windows.impl;
 
 { Environment }
 
@@ -86,14 +87,14 @@ begin
 
 end;
 
-function Environment.CreateWindowFrame(const AOwner: CObject; const AType: &Type) : IWindowFrame;
+function Environment.CreateWindow(const AType: &Type; const AOwner: CObject) : IWindow;
 begin
   var cmp: TComponent := nil;
   if (AOwner <> nil) and not AOwner.TryAsType<TComponent>(cmp) then
     raise ArgumentException.Create('AOwner must be of type TComponent');
 
   var f := FormClass.Create(cmp);
-  Result := TWindowFrame.Create(f);
+  Result := TWindow.Create(_app, AType, f);
 end;
 
 function Environment.get_MainForm: IWindow;
@@ -117,7 +118,7 @@ begin
 //  (Result as TFrame).Owner
 end;
 
-constructor TFrameBuilder.Create(const ACreator: WindowCreateFunc);
+constructor TFrameBuilder.Create(const ACreator: WindowFrameCreateFunc);
 begin
   _creator := ACreator;
 end;
@@ -236,13 +237,14 @@ begin
     Result := AProp;
 end;
 
-procedure TFrameBinder.Bind(const AContent: CObject; const AType: &Type; const Storage: IStorage);
+procedure TFrameBinder.Bind(const AType: &Type; const Control: TObject; const Storage: IStorage);
 begin
   _handlers := CList<IContextChangedHandler>.Create;
 
-  var ctrl: TControl;
-  if AContent.TryAsType<TControl>(ctrl) then
+  if Control is TControl then
   begin
+    var ctrl: TControl := Control as TControl;
+
     // var objectType := _app.Config.TypeDescriptor(AType);
 
     var model: IObjectListModel := nil;

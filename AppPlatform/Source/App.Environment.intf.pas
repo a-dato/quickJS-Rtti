@@ -14,7 +14,7 @@ type
     function get_MainForm: IWindow;
     function get_TickCount: Integer;
 
-    function CreateWindowFrame(const AOwner: CObject; const AType: &Type) : IWindowFrame;
+    function CreateWindow(const AType: &Type; const AOwner: CObject)  : IWindow;
 
     property MainForm: IWindow read get_MainForm;
     property TickCount: Integer read get_TickCount;

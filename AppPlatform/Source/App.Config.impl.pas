@@ -18,17 +18,19 @@ type
   TAppConfig = class(TBaseInterfacedObject, IAppConfig)
   protected
     _Types: Dictionary<&Type, ITypeDescriptor>;
-    _WindowTypes: Dictionary<&Type, IWindowType>;
+    _WindowTypes: Dictionary<&Type, List<IWindowType>>;
 
     function get_Types: List<&Type>;
 
     function  AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
     procedure RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
-    procedure RegisterWindow(const AType: &Type; const Name: string; const CreateFunc: WindowCreateFunc);
+    procedure RegisterWindow(const AType: &Type; const Name: string; const CreateFunc: WindowFrameCreateFunc);
 
     function  TypeByName(const Name: string) : &Type;
     function  TypeDescriptor(const AType: &Type): ITypeDescriptor;
     function  TypeDescriptorByName(const Name: string) : ITypeDescriptor;
+
+    function  WindowType(const AType: &Type; const Name: string) : IWindowType;
   public
     constructor Create;
   end;
@@ -64,6 +66,7 @@ uses
 constructor TAppConfig.Create;
 begin
   _Types := CDictionary<&Type, ITypeDescriptor>.Create(10, TypeEqualityComparer.Create);
+  _WindowTypes := CDictionary<&Type, List<IWindowType>>.Create;
 end;
 
 function TAppConfig.TypeDescriptor(const AType: &Type): ITypeDescriptor;
@@ -132,14 +135,31 @@ begin
       Exit(entry.Key);
 end;
 
-procedure TAppConfig.RegisterWindow(const AType: &Type; const Name: string; const CreateFunc: WindowCreateFunc);
+procedure TAppConfig.RegisterWindow(const AType: &Type; const Name: string; const CreateFunc: WindowFrameCreateFunc);
 begin
+  var types: List<IWindowType>;
 
+  if not _WindowTypes.TryGetValue(AType, types) then
+  begin
+    types := CList<IWindowType>.Create;
+    _WindowTypes[AType] := types;
+  end;
+
+  types.Add(TWindowType.Create(AType, Name, CreateFunc));
 end;
 
 function TAppConfig.TypeDescriptorByName(const Name: string): ITypeDescriptor;
 begin
   Result := TypeDescriptor(TypeByName(Name));
+end;
+
+function TAppConfig.WindowType(const AType: &Type; const Name: string): IWindowType;
+begin
+  var types: List<IWindowType>;
+  if _WindowTypes.TryGetValue(AType, types) then
+    Result := types.Find(function(const Item: IWindowType) : Boolean begin
+      Result := Item.Name = Name;
+    end);
 end;
 
 //{ TJSObjectType }

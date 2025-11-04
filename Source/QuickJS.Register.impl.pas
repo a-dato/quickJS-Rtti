@@ -1745,7 +1745,7 @@ begin
     Result := FConstructor;
 
     if Result = nil then
-      raise Exception.Create('Constructor returned nil');
+      raise Exception.Create('Failed to object of type: ' + FTypeInfo.Name + ', Constructor returned nil');
 
     if get_IsInterface then
     try

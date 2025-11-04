@@ -158,7 +158,7 @@ uses
   App.Factory.impl,
   System.TypInfo,
   QuickJS.VirtualMethod.impl, App.Storage.intf, App.Storage.impl,
-  App.Config.intf, App.Windows.intf;
+  App.Config.intf, App.Windows.intf, App.Windows.impl;
 
 {$R *.fmx}
 
@@ -187,10 +187,14 @@ end;
 
 procedure TForm1.btnCustomerClick(Sender: TObject);
 begin
-  _app.Windows.CreateWindow(TProject.Type, Self).
-    Build.
-      Bind(_app.Storage[TProject.TypeDescriptor.StorageName]).
-        Show(nil);
+  _app.Windows.CreateWindow(TProject.Type, Self, 'Projects')
+    .Bind(_app.Storage[TProject.TypeDescriptor.StorageName])
+      .Show(nil);
+
+//  _app.Windows.CreateWindow(TProject.Type, Self, 'Projects').
+//    Build.
+//      Bind(_app.Storage[TProject.TypeDescriptor.StorageName]).
+//        Show(nil);
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
@@ -283,7 +287,7 @@ end;
 
 procedure TForm1.Button6Click(Sender: TObject);
 begin
-;
+  // var f := TForm1.Create(Self);
 end;
 
 procedure TForm1.Button7Click(Sender: TObject);
@@ -319,8 +323,8 @@ begin
 
   _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
 
-  _app.Config.RegisterWindow(TProject.Type, 'Projects', function(const AOwner: CObject) : IWindow begin
-
+  _app.Config.RegisterWindow(TProject.Type, 'Projects', function(const AOwner: CObject) : IWindowFrame begin
+    Result := TWindowFrame.Create(AOwner, TProjectFrame.Create(AOwner.AsType<TComponent>));
   end);
 
   // TProject.TypeDescriptor.Builder := TFrameBuilder.Create(TProjectFrame);
@@ -342,60 +346,59 @@ begin
   begin
     QuickJS.Register.impl.OutputLogString := LogCallBack;
 
-    _context := TJSContext.Create(TJSRuntime.Create);
-
-    TJSRegisterTypedObjects.Initialize(_context);
+    TJSRegisterTypedObjects.Initialize;
 
 //    TJSRegister.RegisterObject(_context, 'ObjectList', TypeInfo(List<JSObjectReference>),
 //      function : Pointer begin
 //        Result := CList<JSObjectReference>.Create;
 //      end);
 
-    TJSRegister.RegisterObject(_context, 'List', TypeInfo(List<CObject>),
+    TJSRegister.RegisterObject('List', TypeInfo(List<CObject>),
       function : Pointer begin
         Result := CList<CObject>.Create;
       end);
 
-    TJSRegister.RegisterObject(_context, 'ObjectModel', TypeInfo(IObjectListModelChangeTracking),
+    TJSRegister.RegisterObject('ObjectModel', TypeInfo(IObjectListModelChangeTracking),
       function : Pointer begin
         Result := TObjectListModelWithChangeTracking<IJSObject>.Create(nil);
       end);
 
-    TJSRegister.RegisterObject(_context, 'JSBinder', TypeInfo(IContentBinder),
+    TJSRegister.RegisterObject('JSBinder', TypeInfo(IContentBinder),
       function : Pointer begin
         Result := TFrameBinder.Create();
       end);
 
-    TJSRegister.RegisterObject(_context, 'JSFrameBuilder', TypeInfo(IContentBuilder),
+    TJSRegister.RegisterObject('JSFrameBuilder', TypeInfo(IContentBuilder),
       function : Pointer begin
-        Assert(False);
-        // Result := TFrameBuilder.Create(TJSGeneralFrame);
-        //Result := TFrameBuilder.Create(TCustomerFrame);
+        // Result := TFrameBuilder.Create(TCustomerFrame);
+        Result := TFrameBuilder.Create(nil);
       end);
 
-    TJSRegister.RegisterObject(_context, 'XMLHttpRequest', TypeInfo(IXMLHttpRequest),
+    TJSRegister.RegisterObject('XMLHttpRequest', TypeInfo(IXMLHttpRequest),
       function : Pointer begin
         Result := TXMLHttpRequest.Create;
       end);
 
-    TJSRegister.RegisterObject(_context, 'IBaseInterface', TypeInfo(IBaseInterface), nil);
-    TJSRegister.RegisterObject(_context, 'IAddingNew', TypeInfo(IAddingNew), nil);
-    TJSRegister.RegisterObject(_context, 'IAddRange', TypeInfo(IAddRange), nil);
-    TJSRegister.RegisterObject(_context, 'ICloneable', TypeInfo(ICloneable), nil);
-    TJSRegister.RegisterObject(_context, 'IEditState', TypeInfo(IEditState), nil);
-    TJSRegister.RegisterObject(_context, 'IEditableModel', TypeInfo(IEditableModel), nil);
-    TJSRegister.RegisterObject(_context, 'IOnItemChangedSupport', TypeInfo(IOnItemChangedSupport), nil);
-    TJSRegister.RegisterObject(_context, 'IUpdatableObject', TypeInfo(IUpdatableObject), nil);
-    TJSRegister.RegisterObject(_context, 'IProject', TypeInfo(IProject), nil);
-    TJSRegister.RegisterObject(_context, 'IStorage', TypeInfo(IStorage), nil);
-    TJSRegister.RegisterObject(_context, 'IStorageSupport', TypeInfo(IStorageSupport), nil);
+    TJSRegister.RegisterObject('IBaseInterface', TypeInfo(IBaseInterface), nil);
+    TJSRegister.RegisterObject('IAddingNew', TypeInfo(IAddingNew), nil);
+    TJSRegister.RegisterObject('IAddRange', TypeInfo(IAddRange), nil);
+    TJSRegister.RegisterObject('ICloneable', TypeInfo(ICloneable), nil);
+    TJSRegister.RegisterObject('IEditState', TypeInfo(IEditState), nil);
+    TJSRegister.RegisterObject('IEditableModel', TypeInfo(IEditableModel), nil);
+    TJSRegister.RegisterObject('IOnItemChangedSupport', TypeInfo(IOnItemChangedSupport), nil);
+    TJSRegister.RegisterObject('IUpdatableObject', TypeInfo(IUpdatableObject), nil);
+    TJSRegister.RegisterObject('IProject', TypeInfo(IProject), nil);
+    TJSRegister.RegisterObject('IStorage', TypeInfo(IStorage), nil);
+    TJSRegister.RegisterObject('IStorageSupport', TypeInfo(IStorageSupport), nil);
 
-    TJSRegister.RegisterLiveObject(_context, 'app', TypeInfo(IAppObject), _app);
-
-    TJSRegister.RegisterObject(_context, 'ITestObject', TypeInfo(ITestObject),
+    TJSRegister.RegisterObject('ITestObject', TypeInfo(ITestObject),
       function : Pointer begin
         Result := TTestObject.Create;
       end);
+
+    _context := TJSRegister.CreateContext;
+
+    TJSRegister.RegisterLiveObject(_context, 'app', TypeInfo(IAppObject), _app);
 
     _test := TTestObject.Create;
     TJSRegister.RegisterLiveObject(_context, 'tst', TypeInfo(ITestObject), _test);

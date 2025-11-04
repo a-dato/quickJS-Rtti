@@ -11,12 +11,12 @@ uses
 type
   TWindowFrame = class(TComponent, IWindowFrame)
   protected
-    _content: CObject;
+    _control: TObject;
     _handle: TForm;
     _onClose: WindowClose;
 
-    function  get_Content: CObject;
-    procedure set_Content(const Value: CObject);
+    function  get_Control: TObject;
+    procedure set_Control(const Value: TObject);
 
     procedure Show(OnClose: WindowClose);
 
@@ -36,18 +36,17 @@ begin
   _handle := AHandle;
 end;
 
-function TWindowFrame.get_Content: CObject;
+function TWindowFrame.get_Control: TObject;
 begin
-  Result := _content;
+  Result := _control;
 end;
 
-procedure TWindowFrame.set_Content(const Value: CObject);
+procedure TWindowFrame.set_Control(const Value: TObject);
 begin
-  _content := Value;
+  _control := Value;
 
-  var fr: TFrame;
-  if _content.TryAsType<TFrame>(fr) then
-    _handle.AddObject(fr);
+  if _control is TFrame then
+    _handle.AddObject(_control as TFrame);
 end;
 
 procedure TWindowFrame.FormClose(Sender: TObject; var Action: TCloseAction);

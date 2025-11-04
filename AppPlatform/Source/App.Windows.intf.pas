@@ -12,19 +12,18 @@ uses
 type
   {$M+}
   IWindow = interface;
+  IWindowFrame = interface;
 
-  WindowCreateFunc = reference to function(const AOwner: CObject) : IWindow;
+  WindowFrameCreateFunc = reference to function(const AOwner: CObject) : IWindowFrame;
   WindowClose = reference to procedure(const Window: IWindow);
 
   {$M+}
   IWindowFrame = interface(IComponent)
 
-    function  get_Content: CObject;
-    procedure set_Content(const Value: CObject);
+    function  get_Control: TObject;
+    procedure set_Control(const Value: TObject);
 
-    procedure Show(OnClose: WindowClose);
-
-    property Content: CObject read get_Content write set_Content;
+    property Control: TObject read get_Control write set_Control;
   end;
 
   {$M+}
@@ -33,7 +32,7 @@ type
     function get_Name: CString;
     function get_ObjectType: &Type;
 
-    function CreateInstance(const AOwner: CObject) : IWindow;
+    function CreateFrame(const AOwner: CObject) : IWindowFrame;
 
     property ObjectType: &Type read get_ObjectType;
     property Name: CString read get_Name;
@@ -43,18 +42,19 @@ type
   IWindow = interface(IComponent)
 
     function  get_Frame: IWindowFrame;
+    procedure set_Frame(const Value: IWindowFrame);
 
     function  Build: IWindow; overload;
     function  Build(const Builder: IContentBuilder): IWindow; overload;
     function  Bind(const Storage: IStorage): IWindow;
     function  Show(OnClose: WindowClose): IWindow;
 
-    property Frame: IWindowFrame read get_Frame;
+    property Frame: IWindowFrame read get_Frame write set_Frame;
   end;
 
   IWindows = interface(List<IWindow>)
     function  CreateWindow(const AType: &Type; const AOwner: CObject) : IWindow; overload;
-    function  CreateWindow(const AType: &Type; const AOwner: CObject; const FrameClassName: string) : IWindow; overload;
+    function  CreateWindow(const AType: &Type; const AOwner: CObject; const Name: string) : IWindow; overload;
   end;
 
 implementation

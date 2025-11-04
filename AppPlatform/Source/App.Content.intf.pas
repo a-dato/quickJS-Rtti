@@ -13,7 +13,7 @@ type
 
   {$M+}
   IContentBinder = interface(IBaseInterface)
-    procedure Bind(const AContent: CObject; const AType: &Type; const Storage: IStorage);
+    procedure Bind(const AType: &Type; const Control: TObject; const Storage: IStorage);
   end;
 
   {$M+}
