@@ -18,7 +18,7 @@ type
   TTestFunc = reference to function(const Param: string) : string;
   TGenFunc<T> = reference to function : T;
 
-  TForm1 = class(TForm, IAppIntegration)
+  TForm1 = class(TForm {, IAppActions})
     Layout1: TLayout;
     mmCode: TMemo;
     mmLog: TMemo;
@@ -63,8 +63,9 @@ type
     { Private declarations }
 
   protected
-    // IAppIntegration
-    function OpenObject(const AObject: CObject) : Boolean;
+    function IsOpen(const AObject: CObject) : Boolean;
+    function Open(const AObject: CObject) : Boolean;
+    function Close(const AObject: CObject) : Boolean;
 
   public
     _context: IJSContext;
@@ -313,6 +314,11 @@ begin
 //
 end;
 
+function TForm1.Close(const AObject: CObject): Boolean;
+begin
+
+end;
+
 function TForm1.CreateTestFunc: TTestFunc;
 begin
   Result := function(const Param: string) : string begin
@@ -325,7 +331,8 @@ begin
   App.Environment.impl.Environment.FormClass := TfrmObjectWindow;
 
   {$IFDEF FRAMEWORK_FMX}
-  _app := TAppObject.Create(App.Environment.impl.Environment.Create(Self));
+  // _app := TAppObject.Create(App.Environment.impl.Environment.Create(Self));
+  _app := TAppObject.Create(App.Environment.impl.Environment.Create(nil));
   {$ENDIF}
 
   _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
@@ -353,6 +360,11 @@ begin
 
   var storage := _app.AddStorage(TProject.Type, TProject.TypeDescriptor.StorageName);
   storage.Attach(TProject.TypeDescriptor.Provider.Data(nil));
+end;
+
+function TForm1.IsOpen(const AObject: CObject): Boolean;
+begin
+
 end;
 
 procedure TForm1.Initialize;
@@ -431,7 +443,7 @@ begin
   end);
 end;
 
-function TForm1.OpenObject(const AObject: CObject): Boolean;
+function TForm1.Open(const AObject: CObject): Boolean;
 begin
   Result := True;
 end;

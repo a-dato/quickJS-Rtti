@@ -20,6 +20,7 @@ uses
   VCL.Controls,
   VCL.Forms
   {$ELSE}
+  FMX.Controls,
   FMX.Forms,
   FMX.Types
   {$ENDIF}
@@ -41,7 +42,7 @@ type
     class var _MainWindow: IWindow;
 
   protected
-    _appIntegration: IAppIntegration;
+    _appActions: IAppActions;
 
     function get_MainWindow: IWindow;
 
@@ -53,7 +54,7 @@ type
     function Close(const AObject: CObject) : Boolean;
 
   public
-    constructor Create(const AppIntegration: IAppIntegration);
+    constructor Create(const AppActions: IAppActions);
     class property FormClass: TFormClass read _FormClass write _FormClass;
   end;
 
@@ -61,7 +62,11 @@ type
   protected
     _handlers: List<IContextChangedHandler>;
 
-    function  CreateChildrenList(const AControl: TControl) : TChildrenList;
+    {$IFDEF FRAMEWORK_VCL}
+    function  CreateChildrenList(const AControl: TWinControl) : TChildrenList;
+    {$ELSE}
+    function  CreateChildrenList(const AControl: TFmxObject) : TChildrenList;
+    {$ENDIF}
     procedure BindChildren(const AType: &Type; const Children: TChildrenList; const AModel: IObjectListModel);
     procedure Bind(const AType: &Type; const Control: TObject; const Storage: IStorage);
 
@@ -83,7 +88,12 @@ uses
   App.PropertyDescriptor.intf,
   ADato.ObjectModel.List.impl,
   App.ObjectModelWithDescriptor.impl,
-  App.Windows.impl;
+  App.Windows.impl
+  {$IFDEF FRAMEWORK_VCL}
+  {$ELSE}
+  , FMX.ScrollControl.DataControl.Impl
+  {$ENDIF}
+  ;
 
 { Environment }
 
@@ -92,9 +102,9 @@ begin
 
 end;
 
-constructor Environment.Create(const AppIntegration: IAppIntegration);
+constructor Environment.Create(const AppActions: IAppActions);
 begin
-  _appIntegration := AppIntegration;
+  _appActions := AppActions;
 end;
 
 function Environment.CreateWindow(const AType: &Type; const AOwner: IComponent) : IWindow;
@@ -127,20 +137,23 @@ end;
 
 function Environment.Open(const AObject: CObject): Boolean;
 begin
-  Result := _appIntegration.OpenObject(AObject);
+  Result := _appActions.Open(AObject);
 end;
 
 { TFrameBinder }
-function TFrameBinder.CreateChildrenList(const AControl: TControl) : TChildrenList;
+{$IFDEF FRAMEWORK_VCL}
+function TFrameBinder.CreateChildrenList(const AControl: TWinControl) : TChildrenList;
 begin
-  {$IFDEF FRAMEWORK_VCL}
-  Result := CList<TControl>.Create(AControl.ChildrenCount);
-  for var i := 0 to AControl.ChildrenCount - 1 do
-    Result.Add(AControl.Children[i]);
-  {$ELSE}
-  Result := AControl.Children;
-  {$ENDIF}
+  Result := CList<TControl>.Create(AControl.ControlCount);
+  for var i := 0 to AControl.ControlCount -  1 do
+    Result.Add(AControl.Controls[i]);
 end;
+{$ELSE}
+function TFrameBinder.CreateChildrenList(const AControl: TFmxObject) : TChildrenList;
+begin
+  Result := AControl.Children;
+end;
+{$ENDIF}
 
 procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TChildrenList; const AModel: IObjectListModel);
 
@@ -202,6 +215,7 @@ procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TChildre
   end;
 
 begin
+  {$IFDEF FRAMEWORK_FMX}
   for var c in Children do
   begin
     // Name looks like
@@ -238,6 +252,7 @@ begin
     if c.ChildrenCount > 0 then
       BindChildren(AType, CreateChildrenList(c), AModel);
   end;
+  {$ENDIF}
 end;
 
 function TFrameBinder.WrapProperty(const AProp: _PropertyInfo): _PropertyInfo;
@@ -249,6 +264,7 @@ end;
 
 procedure TFrameBinder.Bind(const AType: &Type; const Control: TObject; const Storage: IStorage);
 begin
+  {$IFDEF FRAMEWORK_FMX}
   _handlers := CList<IContextChangedHandler>.Create;
 
   if Control is TControl then
@@ -261,31 +277,17 @@ begin
     model := TObjectListModelWithChangeTracking<IBaseInterface>.Create(AType);
     model.Context := Storage.Data;
 
-//    if not Storage.Data.TryAsType<IObjectListModel>(model) then
-//    begin
-//      var list: IList;
-//      if Storage.Data.TryAsType<IList>(list) then
-//      begin
-//        model := TObjectListModelWithChangeTracking<IBaseInterface>.Create(AType);
-//        model.Context := list;
-//      end;
-//    end;
-
     if model <> nil then
     begin
       // var tp := model.ObjectModel.GetType;
       if ctrl.ChildrenCount > 0 then
       begin
-//        var editorManager: IEditorManager;
-//        if Interfaces.Supports<IEditorManager>(ctrl, editorManager) then
-//          editorManager.Bind(model.ObjectModelContext);
-//
-//        BindChildren(ctrl.Children, model, editorManager, AType, objectType);
         BindChildren(AType, ctrl.Children, model);
       end;
     end else
       raise CException.Create('Data is invalid');
   end;
+  {$ENDIF}
 end;
 
 end.
