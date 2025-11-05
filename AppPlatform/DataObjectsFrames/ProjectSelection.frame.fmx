@@ -1,0 +1,115 @@
+object ProjectSelectionFrame: TProjectSelectionFrame
+  Size.Width = 346.000000000000000000
+  Size.Height = 586.000000000000000000
+  Size.PlatformDefault = False
+  object IProject_Model: TDataControl
+    Align = Client
+    HitTest = True
+    Size.Width = 346.000000000000000000
+    Size.Height = 494.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid, TreeOption_MultiSelect]
+    RowHeightDefault = 30.000000000000000000
+    HeaderHeight = 24.000000000000000000
+    AutoExtraColumnSizeMax = -1.000000000000000000
+    CellTopBottomPadding = 5.000000000000000000
+    CellLeftRightPadding = 5.000000000000000000
+    Columns_ = 
+      '<Columns><Item type="TDCTreeCheckboxColumn"><Caption>*</Caption>' +
+      '<InfoControlClass>CheckBox</InfoControlClass><WidthSettings><Wid' +
+      'thType>Pixel</WidthType><Width>50</Width><WidthMin>50</WidthMin>' +
+      '<WidthMax>50</WidthMax></WidthSettings><Visualisation><Visible>T' +
+      'rue</Visible><Frozen>False</Frozen><ReadOnly>False</ReadOnly><Se' +
+      'lectable>True</Selectable><AllowResize>False</AllowResize><Allow' +
+      'Hide>False</AllowHide><HideWhenEmpty>False</HideWhenEmpty><HideG' +
+      'rid>False</HideGrid><IgnoreHeightByRowCalculation>False</IgnoreH' +
+      'eightByRowCalculation></Visualisation><SortAndFilter><Sort>None<' +
+      '/Sort><ShowSortMenu>False</ShowSortMenu><ShowFilterMenu>False</S' +
+      'howFilterMenu></SortAndFilter><SubControlSettings><SubInfoContro' +
+      'lClass>Custom</SubInfoControlClass></SubControlSettings><Hierarc' +
+      'hy><ShowHierarchy>False</ShowHierarchy><Indent>0</Indent></Hiera' +
+      'rchy></Item><Item type="TDCTreeColumn"><Caption>ID</Caption><Pro' +
+      'pertyName>ID</PropertyName><InfoControlClass>Text</InfoControlCl' +
+      'ass><WidthSettings><WidthType>Pixel</WidthType><Width>50</Width>' +
+      '<WidthMin>50</WidthMin><WidthMax>50</WidthMax></WidthSettings><V' +
+      'isualisation><Visible>True</Visible><Frozen>False</Frozen><ReadO' +
+      'nly>False</ReadOnly><Selectable>True</Selectable><AllowResize>Fa' +
+      'lse</AllowResize><AllowHide>False</AllowHide><HideWhenEmpty>Fals' +
+      'e</HideWhenEmpty><HideGrid>False</HideGrid><IgnoreHeightByRowCal' +
+      'culation>False</IgnoreHeightByRowCalculation></Visualisation><So' +
+      'rtAndFilter><Sort>None</Sort><ShowSortMenu>False</ShowSortMenu><' +
+      'ShowFilterMenu>False</ShowFilterMenu></SortAndFilter><SubControl' +
+      'Settings><SubInfoControlClass>Custom</SubInfoControlClass></SubC' +
+      'ontrolSettings><Hierarchy><ShowHierarchy>False</ShowHierarchy><I' +
+      'ndent>0</Indent></Hierarchy></Item><Item type="TDCTreeColumn"><C' +
+      'aption>Name</Caption><PropertyName>Name</PropertyName><InfoContr' +
+      'olClass>Text</InfoControlClass><WidthSettings><WidthType>Pixel</' +
+      'WidthType><Width>50</Width><WidthMin>50</WidthMin><WidthMax>50</' +
+      'WidthMax></WidthSettings><Visualisation><Visible>True</Visible><' +
+      'Frozen>False</Frozen><ReadOnly>False</ReadOnly><Selectable>True<' +
+      '/Selectable><AllowResize>False</AllowResize><AllowHide>False</Al' +
+      'lowHide><HideWhenEmpty>False</HideWhenEmpty><HideGrid>False</Hid' +
+      'eGrid><IgnoreHeightByRowCalculation>False</IgnoreHeightByRowCalc' +
+      'ulation></Visualisation><SortAndFilter><Sort>None</Sort><ShowSor' +
+      'tMenu>False</ShowSortMenu><ShowFilterMenu>False</ShowFilterMenu>' +
+      '</SortAndFilter><SubControlSettings><SubInfoControlClass>Custom<' +
+      '/SubInfoControlClass></SubControlSettings><Hierarchy><ShowHierar' +
+      'chy>False</ShowHierarchy><Indent>0</Indent></Hierarchy></Item></' +
+      'Columns>'#13#10
+  end
+  object Layout1: TLayout
+    Align = Top
+    Size.Width = 346.000000000000000000
+    Size.Height = 50.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    object Label1: TLabel
+      Position.X = 24.000000000000000000
+      Position.Y = 8.000000000000000000
+      Size.Width = 65.000000000000000000
+      Size.Height = 17.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Project:'
+      TabOrder = 0
+    end
+    object IProject_Name_1: TLabel
+      Position.X = 86.000000000000000000
+      Position.Y = 8.000000000000000000
+      Text = 'IProject_Name_1'
+      TabOrder = 1
+    end
+    object Button2: TButton
+      Position.X = 231.000000000000000000
+      Position.Y = 8.000000000000000000
+      TabOrder = 2
+      Text = 'Button2'
+      TextSettings.Trimming = None
+      OnClick = Button2Click
+    end
+  end
+  object Layout2: TLayout
+    Align = Bottom
+    Position.Y = 544.000000000000000000
+    Size.Width = 346.000000000000000000
+    Size.Height = 42.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 3
+    object Button1: TButton
+      Action = acOk
+      ImageIndex = -1
+      Position.X = 201.000000000000000000
+      Position.Y = 8.000000000000000000
+      TabOrder = 0
+      TextSettings.Trimming = None
+    end
+  end
+  object ActionList1: TActionList
+    Left = 214
+    Top = 226
+    object acOk: TAction
+      Text = 'Ok'
+      OnExecute = acOkExecute
+    end
+  end
+end
