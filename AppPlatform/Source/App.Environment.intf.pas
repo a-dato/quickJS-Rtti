@@ -9,7 +9,6 @@ uses
 
 type
   IAppActions = interface(IBaseInterface)
-
     function IsOpen(const AObject: CObject) : Boolean;
     function Open(const AObject: CObject) : Boolean;
     function Close(const AObject: CObject) : Boolean;

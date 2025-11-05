@@ -97,11 +97,6 @@ uses
 
 { Environment }
 
-function Environment.Close(const AObject: CObject): Boolean;
-begin
-
-end;
-
 constructor Environment.Create(const AppActions: IAppActions);
 begin
   _appActions := AppActions;
@@ -128,6 +123,12 @@ end;
 function Environment.get_TickCount: Integer;
 begin
   Result := System_.Environment.TickCount;
+end;
+
+// IAppActions
+function Environment.Close(const AObject: CObject): Boolean;
+begin
+
 end;
 
 function Environment.IsOpen(const AObject: CObject): Boolean;
