@@ -19,6 +19,7 @@ type
   protected
     _Types: Dictionary<&Type, ITypeDescriptor>;
     _WindowTypes: Dictionary<string {Name}, IWindowType>;
+    _TypeRegisteredHandlers: IList<TTypeRegisteredEvent>;
 
     function get_Types: List<&Type>;
 
@@ -31,8 +32,12 @@ type
     function  TypeDescriptorByName(const Name: string) : ITypeDescriptor;
 
     function  TryGetWindowType(const Name: string; out WindowType : IWindowType) : Boolean;
+
+    procedure AddOnTypeRegistered(const Handler: TTypeRegisteredEvent);
+    procedure RemoveOnTypeRegistered(const Handler: TTypeRegisteredEvent);
   public
     constructor Create;
+    destructor Destroy; override;
   end;
 
 implementation
@@ -50,6 +55,13 @@ constructor TAppConfig.Create;
 begin
   _Types := CDictionary<&Type, ITypeDescriptor>.Create(10, TypeEqualityComparer.Create);
   _WindowTypes := CDictionary<string, IWindowType>.Create;
+  _TypeRegisteredHandlers := CList<TTypeRegisteredEvent>.Create;
+end;
+
+destructor TAppConfig.Destroy;
+begin
+  _TypeRegisteredHandlers := nil;
+  inherited;
 end;
 
 function TAppConfig.TypeDescriptor(const AType: &Type): ITypeDescriptor;
@@ -109,6 +121,21 @@ end;
 procedure TAppConfig.RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
 begin
   _Types[AType] := TypeDescriptor {can be nil};
+  
+  // Notify all registered handlers
+  for var handler in _TypeRegisteredHandlers do
+    handler(AType, TypeDescriptor);
+end;
+
+procedure TAppConfig.AddOnTypeRegistered(const Handler: TTypeRegisteredEvent);
+begin
+  if not _TypeRegisteredHandlers.Contains(Handler) then
+    _TypeRegisteredHandlers.Add(Handler);
+end;
+
+procedure TAppConfig.RemoveOnTypeRegistered(const Handler: TTypeRegisteredEvent);
+begin
+  _TypeRegisteredHandlers.Remove(Handler);
 end;
 
 function TAppConfig.TypeByName(const Name: string): &Type;

@@ -11,6 +11,8 @@ uses
   App.PropertyDescriptor.intf;
 
 type
+  TTypeRegisteredEvent = procedure(const AType: &Type; const TypeDescriptor: ITypeDescriptor) of object;
+
   {$M+}
   IAppConfig = interface(IBaseInterface)
     ['{A3009BCA-0053-40AD-9C50-45EDB0793C48}']
@@ -26,6 +28,9 @@ type
     function  TypeDescriptor(const AType: &Type): ITypeDescriptor;
 
     function  TryGetWindowType(const Name: string; out WindowType : IWindowType) : Boolean;
+
+    procedure AddOnTypeRegistered(const Handler: TTypeRegisteredEvent);
+    procedure RemoveOnTypeRegistered(const Handler: TTypeRegisteredEvent);
 
     property  Types: List<&Type> read get_Types;
   end;

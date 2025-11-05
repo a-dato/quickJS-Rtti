@@ -459,7 +459,7 @@ begin
   FJavaScriptFilePath := JSFilePath;
   FEnvFilePath := EnvFilePath;
   
-  {$IFDEF TESTS}
+  {$IFDEF RUN_100X}
   // Run 100 times to test for memory leaks
   Writeln('Running 100 iterations to test for memory leaks...');
   Writeln('');
