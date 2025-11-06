@@ -18,7 +18,7 @@ type
   TTestFunc = reference to function(const Param: string) : string;
   TGenFunc<T> = reference to function : T;
 
-  TForm1 = class(TForm {, IAppActions})
+  TForm1 = class(TForm)
     Layout1: TLayout;
     mmCode: TMemo;
     mmLog: TMemo;
@@ -143,8 +143,8 @@ uses
   QuickJS.Register.dn4d.impl,
   App.impl,
   App.Environment.impl,
+  App.MasterForm,
   Project.impl,
-  ObjectWindow,
   Customer.frame,
   QuickJS.Register.dn4d.intf,
   ADato.ObjectModel.List.Tracking.intf,
@@ -328,11 +328,9 @@ end;
 
 procedure TForm1.InitializeAppEnvironment;
 begin
-  App.Environment.impl.Environment.FormClass := TfrmObjectWindow;
-
   {$IFDEF FRAMEWORK_FMX}
   // _app := TAppObject.Create(App.Environment.impl.Environment.Create(Self));
-  _app := TAppObject.Create(App.Environment.impl.Environment.Create(nil));
+  _app := TAppObject.Create(App.Environment.impl.Environment.Create(TAppMasterForm, nil));
   {$ENDIF}
 
   _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);

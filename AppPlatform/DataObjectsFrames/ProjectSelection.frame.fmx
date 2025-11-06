@@ -34,29 +34,29 @@ object ProjectSelectionFrame: TProjectSelectionFrame
       'ass><WidthSettings><WidthType>Pixel</WidthType><Width>50</Width>' +
       '<WidthMin>50</WidthMin><WidthMax>50</WidthMax></WidthSettings><V' +
       'isualisation><Visible>True</Visible><Frozen>False</Frozen><ReadO' +
-      'nly>False</ReadOnly><Selectable>True</Selectable><AllowResize>Fa' +
-      'lse</AllowResize><AllowHide>False</AllowHide><HideWhenEmpty>Fals' +
-      'e</HideWhenEmpty><HideGrid>False</HideGrid><IgnoreHeightByRowCal' +
-      'culation>False</IgnoreHeightByRowCalculation></Visualisation><So' +
-      'rtAndFilter><Sort>None</Sort><ShowSortMenu>False</ShowSortMenu><' +
-      'ShowFilterMenu>False</ShowFilterMenu></SortAndFilter><SubControl' +
-      'Settings><SubInfoControlClass>Custom</SubInfoControlClass></SubC' +
-      'ontrolSettings><Hierarchy><ShowHierarchy>False</ShowHierarchy><I' +
-      'ndent>0</Indent></Hierarchy></Item><Item type="TDCTreeColumn"><C' +
-      'aption>Name</Caption><PropertyName>Name</PropertyName><InfoContr' +
-      'olClass>Text</InfoControlClass><WidthSettings><WidthType>Pixel</' +
-      'WidthType><Width>50</Width><WidthMin>50</WidthMin><WidthMax>50</' +
-      'WidthMax></WidthSettings><Visualisation><Visible>True</Visible><' +
-      'Frozen>False</Frozen><ReadOnly>False</ReadOnly><Selectable>True<' +
-      '/Selectable><AllowResize>False</AllowResize><AllowHide>False</Al' +
-      'lowHide><HideWhenEmpty>False</HideWhenEmpty><HideGrid>False</Hid' +
-      'eGrid><IgnoreHeightByRowCalculation>False</IgnoreHeightByRowCalc' +
-      'ulation></Visualisation><SortAndFilter><Sort>None</Sort><ShowSor' +
-      'tMenu>False</ShowSortMenu><ShowFilterMenu>False</ShowFilterMenu>' +
-      '</SortAndFilter><SubControlSettings><SubInfoControlClass>Custom<' +
-      '/SubInfoControlClass></SubControlSettings><Hierarchy><ShowHierar' +
-      'chy>False</ShowHierarchy><Indent>0</Indent></Hierarchy></Item></' +
-      'Columns>'#13#10
+      'nly>True</ReadOnly><Selectable>True</Selectable><AllowResize>Fal' +
+      'se</AllowResize><AllowHide>False</AllowHide><HideWhenEmpty>False' +
+      '</HideWhenEmpty><HideGrid>False</HideGrid><IgnoreHeightByRowCalc' +
+      'ulation>False</IgnoreHeightByRowCalculation></Visualisation><Sor' +
+      'tAndFilter><Sort>None</Sort><ShowSortMenu>False</ShowSortMenu><S' +
+      'howFilterMenu>False</ShowFilterMenu></SortAndFilter><SubControlS' +
+      'ettings><SubInfoControlClass>Custom</SubInfoControlClass></SubCo' +
+      'ntrolSettings><Hierarchy><ShowHierarchy>False</ShowHierarchy><In' +
+      'dent>0</Indent></Hierarchy></Item><Item type="TDCTreeColumn"><Ca' +
+      'ption>Name</Caption><PropertyName>Name</PropertyName><InfoContro' +
+      'lClass>Text</InfoControlClass><WidthSettings><WidthType>Pixel</W' +
+      'idthType><Width>50</Width><WidthMin>50</WidthMin><WidthMax>50</W' +
+      'idthMax></WidthSettings><Visualisation><Visible>True</Visible><F' +
+      'rozen>False</Frozen><ReadOnly>True</ReadOnly><Selectable>True</S' +
+      'electable><AllowResize>False</AllowResize><AllowHide>False</Allo' +
+      'wHide><HideWhenEmpty>False</HideWhenEmpty><HideGrid>False</HideG' +
+      'rid><IgnoreHeightByRowCalculation>False</IgnoreHeightByRowCalcul' +
+      'ation></Visualisation><SortAndFilter><Sort>None</Sort><ShowSortM' +
+      'enu>False</ShowSortMenu><ShowFilterMenu>False</ShowFilterMenu></' +
+      'SortAndFilter><SubControlSettings><SubInfoControlClass>Custom</S' +
+      'ubInfoControlClass></SubControlSettings><Hierarchy><ShowHierarch' +
+      'y>False</ShowHierarchy><Indent>0</Indent></Hierarchy></Item></Co' +
+      'lumns>'#13#10
   end
   object Layout1: TLayout
     Align = Top
@@ -78,14 +78,6 @@ object ProjectSelectionFrame: TProjectSelectionFrame
       Position.Y = 8.000000000000000000
       Text = 'IProject_Name_1'
       TabOrder = 1
-    end
-    object Button2: TButton
-      Position.X = 231.000000000000000000
-      Position.Y = 8.000000000000000000
-      TabOrder = 2
-      Text = 'Button2'
-      TextSettings.Trimming = None
-      OnClick = Button2Click
     end
   end
   object Layout2: TLayout

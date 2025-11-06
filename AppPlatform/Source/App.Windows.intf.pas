@@ -15,15 +15,15 @@ type
   IWindowFrame = interface;
 
   TFrameCreateFunc = reference to function(const AOwner: IWindow) : IWindowFrame;
-  TWindowClose = reference to procedure(const Window: IWindow);
+  TWindowClose = reference to function(const Window: IWindow; IsCloseQuery: Boolean) : Boolean;
 
   {$M+}
   IWindowFrame = interface(IComponent)
 
-    function  get_Control: TObject;
-    procedure set_Control(const Value: TObject);
+    function  get_Content: TObject;
+    procedure set_Content(const Value: TObject);
 
-    property Control: TObject read get_Control write set_Control;
+    property Content: TObject read get_Content write set_Content;
   end;
 
   {$M+}

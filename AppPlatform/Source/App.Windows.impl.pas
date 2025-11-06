@@ -12,7 +12,14 @@ uses
   ADato.ObjectModel.List.intf,
   App.TypeDescriptor.intf,
   App.Storage.intf,
-  App.Content.intf;
+  App.Content.intf,
+  System.UITypes
+  {$IFDEF FRAMEWORK_VCL}
+  //Vcl.Controls, Vcl.Forms
+  {$ELSE}
+
+  {$ENDIF}
+  ;
 
 type
   TWindow = class(TComponent, IWindow)
@@ -20,11 +27,16 @@ type
     _control: TObject;  // TForm or other container
     _Frame: IWindowFrame;
     _Type: &Type;
+    _onClose: TWindowClose;
 
     function  get_Control: TObject;
 
     function  get_Frame: IWindowFrame;
     procedure set_Frame(const Value: IWindowFrame);
+
+  protected
+    procedure FormClose(Sender: TObject; var Action: TCloseAction);
+    procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 
     function  CreateFrame(const Name: string) : IWindow;
     function  Bind(const Storage: IStorage) : IWindow;
@@ -36,13 +48,13 @@ type
 
   TWindowFrame = class(TComponent, IWindowFrame)
   protected
-    _control: TObject;
+    _content: TObject;
 
-    function  get_Control: TObject;
-    procedure set_Control(const Value: TObject);
+    function  get_Content: TObject;
+    procedure set_Content(const Value: TObject);
 
   public
-    constructor Create(const AOwner: IWindow; Control: TObject);
+    constructor Create(const AOwner: IWindow; Content: TObject);
   end;
 
   TWindowType = class(TBaseInterfacedObject, IWindowType)
@@ -72,7 +84,7 @@ uses
 
 function TWindow.Bind(const Storage: IStorage): IWindow;
 begin
-  var c := _frame.Control;
+  var c := _frame.Content;
   _app.Config.TypeDescriptor(_Type).Binder.Bind(_Type, c, Storage);
   Result := Self;
 end;
@@ -110,27 +122,51 @@ begin
   _frame := Value;
 
   {$IFDEF FRAMEWORK_VCL}
-  if (_control is TWinControl) and (_frame.Control is TWinControl) then
+  if (_control is TWinControl) and (_frame.Content is TWinControl) then
   begin
-    var c := _frame.Control as TControl;
+    var c := _frame.Content as TControl;
     c.Parent := _control as TWinControl;
     c.Align := TAlign.alClient;
   end;
   {$ELSE}
-  if (_control is TFmxObject) and (_frame.Control is TControl) then
+  if (_control is TFmxObject) and (_frame.Content is TControl) then
   begin
-    var c: TControl := _frame.Control as TControl;
-    (_control as TFmxObject).AddObject(c);
-    c.Align := TAlignLayout.Client;
+    var child: TControl := _frame.Content as TControl;
+    var host := _control as TForm;
+    host.Width := Trunc(child.Width);
+    host.Height := Trunc(child.Height);
+    host.AddObject(child);
+    child.Align := TAlignLayout.Client;
   end;
   {$ENDIF}
+end;
+
+procedure TWindow.FormClose(Sender: TObject; var Action: TCloseAction);
+begin
+  if Assigned(_onClose) then
+    _onClose(Self, False);
+
+  Action := TCloseAction.caFree;
+end;
+
+procedure TWindow.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
+begin
+  if Assigned(_onClose) then
+    CanClose := _onClose(Self, True) else
+    CanClose := True;
 end;
 
 function TWindow.Show(OnClose: TWindowClose): IWindow;
 begin
   // Works with VCL and FMX
   if _control is TForm then
+  begin
+    _onClose := OnClose;
+    var frm := _control as TForm;
+    frm.OnCloseQuery := FormCloseQuery;
+    frm.OnClose := FormClose;
     (_control as TForm).Show;
+  end;
 
   Result := Self;
 end;
@@ -155,20 +191,20 @@ end;
 
 { TWindowFrame }
 
-constructor TWindowFrame.Create(const AOwner: IWindow; Control: TObject);
+constructor TWindowFrame.Create(const AOwner: IWindow; Content: TObject);
 begin
   inherited Create(nil);
-  _control := Control;
+  _content := Content;
 end;
 
-function TWindowFrame.get_Control: TObject;
+function TWindowFrame.get_Content: TObject;
 begin
-  Result := _control;
+  Result := _content;
 end;
 
-procedure TWindowFrame.set_Control(const Value: TObject);
+procedure TWindowFrame.set_Content(const Value: TObject);
 begin
-  _control := Value;
+  _content := Value;
 end;
 
 end.

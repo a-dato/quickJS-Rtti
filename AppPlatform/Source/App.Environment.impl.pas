@@ -38,10 +38,10 @@ type
     TFormClass = class of TForm;
 
   protected
-    class var _FormClass: TFormClass;
     class var _MainWindow: IWindow;
 
   protected
+    _formClass: TFormClass;
     _appActions: IAppActions;
 
     function get_MainWindow: IWindow;
@@ -54,8 +54,7 @@ type
     function Close(const AObject: CObject) : Boolean;
 
   public
-    constructor Create(const AppActions: IAppActions);
-    class property FormClass: TFormClass read _FormClass write _FormClass;
+    constructor Create(const AClass: TFormClass; const AppActions: IAppActions);
   end;
 
   TFrameBinder = class(TBaseInterfacedObject, IContentBinder)
@@ -97,8 +96,9 @@ uses
 
 { Environment }
 
-constructor Environment.Create(const AppActions: IAppActions);
+constructor Environment.Create(const AClass: TFormClass; const AppActions: IAppActions);
 begin
+  _formClass := AClass;
   _appActions := AppActions;
 end;
 
@@ -108,7 +108,7 @@ begin
 //  if (AOwner <> nil) and not AOwner.TryAsType<TComponent>(cmp) then
 //    raise ArgumentException.Create('AOwner must be of type TComponent');
 
-  var f := FormClass.Create(nil);
+  var f := _formClass.Create(nil);
   Result := TWindow.Create(AType, f);
 end;
 

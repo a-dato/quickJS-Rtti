@@ -6,7 +6,6 @@ uses
   System.StartUpCopy,
   FMX.Forms,
   AppMain in 'AppMain.pas' {Form1},
-  ObjectWindow in 'ObjectWindow.pas' {frmObjectWindow},
   Customer.frame in 'DataObjectsFrames\Customer.frame.pas' {CustomerFrame},
   JSGeneral.frame in 'DataObjectsFrames\JSGeneral.frame.pas' {JSGeneralFrame: TFrame},
   ObjectDesigner in 'AppDialogs\ObjectDesigner.pas' {ObjectDesignerForm},
@@ -19,7 +18,8 @@ uses
   App.KeyNavigator.intf in 'AppUI\App.KeyNavigator.intf.pas',
   App.UIStateDelegate in 'AppUI\App.UIStateDelegate.pas',
   App.KeyNavigator.impl in 'AppUI\App.KeyNavigator.impl.pas',
-  ProjectSelection.frame in 'DataObjectsFrames\ProjectSelection.frame.pas' {ProjectSelectionFrame: TFrame};
+  ProjectSelection.frame in 'DataObjectsFrames\ProjectSelection.frame.pas' {ProjectSelectionFrame: TFrame},
+  App.MasterForm in 'AppUI\App.MasterForm.pas';
 
 {$R *.res}
 

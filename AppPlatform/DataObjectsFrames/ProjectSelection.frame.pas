@@ -3,13 +3,20 @@
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
+  System_,
+  System.SysUtils,
+  System.Types,
+  System.UITypes,
+  System.Classes,
+  System.Variants,
+  System.Collections.Generic,
+  System.Actions,
   FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
-  System.Actions, FMX.ActnList, FMX.ListBox, FMX.Edit, FMX.TabControl,
+  FMX.ActnList, FMX.ListBox, FMX.Edit, FMX.TabControl,
   FMX.Controls.Presentation, FMX.Layouts, FMX.ScrollControl.Impl,
   FMX.ScrollControl.WithRows.Impl, FMX.ScrollControl.WithCells.Impl,
   FMX.ScrollControl.WithEditableCells.Impl, FMX.ScrollControl.DataControl.Impl,
-  FMX.ScrollControl.Events, JSGeneral.frame, Customer.frame;
+  FMX.ScrollControl.Events;
 
 type
   TProjectSelectionFrame = class(TFrame)
@@ -21,19 +28,21 @@ type
     Button1: TButton;
     ActionList1: TActionList;
     acOk: TAction;
-    Button2: TButton;
     procedure acOkExecute(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
   private
 
+  protected
+    function  get_Selected: List<CObject>;
+    procedure set_Selected(const Items: List<CObject>);
   public
-    constructor Create(AOwner: TComponent); override;
+
+    property Selected: List<CObject> read get_Selected write set_Selected;
   end;
 
 implementation
 
 uses
-  App.EditorManager.impl, System_;
+  App.EditorManager.impl, System.Collections;
 
 {$R *.fmx}
 
@@ -42,15 +51,14 @@ begin
   // Close;
 end;
 
-constructor TProjectSelectionFrame.Create(AOwner: TComponent);
+function TProjectSelectionFrame.get_Selected: List<CObject>;
 begin
-  inherited;
+  Result := IProject_Model.SelectedItems;
 end;
 
-procedure TProjectSelectionFrame.Button2Click(Sender: TObject);
+procedure TProjectSelectionFrame.set_Selected(const Items: List<CObject>);
 begin
-  for var s in IProject_Model.SelectedItems do
-    ShowMessage(s.ToString);
+  IProject_Model.AssignSelection(Items as IList);
 end;
 
 end.
