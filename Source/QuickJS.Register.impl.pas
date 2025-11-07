@@ -2292,12 +2292,18 @@ begin
     tkRecord:
     // Records are copied and then returned as 'objects'
     begin
-      var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
-      Result := JS_NewObjectClass(ctx, reg.ClassID);
-      // Objects retrieved from get_property are passed by reference
-      // They will not be freed when CFinalize is called
-      var rec := TRecordReference.Create(Value);
-      JS_SetOpaque(Result, rec);
+      if Value.TypeInfo = TypeInfo(JSValue) then
+        Result := Value.AsType<JSValue>
+
+      else
+      begin
+        var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
+        Result := JS_NewObjectClass(ctx, reg.ClassID);
+        // Objects retrieved from get_property are passed by reference
+        // They will not be freed when CFinalize is called
+        var rec := TRecordReference.Create(Value);
+        JS_SetOpaque(Result, rec);
+      end;
     end;
     tkInterface:
     begin
@@ -2311,22 +2317,34 @@ begin
         else
         begin
           // Resolve interface mapping if available
-          var typeInfoToUse := Value.TypeInfo;
-          var ptr: Pointer;
-          Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
-          
-          if Assigned(TJSRegister.FObjectBridgeResolver) then
-            typeInfoToUse := TJSRegister.FObjectBridgeResolver.ResolveInterfaceMapping(Value.TypeInfo, ptr);
-          
-          var reg := GetRegisteredObjectFromTypeInfo(typeInfoToUse);
+//          var typeInfoToUse := Value.TypeInfo;
+//          var ptr: Pointer;
+//          Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
+//
+//          if Assigned(TJSRegister.FObjectBridgeResolver) then
+//            typeInfoToUse := TJSRegister.FObjectBridgeResolver.ResolveInterfaceMapping(Value.TypeInfo, ptr);
+//
+//          var reg := GetRegisteredObjectFromTypeInfo(typeInfoToUse);
+//          if reg <> nil then
+//          begin
+//            Result := JS_NewObjectClass(ctx, reg.ClassID);
+//            // No need to call _AddRef, Supports will bump reference count
+//            // Re-cast to the resolved interface type
+//            Supports(Value.AsInterface, typeInfoToUse.TypeData.Guid, ptr);
+//            JS_SetOpaque(Result, ptr);
+//          end;
+
+          var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
           if reg <> nil then
           begin
             Result := JS_NewObjectClass(ctx, reg.ClassID);
             // No need to call _AddRef, Supports will bump reference count
             // Re-cast to the resolved interface type
-            Supports(Value.AsInterface, typeInfoToUse.TypeData.Guid, ptr);
+            var ptr: Pointer;
+            Supports(Value.AsInterface, Value.TypeInfo.TypeData.Guid, ptr);
             JS_SetOpaque(Result, ptr);
           end;
+
         end;
       end;
     end;

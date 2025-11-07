@@ -19,7 +19,7 @@ uses
   App.UIStateDelegate in 'AppUI\App.UIStateDelegate.pas',
   App.KeyNavigator.impl in 'AppUI\App.KeyNavigator.impl.pas',
   ProjectSelection.frame in 'DataObjectsFrames\ProjectSelection.frame.pas' {ProjectSelectionFrame: TFrame},
-  App.MasterForm in 'AppUI\App.MasterForm.pas';
+  FMX.App.MasterForm in 'AppUI\FMX.App.MasterForm.pas';
 
 {$R *.res}
 

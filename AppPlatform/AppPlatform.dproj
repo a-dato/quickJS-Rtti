@@ -305,9 +305,7 @@
             <FormType>fmx</FormType>
             <DesignClass>TFrame</DesignClass>
         </DCCReference>
-        <DCCReference Include="AppUI\App.MasterForm.pas">
-            <FormType>fmx</FormType>
-        </DCCReference>
+        <DCCReference Include="AppUI\FMX.App.MasterForm.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

@@ -43,20 +43,20 @@ object ProjectSelectionFrame: TProjectSelectionFrame
       'ettings><SubInfoControlClass>Custom</SubInfoControlClass></SubCo' +
       'ntrolSettings><Hierarchy><ShowHierarchy>False</ShowHierarchy><In' +
       'dent>0</Indent></Hierarchy></Item><Item type="TDCTreeColumn"><Ca' +
-      'ption>Name</Caption><PropertyName>Name</PropertyName><InfoContro' +
-      'lClass>Text</InfoControlClass><WidthSettings><WidthType>Pixel</W' +
-      'idthType><Width>50</Width><WidthMin>50</WidthMin><WidthMax>50</W' +
-      'idthMax></WidthSettings><Visualisation><Visible>True</Visible><F' +
-      'rozen>False</Frozen><ReadOnly>True</ReadOnly><Selectable>True</S' +
-      'electable><AllowResize>False</AllowResize><AllowHide>False</Allo' +
-      'wHide><HideWhenEmpty>False</HideWhenEmpty><HideGrid>False</HideG' +
-      'rid><IgnoreHeightByRowCalculation>False</IgnoreHeightByRowCalcul' +
-      'ation></Visualisation><SortAndFilter><Sort>None</Sort><ShowSortM' +
-      'enu>False</ShowSortMenu><ShowFilterMenu>False</ShowFilterMenu></' +
-      'SortAndFilter><SubControlSettings><SubInfoControlClass>Custom</S' +
-      'ubInfoControlClass></SubControlSettings><Hierarchy><ShowHierarch' +
-      'y>False</ShowHierarchy><Indent>0</Indent></Hierarchy></Item></Co' +
-      'lumns>'#13#10
+      'ption>Description</Caption><PropertyName>Description</PropertyNa' +
+      'me><InfoControlClass>Text</InfoControlClass><WidthSettings><Widt' +
+      'hType>Pixel</WidthType><Width>50</Width><WidthMin>50</WidthMin><' +
+      'WidthMax>50</WidthMax></WidthSettings><Visualisation><Visible>Tr' +
+      'ue</Visible><Frozen>False</Frozen><ReadOnly>True</ReadOnly><Sele' +
+      'ctable>True</Selectable><AllowResize>False</AllowResize><AllowHi' +
+      'de>False</AllowHide><HideWhenEmpty>False</HideWhenEmpty><HideGri' +
+      'd>False</HideGrid><IgnoreHeightByRowCalculation>False</IgnoreHei' +
+      'ghtByRowCalculation></Visualisation><SortAndFilter><Sort>None</S' +
+      'ort><ShowSortMenu>False</ShowSortMenu><ShowFilterMenu>False</Sho' +
+      'wFilterMenu></SortAndFilter><SubControlSettings><SubInfoControlC' +
+      'lass>Custom</SubInfoControlClass></SubControlSettings><Hierarchy' +
+      '><ShowHierarchy>False</ShowHierarchy><Indent>0</Indent></Hierarc' +
+      'hy></Item></Columns>'#13#10
   end
   object Layout1: TLayout
     Align = Top
@@ -73,10 +73,10 @@ object ProjectSelectionFrame: TProjectSelectionFrame
       Text = 'Project:'
       TabOrder = 0
     end
-    object IProject_Name_1: TLabel
+    object IProject_Description_1: TLabel
       Position.X = 86.000000000000000000
       Position.Y = 8.000000000000000000
-      Text = 'IProject_Name_1'
+      Text = 'IProject_Description_1'
       TabOrder = 1
     end
   end

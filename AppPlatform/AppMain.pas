@@ -10,7 +10,7 @@ uses
   App.intf, System.Actions, FMX.ActnList, FMX.StdCtrls, System.Net.URLClient,
   System.Net.HttpClient, System.Net.HttpClientComponent, System_,
   Project.intf, System.Collections, System.Collections.Generic, System.Rtti,
-  App.Environment.intf;
+  App.Environment.intf, App.Windows.intf;
 
 type
   {$M+}
@@ -88,7 +88,7 @@ type
     function get_Names(const Value: string): string;
     procedure SaveToFile(const FileName: string; const Data: CObject);
     function Test(const Value: CObject) : CObject;
-    function Test2(const Value: IProject) : IInterface;
+    function Test2 : IWindow;
     function Test3(const Value: &Type) : CObject;
     function Test4(const Value: TFunc<CObject>) : CObject;
     function Test5(const Value: TTestFunc) : CObject;
@@ -123,7 +123,7 @@ type
     procedure SaveToFile(const FileName: string; const Data: CObject);
 
     function Test(const Value: CObject) : CObject;
-    function Test2(const Value: IProject) : IInterface;
+    function Test2 : IWindow;
     function Test3(const Value: &Type) : CObject;
     function Test4(const Value: TFunc<CObject>) : CObject;
     function Test5(const Value: TTestFunc) : CObject;
@@ -143,7 +143,7 @@ uses
   QuickJS.Register.dn4d.impl,
   App.impl,
   App.Environment.impl,
-  App.MasterForm,
+  FMX.App.MasterForm,
   Project.impl,
   Customer.frame,
   QuickJS.Register.dn4d.intf,
@@ -164,7 +164,7 @@ uses
   App.Factory.impl,
   System.TypInfo,
   QuickJS.VirtualMethod.impl, App.Storage.intf, App.Storage.impl,
-  App.Config.intf, App.Windows.intf, App.Windows.impl, App.Component.intf,
+  App.Config.intf, App.Windows.impl, App.Component.intf,
   ProjectSelection.frame;
 
 {$R *.fmx}
@@ -194,15 +194,13 @@ end;
 
 procedure TForm1.btnCustomerClick(Sender: TObject);
 begin
-  _app.Environment.CreateWindow(TProject.Type, _app.Environment.MainWindow)
-    .CreateFrame('Projects')
-      .Bind(_app.Storage[TProject.TypeDescriptor.StorageName])
-        .Show(nil);
+  var w: IWindow := TWindow.Create(&Type.Unknown, nil);
+  w := nil;
 
-//  _app.Windows.CreateWindow(TProject.Type, Self, 'Projects').
-//    Build.
-//      Bind(_app.Storage[TProject.TypeDescriptor.StorageName]).
-//        Show(nil);
+//  _app.Environment.CreateWindow(TProject.Type, _app.Environment.MainWindow)
+//    .CreateFrame('Projects')
+//      .Bind(_app.Storage[TProject.TypeDescriptor.StorageName])
+//        .Show(nil);
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
@@ -556,21 +554,9 @@ begin
 //  sl.Free;
 end;
 
-function TTestObject.Test2(const Value: IProject): IInterface;
+function TTestObject.Test2 : IWindow;
 begin
-  var t := Value.GetType;
-
-  var props := t.GetProperties;
-  for var p in props do
-    ShowMessage(p.Name);
-
-//  var b: IBaseInterface;
-//  if Supports(Value, IBaseInterface, b) then
-//    ShowMessage(b.GetHashCode.ToString);
-
-//  var an: IAddNew;
-//  if Interfaces.Supports<IAddNew>(Value, an) then
-//    an.AddNew;
+  Result := TWindow.Create(&Type.Unknown, nil);
 end;
 
 function TTestObject.Test3(const Value: &Type) : CObject;

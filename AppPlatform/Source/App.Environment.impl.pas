@@ -4,6 +4,7 @@ interface
 
 uses
   System_,
+  System.Collections,
   System.Collections.Generic,
 
   App.intf,
@@ -67,7 +68,8 @@ type
     function  CreateChildrenList(const AControl: TFmxObject) : TChildrenList;
     {$ENDIF}
     procedure BindChildren(const AType: &Type; const Children: TChildrenList; const AModel: IObjectListModel);
-    procedure Bind(const AType: &Type; const Control: TObject; const Storage: IStorage);
+
+    procedure Bind(const AType: &Type; const Control: TObject; const Data: CObject);
 
     function WrapProperty(const AProp: _PropertyInfo) : _PropertyInfo; virtual;
   public
@@ -80,7 +82,6 @@ uses
   System.SysUtils,
   System.ClassHelpers,
   ADato.ObjectModel.Binders,
-  System.Collections,
   ADato.ObjectModel.List.Tracking.impl,
   ADato.ObjectModel.impl,
   ADato.ObjectModel.intf,
@@ -263,7 +264,7 @@ begin
     Result := AProp;
 end;
 
-procedure TFrameBinder.Bind(const AType: &Type; const Control: TObject; const Storage: IStorage);
+procedure TFrameBinder.Bind(const AType: &Type; const Control: TObject; const Data: CObject);
 begin
   {$IFDEF FRAMEWORK_FMX}
   _handlers := CList<IContextChangedHandler>.Create;
@@ -276,7 +277,16 @@ begin
 
     var model: IObjectListModel := nil;
     model := TObjectListModelWithChangeTracking<IBaseInterface>.Create(AType);
-    model.Context := Storage.Data;
+
+    var l: IList;
+    var s: IStorage;
+
+    if Data.TryAsType<IStorage>(s) then
+      l := s.Data
+    else if not Data.TryAsType<IList>(l) then
+      raise CException.Create('Data is invalid');
+
+    model.Context := l;
 
     if model <> nil then
     begin
@@ -285,8 +295,7 @@ begin
       begin
         BindChildren(AType, ctrl.Children, model);
       end;
-    end else
-      raise CException.Create('Data is invalid');
+    end;
   end;
   {$ENDIF}
 end;

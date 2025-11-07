@@ -23,7 +23,7 @@ type
     IProject_Model: TDataControl;
     Layout1: TLayout;
     Label1: TLabel;
-    IProject_Name_1: TLabel;
+    IProject_Description_1: TLabel;
     Layout2: TLayout;
     Button1: TButton;
     ActionList1: TActionList;

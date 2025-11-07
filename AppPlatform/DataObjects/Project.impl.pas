@@ -23,7 +23,7 @@ type
 
   protected
     _ID: CObject;
-    _Name: string;
+    _Description: string;
     _Child: IProject;
     _storageSupport: IStorageSupport;
 
@@ -31,8 +31,8 @@ type
 
     function  get_ID: CObject;
     procedure set_ID(const Value: CObject);
-    function  get_Name: string;
-    procedure set_Name(const Value: string);
+    function  get_Description: string;
+    procedure set_Description(const Value: string);
     function  get_ChildProject: IProject;
 
     // IExtendableObject
@@ -119,9 +119,9 @@ begin
   Result := _ID;
 end;
 
-function TProject.get_Name: string;
+function TProject.get_Description: string;
 begin
-  Result := _Name;
+  Result := _Description;
 end;
 
 function TProject.get_ChildProject: IProject;
@@ -130,7 +130,7 @@ begin
   begin
     _Child := TProject.Create;
     _Child.ID := Int64(_ID) + 100;
-    _Child.Name := 'Child of ' + _Name;
+    _Child.Description := 'Child of ' + _Description;
   end;
 
   Result := _Child;
@@ -141,9 +141,9 @@ begin
   _ID := Value;
 end;
 
-procedure TProject.set_Name(const Value: string);
+procedure TProject.set_Description(const Value: string);
 begin
-  _Name := Value;
+  _Description := Value;
 end;
 
 procedure TProject.set_PropertyValue(const AProperty: _PropertyInfo; const Value: CObject);
@@ -164,7 +164,7 @@ begin
   begin
     var p: IProject := TProject.Create;
     p.ID := i;
-    p.Name := 'Project ' + i.ToString;
+    p.Description := 'Project ' + i.ToString;
 
     l.Add(p);
   end;
