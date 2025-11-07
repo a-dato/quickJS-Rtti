@@ -358,7 +358,7 @@ begin
   if Assigned(_ImplementingInterfaces) then
     _ImplementingInterfaces.Free;
     
-  if (_ctx <> nil) and IsQuickJSLoaded then
+  if _ctx <> nil then
     JS_FreeValue(_ctx, _value);
     
   inherited;
