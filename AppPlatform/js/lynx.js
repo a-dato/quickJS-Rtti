@@ -130,6 +130,14 @@ export class LynxProject extends LynxObject {
 	}
 }
 
+export class LynxTask extends LynxObject {
+	QueryInterface(type) {
+		if(type === ITask) {
+			return this;
+		}
+		return super.QueryInterface(type);
+	}
+}
 
 export class LynxType extends IBaseInterface_ {
 }

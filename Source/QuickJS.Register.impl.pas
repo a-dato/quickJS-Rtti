@@ -2590,13 +2590,8 @@ end;
 
 constructor TJSRuntime.Create;
 begin
-  if not IsQuickJSLoaded then
-  begin
-    _rt := nil;
-    Exit;
-  end;
-  
   _rt := JS_NewRuntime;
+  js_std_init_handlers(_rt);
 end;
 
 function TJSRuntime.CreateContext: IJSContext;
@@ -2895,8 +2890,6 @@ const
 begin
   if (_ctx = nil) or not IsQuickJSLoaded then
     Exit;
-
-  js_std_init_handlers(_runtime.rt);
 
   // ES6 Module loader.
   JS_SetModuleLoaderFunc(_runtime.rt, nil, @js_module_loader, nil);
