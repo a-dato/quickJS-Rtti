@@ -230,15 +230,14 @@ begin
     Exit;
   
   // Try each potential target interface in priority order
-  for var targetInterface in mappingList do
+  for var targetInterfaceTypeInfo in mappingList do
   begin
     // Check if the object supports the target interface (without keeping a reference)
-    var tempIntf: IInterface;
-    if Supports(SourceInterfaceInstance, targetInterface.TypeData.Guid, tempIntf) then
+    if Supports(SourceInterfaceInstance, targetInterfaceTypeInfo.TypeData.Guid) then
     begin
       // Object supports this target interface, use it
       // tempIntf will be released automatically when it goes out of scope
-      Result := targetInterface;
+      Result := targetInterfaceTypeInfo;
       Exit;
     end;
   end;
