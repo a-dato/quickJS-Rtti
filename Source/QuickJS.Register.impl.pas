@@ -120,6 +120,7 @@ type
     class var FAllContexts: TList<Pointer {Unsafe IJSContext pointer}>;
     class var FPendingRegistrations: TList<TRegistrationInfo>;
     class var FRegisteredEnums: TDictionary<PTypeInfo, string>; // Maps enum TypeInfo to enum name
+    class var FCustomObjectFactory: TCustomObjectFactory;
 
     class procedure AddRegisteredObjectWithClassID(const RegisteredObject: IRegisteredObject);
     procedure InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
@@ -198,6 +199,8 @@ type
     class function  TryGetRegisteredObjectFromConstructor(JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject) : Boolean;
     class function  TryGetRegisteredJSObject(JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject) : Boolean;
     class function  TryGetRegisteredInterface(const IID: TGuid; out RegisteredObject: IRegisteredObject) : Boolean;
+
+    class procedure SetCustomObjectFactory(const Factory: TCustomObjectFactory);
 
     class property AutoRegister: Boolean read FAutoRegister write FAutoRegister;
     class property Instance: TJSRegister read FInstance write set_Instance;
@@ -1683,6 +1686,11 @@ begin
   end;
 end;
 
+class procedure TJSRegister.SetCustomObjectFactory(const Factory: TCustomObjectFactory);
+begin
+  FCustomObjectFactory := Factory;
+end;
+
 { TRegisteredObject }
 
 function TRegisteredObject.TryGetExtensionProperty(const PropName: string; out PropertyName: string) : Boolean;
@@ -1761,35 +1769,31 @@ end;
 
 function TRegisteredObject.CreateInstance(ctx: JSContext; argc: Integer; argv: PJSValueConstArr): Pointer;
 var
-  arr: array of TValue;
-begin
-  Result := CallConstructor;
+  arr: TArray<TValue>;
 
-  if Result <> nil then
+  function TryCreateViaFactory: Pointer;
   begin
-    if get_IsInterface then
+    Result := nil;
+    if not Assigned(TJSRegister.FCustomObjectFactory) then
       Exit;
-      
-    // For records, wrap in TRecordReference
-    if FTypeInfo.Kind = tkRecord then
+    
+    // Convert JSValues to TValue array
+    SetLength(arr, argc);
+    for var i := 0 to argc - 1 do
     begin
-      var rec_val: TValue;
-      TValue.Make(Result, FTypeInfo, rec_val);
-      Result := TRecordReference.Create(rec_val);
-      Exit;
+      var jsVal := PJSValueConstArr(argv)[i];
+      arr[i] := JSConverter.Instance.JSValueToTValue(ctx, jsVal, nil);
     end;
     
-    // For classes
-    var ii: IInterface;
-    if Supports(TObject(Result), IInterface, ii) then
-      ii._AddRef;
-  end
-  else
+    Result := TJSRegister.FCustomObjectFactory(FTypeInfo, arr);
+  end;
+  
+  function TryCreateViaRTTI: Pointer;
   begin
     var rttiType := TRttiContext.Create.GetType(FTypeInfo);
     var rtti_method: TRttiMethod := nil;
 
-    // For records, look for constructor (Create) methods
+    // Look for constructor with matching parameter count
     for var method in rttiType.GetMethods do
     begin
       if method.IsConstructor and (Length(method.GetParameters) = argc) then
@@ -1802,6 +1806,7 @@ begin
     if rtti_method = nil then
       raise Exception.Create('No constructor could be found');
 
+    // Convert arguments
     if argc > 0 then
     begin
       var params := rtti_method.GetParameters;
@@ -1839,12 +1844,45 @@ begin
     begin
       // For classes, invoke constructor
       Result := rtti_method.Invoke(PTypeInfo(FTypeInfo)^.TypeData.ClassType, arr).AsObject;
-
-      var ii: IInterface;
-      if Supports(TObject(Result), IInterface, ii) then
-        ii._AddRef;
     end;
   end;
+  
+  procedure HandleResult(var Ptr: Pointer);
+  begin
+    if Ptr = nil then
+      Exit;
+    
+    // Interfaces are already properly ref-counted, just return
+    if get_IsInterface then
+      Exit;
+      
+    // For records, wrap in TRecordReference
+    if FTypeInfo.Kind = tkRecord then
+    begin
+      var rec_val: TValue;
+      TValue.Make(Ptr, FTypeInfo, rec_val);
+      Ptr := TRecordReference.Create(rec_val);
+      Exit;
+    end;
+    
+    // For classes, check if interface support needed
+    var ii: IInterface;
+    if Supports(TObject(Ptr), IInterface, ii) then
+      ii._AddRef;
+  end;
+
+begin
+  // Try creation methods in order of preference
+  Result := TryCreateViaFactory;
+  
+  if Result = nil then
+    Result := CallConstructor;
+    
+  if Result = nil then
+    Result := TryCreateViaRTTI;
+  
+  // Handle the result consistently regardless of creation method
+  HandleResult(Result);
 end;
 
 function TRegisteredObject.GetArrayIndexer: IPropertyDescriptor;
@@ -2317,31 +2355,17 @@ begin
         else
         begin
           // Resolve interface mapping if available
-//          var typeInfoToUse := Value.TypeInfo;
-//          var ptr: Pointer;
-//          Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
-//
-//          if Assigned(TJSRegister.FObjectBridgeResolver) then
-//            typeInfoToUse := TJSRegister.FObjectBridgeResolver.ResolveInterfaceMapping(Value.TypeInfo, ptr);
-//
-//          var reg := GetRegisteredObjectFromTypeInfo(typeInfoToUse);
-//          if reg <> nil then
-//          begin
-//            Result := JS_NewObjectClass(ctx, reg.ClassID);
-//            // No need to call _AddRef, Supports will bump reference count
-//            // Re-cast to the resolved interface type
-//            Supports(Value.AsInterface, typeInfoToUse.TypeData.Guid, ptr);
-//            JS_SetOpaque(Result, ptr);
-//          end;
-
-          var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
+          var typeInfoToUse := Value.TypeInfo;
+          if Assigned(TJSRegister.FObjectBridgeResolver) then
+            typeInfoToUse := TJSRegister.FObjectBridgeResolver.ResolveInterfaceMapping(Value.TypeInfo, Value.AsInterface);
+          
+          var reg := GetRegisteredObjectFromTypeInfo(typeInfoToUse);
           if reg <> nil then
           begin
             Result := JS_NewObjectClass(ctx, reg.ClassID);
-            // No need to call _AddRef, Supports will bump reference count
-            // Re-cast to the resolved interface type
+            // Supports will bump reference count (required for QuickJS to manage the object lifetime)
             var ptr: Pointer;
-            Supports(Value.AsInterface, Value.TypeInfo.TypeData.Guid, ptr);
+            Supports(Value.AsInterface, typeInfoToUse.TypeData.Guid, ptr);
             JS_SetOpaque(Result, ptr);
           end;
 

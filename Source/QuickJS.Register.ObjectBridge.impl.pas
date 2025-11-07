@@ -30,7 +30,7 @@ type
     procedure AddPropertyDescriptor(const Descriptor: IObjectBridgePropertyDescriptor);
     procedure AddMethodDescriptor(const Descriptor: IObjectBridgeMethodDescriptor);
     procedure AddInterfaceMapping(const SourceInterface: PTypeInfo; const TargetInterface: PTypeInfo);
-    function ResolveInterfaceMapping(const SourceInterface: PTypeInfo; const InterfacePtr: Pointer): PTypeInfo;
+    function ResolveInterfaceMapping(const SourceInterface: PTypeInfo; const SourceInterfaceInstance: IInterface): PTypeInfo;
   end;
 
 implementation
@@ -217,11 +217,11 @@ begin
   mappingList.Insert(0, TargetInterface);
 end;
 
-function TObjectBridgeResolver.ResolveInterfaceMapping(const SourceInterface: PTypeInfo; const InterfacePtr: Pointer): PTypeInfo;
+function TObjectBridgeResolver.ResolveInterfaceMapping(const SourceInterface: PTypeInfo; const SourceInterfaceInstance: IInterface): PTypeInfo;
 begin
   Result := SourceInterface; // Default: return the source if no mapping found
   
-  if (SourceInterface = nil) or (InterfacePtr = nil) then
+  if (SourceInterface = nil) or (SourceInterfaceInstance = nil) then
     Exit;
   
   // Look up mappings for this source interface
@@ -230,16 +230,14 @@ begin
     Exit;
   
   // Try each potential target interface in priority order
-  for var targetInterface in mappingList do
+  for var targetInterfaceTypeInfo in mappingList do
   begin
-    // Check if the object supports the target interface
-    var targetIntf: IInterface;
-    var sourceIntf: IInterface := IInterface(InterfacePtr);
-    
-    if Supports(sourceIntf, targetInterface.TypeData.Guid, targetIntf) then
+    // Check if the object supports the target interface (without keeping a reference)
+    if Supports(SourceInterfaceInstance, targetInterfaceTypeInfo.TypeData.Guid) then
     begin
       // Object supports this target interface, use it
-      Result := targetInterface;
+      // tempIntf will be released automatically when it goes out of scope
+      Result := targetInterfaceTypeInfo;
       Exit;
     end;
   end;
