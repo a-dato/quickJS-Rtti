@@ -3,12 +3,14 @@
 interface
 
 uses
-  System_, App.Storage.intf, System.Collections;
+  System_,
+  System.Collections,
+  App.Storage.intf;
 
 type
   {$M+}
   IContentBinder = interface(IBaseInterface)
-    procedure Bind(const AType: &Type; const Control: TObject; const Storage: IStorage);
+    procedure Bind(const AType: &Type; const Control: TObject; const Data: CObject);
   end;
 
   {$M+}

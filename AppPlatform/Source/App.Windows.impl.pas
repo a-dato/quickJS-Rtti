@@ -39,11 +39,12 @@ type
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
 
     function  CreateFrame(const Name: string) : IWindow;
-    function  Bind(const Storage: IStorage) : IWindow;
+    function  Bind(const Data: CObject) : IWindow;
     function  Show(OnClose: TWindowClose) : IWindow;
 
   public
     constructor Create(const AType: &Type; Form: TObject);
+    destructor Destroy; override;
   end;
 
   TWindowFrame = class(TComponent, IWindowFrame)
@@ -55,6 +56,7 @@ type
 
   public
     constructor Create(const AOwner: IWindow; Content: TObject);
+    destructor Destroy; override;
   end;
 
   TWindowType = class(TBaseInterfacedObject, IWindowType)
@@ -77,15 +79,18 @@ uses
   {$ELSE}
   FMX.Controls, FMX.Types, FMX.Forms
   {$ENDIF}
-  ;
+  , App.Environment.impl;
 
 
 { Window }
 
-function TWindow.Bind(const Storage: IStorage): IWindow;
+function TWindow.Bind(const Data: CObject): IWindow;
 begin
   var c := _frame.Content;
-  _app.Config.TypeDescriptor(_Type).Binder.Bind(_Type, c, Storage);
+  var binder := _app.Config.TypeDescriptor(_Type).Binder;
+  if binder = nil then
+    binder := TFrameBinder.Create;
+  binder.Bind(_Type, c, Data);
   Result := Self;
 end;
 
@@ -93,6 +98,11 @@ constructor TWindow.Create(const AType: &Type; Form: TObject);
 begin
   _type := AType;
   _control := Form;
+end;
+
+destructor TWindow.Destroy;
+begin
+  inherited;
 end;
 
 function TWindow.CreateFrame(const Name: string) : IWindow;
@@ -197,6 +207,11 @@ begin
   _content := Content;
 end;
 
+destructor TWindowFrame.Destroy;
+begin
+  inherited;
+end;
+
 function TWindowFrame.get_Content: TObject;
 begin
   Result := _content;
@@ -208,4 +223,5 @@ begin
 end;
 
 end.
+
 

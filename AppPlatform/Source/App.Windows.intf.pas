@@ -45,7 +45,7 @@ type
 
     function  CreateFrame(const Name: string) : IWindow;
 
-    function  Bind(const Storage: IStorage): IWindow;
+    function  Bind(const Data: CObject): IWindow;
     function  Show(OnClose: TWindowClose): IWindow;
 
     property Control: TObject read get_Control;

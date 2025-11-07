@@ -2343,12 +2343,18 @@ begin
     tkRecord:
     // Records are copied and then returned as 'objects'
     begin
-      var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
-      Result := JS_NewObjectClass(ctx, reg.ClassID);
-      // Objects retrieved from get_property are passed by reference
-      // They will not be freed when CFinalize is called
-      var rec := TRecordReference.Create(Value);
-      JS_SetOpaque(Result, rec);
+      if Value.TypeInfo = TypeInfo(JSValue) then
+        Result := Value.AsType<JSValue>
+
+      else
+      begin
+        var reg := GetRegisteredObjectFromTypeInfo(Value.TypeInfo);
+        Result := JS_NewObjectClass(ctx, reg.ClassID);
+        // Objects retrieved from get_property are passed by reference
+        // They will not be freed when CFinalize is called
+        var rec := TRecordReference.Create(Value);
+        JS_SetOpaque(Result, rec);
+      end;
     end;
     tkInterface:
     begin
@@ -2375,6 +2381,7 @@ begin
             Supports(Value.AsInterface, typeInfoToUse.TypeData.Guid, ptr);
             JS_SetOpaque(Result, ptr);
           end;
+
         end;
       end;
     end;
