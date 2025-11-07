@@ -10,6 +10,7 @@ uses
 
 type
   TObjectConstuctor = function : Pointer;
+  TCustomObjectFactory = function(const ATypeInfo: PTypeInfo; const Args: TArray<TObject>) : Pointer of object;
 
   TObjectSupportsExtension = (Unknown, Supported, NotSupported);
   

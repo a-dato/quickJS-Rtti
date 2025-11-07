@@ -19,9 +19,9 @@ type
     // Example: Map IBaseInterface -> IUser (if the object supports IUser, use that instead)
     procedure AddInterfaceMapping(const SourceInterface: PTypeInfo; const TargetInterface: PTypeInfo);
     
-    // Resolves the best interface to use for a given interface pointer
+    // Resolves the best interface to use for a given interface instance
     // Returns the target interface TypeInfo if a mapping exists and the object supports it, otherwise returns the source
-    function ResolveInterfaceMapping(const SourceInterface: PTypeInfo; const InterfacePtr: Pointer): PTypeInfo;
+    function ResolveInterfaceMapping(const SourceInterface: PTypeInfo; const SourceInterfaceInstance: IInterface): PTypeInfo;
   end;
 
 implementation

@@ -120,6 +120,7 @@ type
     class var FAllContexts: TList<Pointer {Unsafe IJSContext pointer}>;
     class var FPendingRegistrations: TList<TRegistrationInfo>;
     class var FRegisteredEnums: TDictionary<PTypeInfo, string>; // Maps enum TypeInfo to enum name
+    class var FCustomObjectFactory: TCustomObjectFactory;
 
     class procedure AddRegisteredObjectWithClassID(const RegisteredObject: IRegisteredObject);
     procedure InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); virtual;
@@ -198,6 +199,8 @@ type
     class function  TryGetRegisteredObjectFromConstructor(JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject) : Boolean;
     class function  TryGetRegisteredJSObject(JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject) : Boolean;
     class function  TryGetRegisteredInterface(const IID: TGuid; out RegisteredObject: IRegisteredObject) : Boolean;
+
+    class procedure SetCustomObjectFactory(const Factory: TCustomObjectFactory);
 
     class property AutoRegister: Boolean read FAutoRegister write FAutoRegister;
     class property Instance: TJSRegister read FInstance write set_Instance;
@@ -1683,6 +1686,11 @@ begin
   end;
 end;
 
+class procedure TJSRegister.SetCustomObjectFactory(const Factory: TCustomObjectFactory);
+begin
+  FCustomObjectFactory := Factory;
+end;
+
 { TRegisteredObject }
 
 function TRegisteredObject.TryGetExtensionProperty(const PropName: string; out PropertyName: string) : Boolean;
@@ -1762,7 +1770,50 @@ end;
 function TRegisteredObject.CreateInstance(ctx: JSContext; argc: Integer; argv: PJSValueConstArr): Pointer;
 var
   arr: array of TValue;
+  objArr: TArray<TObject>;
 begin
+  // Try custom factory first if available
+  if Assigned(TJSRegister.FCustomObjectFactory) then
+  begin
+    // Convert JSValues to TObject array
+    SetLength(objArr, argc);
+    for var i := 0 to argc - 1 do
+    begin
+      var jsVal := PJSValueConstArr(argv)[i];
+      
+      // Try to get object from JSValue
+      var ptr := TJSRegister.GetObjectFromJSValue(jsVal, True);
+      if ptr <> nil then
+        objArr[i] := TObject(ptr)
+      else
+      begin
+        // Try converting to TValue and extract object if possible
+        var tval := JSConverter.Instance.JSValueToTValue(ctx, jsVal, nil);
+        if not tval.IsEmpty and (tval.Kind = tkClass) then
+          objArr[i] := tval.AsObject
+        else
+          objArr[i] := nil; // Pass nil for non-object parameters
+      end;
+    end;
+    
+    // Call the factory
+    Result := TJSRegister.FCustomObjectFactory(FTypeInfo, objArr);
+    
+    if Result <> nil then
+    begin
+      if get_IsInterface then
+        Exit;
+        
+      // For classes, check if interface support needed
+      var ii: IInterface;
+      if Supports(TObject(Result), IInterface, ii) then
+        ii._AddRef;
+        
+      Exit;
+    end;
+    // If factory returned nil, fall through to default behavior
+  end;
+
   Result := CallConstructor;
 
   if Result <> nil then
@@ -2312,18 +2363,15 @@ begin
         begin
           // Resolve interface mapping if available
           var typeInfoToUse := Value.TypeInfo;
-          var ptr: Pointer;
-          Supports(Value.AsInterface, Value.TypeData.Guid, ptr);
-          
           if Assigned(TJSRegister.FObjectBridgeResolver) then
-            typeInfoToUse := TJSRegister.FObjectBridgeResolver.ResolveInterfaceMapping(Value.TypeInfo, ptr);
+            typeInfoToUse := TJSRegister.FObjectBridgeResolver.ResolveInterfaceMapping(Value.TypeInfo, Value.AsInterface);
           
           var reg := GetRegisteredObjectFromTypeInfo(typeInfoToUse);
           if reg <> nil then
           begin
             Result := JS_NewObjectClass(ctx, reg.ClassID);
-            // No need to call _AddRef, Supports will bump reference count
-            // Re-cast to the resolved interface type
+            // Supports will bump reference count (required for QuickJS to manage the object lifetime)
+            var ptr: Pointer;
             Supports(Value.AsInterface, typeInfoToUse.TypeData.Guid, ptr);
             JS_SetOpaque(Result, ptr);
           end;
