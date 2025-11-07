@@ -199,8 +199,9 @@ object Form1: TForm1
       'AddressType.register();'
       'CustomerType.register();'
       ''
-      'import {SMSheet, SMSheetType} from '#39'../../js/SmartSheet.js'#39';'
-      'SMSheetType.register();'
+      'import {SMSheet, SMProject} from '#39'../../js/SmartSheet.js'#39';'
+      'SMSheet.register();'
+      'SMSheet.Token = '#39'HPQgqT91fnVkihhyV0IugSjDtscZFqf6np4nr'#39';'
       ''
       
         '//import {SFAccount, SFAccountType} from '#39'../../js/SalesForceAcc' +
