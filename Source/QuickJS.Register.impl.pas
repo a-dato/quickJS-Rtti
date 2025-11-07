@@ -2851,10 +2851,41 @@ const
   console_log : PAnsiChar = 'console.log=log;'#10;
 
   add_fetch: PAnsiChar =
-    'import fetch from ''./fetch.js'';'#10+
+    'globalThis.fetch = function(url, options = {}) {'#10+
+    '  return new Promise((resolve,reject) => {'#10+
+    '    const xhr = new XMLHttpRequest();'#10+
+    '    const method = options.method || ''GET'';'#10+
+    ''#10+
+    '    // Set headers if provided'#10+
+    '    if (options.headers) {'#10+
+    '      for (const [key, value] of Object.entries(options.headers)) {'#10+
+    '        xhr.setRequestHeader(key, value);'#10+
+    '      }'#10+
+    '    }'#10+
+    ''#10+
+    '    xhr.open(method, url, false /* run synchronous*/);'#10+
+    ''#10+
+    '    if(options.body != null)'#10+
+    '      xhr.send(options.body);'#10+
+    '    else'#10+
+    '      xhr.send();'#10+
+    '    '#10+
+    '    if(xhr.readyState == 4) {'#10+
+    '      const response = {'#10+
+    '        ok: xhr.status >= 200 && xhr.status < 300,'#10+
+    '        status: xhr.status,'#10+
+    '        statusText: xhr.statusText,'#10+
+    '        url: xhr.responseURL,'#10+
+    '        text: () => Promise.resolve(xhr.responseText),'#10+
+    '        json: () => Promise.resolve(JSON.parse(xhr.responseText)),'#10+
+    '        blob: () => Promise.resolve(new Blob([xhr.response])),'#10+
+    '      };'#10+
+    '      resolve(response);'#10+
+    '    } else'#10+
+    '      reject(''XMLHttpRequest.readyState invalid: '' + xhr.readyState);'#10+
+    '  });'#10+
+    '};'#10
 //    'import { DateTime, Duration, Interval, Settings } from ''./luxon.js'';'#10+
-
-    'globalThis.fetch = fetch;'#10
 //    + 'globalThis.DateTime = DateTime;'#10+
 //    'globalThis.Duration = Duration;'#10+
 //    'globalThis.Interval = Interval;'#10+
