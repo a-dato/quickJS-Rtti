@@ -1860,9 +1860,13 @@ var
     if get_IsInterface then
       Exit;
       
-    // For records, wrap in TRecordReference
+    // For records, wrap in TRecordReference (but only if not already wrapped)
     if FTypeInfo.Kind = tkRecord then
     begin
+      // Check if already wrapped by TryCreateViaRTTI
+      if TObject(Ptr) is TRecordReference then
+        Exit; // Already wrapped, don't wrap again
+        
       var rec_val: TValue;
       TValue.Make(Ptr, FTypeInfo, rec_val);
       Ptr := TRecordReference.Create(rec_val);
