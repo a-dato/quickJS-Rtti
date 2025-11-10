@@ -121,28 +121,10 @@ export class LynxObject extends ICloneable_ {
 
 }
 
-export class LynxProject extends LynxObject {
-	QueryInterface(type) {
-		if(type === IProject) {
-			return this;
-		}
-		return super.QueryInterface(type);
-	}
-}
-
-export class LynxTask extends LynxObject {
-	QueryInterface(type) {
-		if(type === ITask) {
-			return this;
-		}
-		return super.QueryInterface(type);
-	}
-}
-
 export class LynxType extends IBaseInterface_ {
 }
 
-export class LynxProvider extends IBaseInterface_ {
+export class Provider extends IBaseInterface_ {
 }
 
 class ILynxDialog
@@ -152,4 +134,22 @@ class ILynxDialog
 export class LynxDialog extends ILynxDialog
 {
 
+}
+
+export class Project extends LynxObject {
+	QueryInterface(type) {
+		if(type === IProject) {
+			return this;
+		}
+		return super.QueryInterface(type);
+	}
+}
+
+export class Task extends LynxObject {
+	QueryInterface(type) {
+		if(type === ITask) {
+			return this;
+		}
+		return super.QueryInterface(type);
+	}
 }

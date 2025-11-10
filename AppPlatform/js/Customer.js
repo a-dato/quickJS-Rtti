@@ -1,5 +1,5 @@
 import {TypeCode, ITypeDescriptor_} from './app.js';
-import {visible,editor,status,LynxObject,LynxType,LynxProvider} from './lynx.js';
+import {visible,editor,status,LynxObject,LynxType,Provider} from './lynx.js';
 
 /*
  * Address type
@@ -286,7 +286,7 @@ export class CustomerType extends ITypeDescriptor_ {
 	}
 }
 
-class CustomerProvider extends LynxProvider {
+class CustomerProvider extends Provider {
 	constructor() {
 		super();
 	}
