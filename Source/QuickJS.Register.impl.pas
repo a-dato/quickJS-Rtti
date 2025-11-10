@@ -1031,7 +1031,7 @@ end;
 
 class function TJSRegister.GetClassName(Value: PTypeInfo) : string;
 begin
-  Result  := string(Value.Name);
+  Result := string(Value.Name);
 //  if Result[1] = 'T' then
 //    Result := Result.Substring(1);
 end;
