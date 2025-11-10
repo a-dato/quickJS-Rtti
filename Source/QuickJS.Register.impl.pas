@@ -1777,6 +1777,10 @@ var
     if not Assigned(TJSRegister.FCustomObjectFactory) then
       Exit;
     
+    // Don't send records to the factory
+    if FTypeInfo.Kind = tkRecord then
+      Exit;
+    
     // Convert JSValues to TValue array
     SetLength(arr, argc);
     for var i := 0 to argc - 1 do
