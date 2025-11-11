@@ -10,7 +10,7 @@ uses
   App.intf, System.Actions, FMX.ActnList, FMX.StdCtrls, System.Net.URLClient,
   System.Net.HttpClient, System.Net.HttpClientComponent, System_,
   Project.intf, System.Collections, System.Collections.Generic, System.Rtti,
-  App.Environment.intf, App.Windows.intf;
+  App.Environment.intf, App.Windows.intf, App.QuickJSBridge.intf;
 
 type
   {$M+}
@@ -68,6 +68,8 @@ type
     function Close(const AObject: CObject) : Boolean;
 
   public
+    class var _quickJSBridge: IAppQuickJSBridge;
+
     _context: IJSContext;
     _test: ITestObject;
     _testFunc: TTestFunc;
@@ -331,8 +333,6 @@ begin
   _app := TAppObject.Create(App.Environment.impl.Environment.Create(TAppMasterForm, nil));
   {$ENDIF}
 
-  _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
-
   _app.Config.RegisterWindow('Projects', function(const Window: IWindow) : IWindowFrame begin
     Result := TWindowFrame.Create(Window, TProjectFrame.Create(Window.Control as TComponent));
   end);
@@ -350,6 +350,7 @@ begin
   TProject.TypeDescriptor.Binder := TFrameBinder.Create();
   TProject.TypeDescriptor.Provider := ProjectProvider.Create(TProject.TypeDescriptor);
 
+  _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
   _app.Factory.RegisterType(TProject.Type, function : CObject begin
     Result := CObject.From<IProject>(TProject.Create);
   end);
@@ -405,7 +406,7 @@ begin
     TJSRegister.RegisterObject('IEditableModel', TypeInfo(IEditableModel), nil);
     TJSRegister.RegisterObject('IOnItemChangedSupport', TypeInfo(IOnItemChangedSupport), nil);
     TJSRegister.RegisterObject('IUpdatableObject', TypeInfo(IUpdatableObject), nil);
-    TJSRegister.RegisterObject('IProject', TypeInfo(IProject), nil);
+    // TJSRegister.RegisterObject('IProject', TypeInfo(IProject), nil);
     TJSRegister.RegisterObject('IStorage', TypeInfo(IStorage), nil);
     TJSRegister.RegisterObject('IStorageSupport', TypeInfo(IStorageSupport), nil);
 
@@ -413,6 +414,10 @@ begin
       function : Pointer begin
         Result := TTestObject.Create;
       end);
+
+    // Create the QuickJS bridge to automatically register types with QuickJS
+    _quickJSBridge := CreateAppQuickJSBridge(_app.Config);
+    _quickJSBridge.RegisterExistingTypes;
 
     _context := TJSRegister.CreateContext;
 

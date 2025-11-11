@@ -22,6 +22,7 @@ type
   {$M+}
   ITypeDescriptor = interface(IBaseInterface)
     ['{87B5C48E-38C7-4E6E-874D-0F22D1D5DC00}']
+    function  get_ClassName: CString;
     function  get_StorageName: CString;
     function  get_Binder: IContentBinder;
     procedure set_Binder(const Value: IContentBinder);
@@ -31,6 +32,7 @@ type
 
     function  AddPropertyDescriptor(const Name: string; const Value: IPropertyDescriptor) : Boolean;
 
+    property ClassName: CString read get_ClassName;
     property StorageName: CString read get_StorageName;
     property Binder: IContentBinder read get_Binder write set_Binder;
     property Provider: IContentProvider read get_Provider write set_Provider;
