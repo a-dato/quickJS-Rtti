@@ -1,10 +1,10 @@
 import {TypeCode, ITypeDescriptor_} from './app.js';
-import {visible,editor,status,LynxObject,LynxType,Provider} from './lynx.js';
+import {visible,editor,status,Object_,Type_,Provider_} from './lynx.js';
 
 /*
  * Address type
 */
-export class Address extends LynxObject {
+export class Address extends Object_ {
   constructor(id, street, zip) {
 		super(id);
     this._Street = street;
@@ -103,7 +103,7 @@ export class AddressType {
 	}
 }
 
-class AddressProvider {
+class AddressProvider extends Provider_ {
 	constructor() {
 		this._Data = null;
 	}
@@ -148,7 +148,7 @@ class AddressProvider {
 /*
  * Customer
 */
-export class Customer extends LynxObject {
+export class Customer extends Object_ {
   constructor(id, n) {
 		super(id);
     this._Name = n;
@@ -286,7 +286,7 @@ export class CustomerType extends ITypeDescriptor_ {
 	}
 }
 
-class CustomerProvider extends Provider {
+class CustomerProvider extends Provider_ {
 	constructor() {
 		super();
 	}

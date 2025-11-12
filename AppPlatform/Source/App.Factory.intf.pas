@@ -7,6 +7,14 @@ uses
   System.SysUtils;
 
 type
+  ETypeNotSupported = Class(CException)
+
+  end;
+
+  EConstructorNotSupported = Class(CException)
+
+  end;
+
   {$M+}
   TCreatorFunc_0 = reference to function: CObject;
   TCreatorFunc_1 = reference to function(const Param0: CObject) : CObject;
@@ -28,6 +36,12 @@ type
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject) : CObject; overload;
+
+    function  TryCreateInstance(const AType: &Type; out AObject: CObject) : Boolean; overload;
+    function  TryCreateInstance(const AType: &Type; const Param0: CObject; out AObject: CObject) : Boolean; overload;
+    function  TryCreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; out AObject: CObject) : Boolean; overload;
+    function  TryCreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; out AObject: CObject) : Boolean; overload;
+    function  TryCreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject; out AObject: CObject) : Boolean; overload;
 
     function  NextID: Int64;
     procedure ResetID(const Value: Int64);

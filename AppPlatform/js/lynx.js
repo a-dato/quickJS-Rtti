@@ -117,14 +117,14 @@ export class ICloneable_ extends IInterfaceWithID_ {
 	}
 }
 
-export class LynxObject extends ICloneable_ {
+export class Object_ extends ICloneable_ {
 
 }
 
-export class LynxType extends IBaseInterface_ {
+export class Type_ extends IBaseInterface_ {
 }
 
-export class Provider extends IBaseInterface_ {
+export class Provider_ extends IBaseInterface_ {
 }
 
 class ILynxDialog
@@ -136,7 +136,7 @@ export class LynxDialog extends ILynxDialog
 
 }
 
-export class Project extends LynxObject {
+export class Project_ extends Object_ {
 	QueryInterface(type) {
 		if(type === IProject) {
 			return this;
@@ -145,7 +145,7 @@ export class Project extends LynxObject {
 	}
 }
 
-export class Task extends LynxObject {
+export class Task_ extends Object_ {
 	QueryInterface(type) {
 		if(type === ITask) {
 			return this;
