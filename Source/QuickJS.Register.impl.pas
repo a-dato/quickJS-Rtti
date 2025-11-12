@@ -1776,11 +1776,11 @@ var
     Result := nil;
     if not Assigned(TJSRegister.FCustomObjectFactory) then
       Exit;
-    
+
     // Don't send records to the factory
     if FTypeInfo.Kind = tkRecord then
       Exit;
-    
+
     // Convert JSValues to TValue array
     SetLength(arr, argc);
     for var i := 0 to argc - 1 do
@@ -1788,7 +1788,8 @@ var
       var jsVal := PJSValueConstArr(argv)[i];
       arr[i] := JSConverter.Instance.JSValueToTValue(ctx, jsVal, nil);
     end;
-    
+
+    // Might raise an exception when wrong constructor is called
     Result := TJSRegister.FCustomObjectFactory(FTypeInfo, arr);
   end;
   
