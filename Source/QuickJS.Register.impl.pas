@@ -2922,8 +2922,11 @@ begin
   eval_internal(add_fetch, Length(add_fetch), 'initialize', JS_EVAL_TYPE_MODULE);
 
   JS_FreeValue(_ctx, global);
-
-  js_std_loop(_ctx);
+  
+  // js_std_loop should NOT be called here during initialization
+  // WaitForJobs during script execution already handles pending jobs
+  // Calling js_std_loop here can cause crashes with unhandled promise rejections
+  // js_std_loop(_ctx);
 end;
 
 { TJSIndexedPropertyAccessor }
