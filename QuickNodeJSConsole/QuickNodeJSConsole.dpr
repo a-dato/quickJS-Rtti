@@ -21,7 +21,9 @@ uses
   TestObjectsDefinitionsTest.impl,
   System_
   {$ENDIF}
-  ;
+  ,
+  XMLHttpRequest.impl,
+  XMLHttpRequest.intf;
 
 type
   TQuickJSConsole = class
@@ -90,6 +92,8 @@ begin
     begin
       Writeln(S);
     end);
+
+  TJSRegister.RegisterObject('XMLHttpRequest', TypeInfo(IXMLHttpRequest), function : Pointer begin Result := TXMLHttpRequest.Create; end);
 
   {$IFDEF TESTS}
   // Initialize the typed object system once
