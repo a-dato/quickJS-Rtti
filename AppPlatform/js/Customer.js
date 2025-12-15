@@ -36,7 +36,7 @@ export class Address extends Object_ {
 	}
 }
 
-export class AddressType {
+export class AddressType extends ITypeDescriptor_ {
 	static Instance = null;
 	
 	static register() {
@@ -47,6 +47,7 @@ export class AddressType {
 	}
 
 	constructor() {
+		super();
 		this.Binder = new JSBinder();			// IContentBinder
 		this.Provider = new AddressProvider();	// IContentProvider
 		this.PropertyDescriptor = {
@@ -105,6 +106,7 @@ export class AddressType {
 
 class AddressProvider extends Provider_ {
 	constructor() {
+		super();
 		this._Data = null;
 	}
 	

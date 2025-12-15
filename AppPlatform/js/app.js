@@ -30,6 +30,10 @@ export const TypeCode = {
 	Pointer: 26};
 
 export class IBaseInterface_ {
+	get ClassName() {
+		return this.constructor.name;
+	}
+
   GetHashCode() {
 		return this;
 	}
@@ -54,7 +58,7 @@ export class IBaseInterface_ {
 		if(type === IBaseInterface || type === IInterfaceWithID || type === ICloneable) {
 			return this;
 		}
-	}
+	}	
 }
 
 export class PropertyInfo_ {
