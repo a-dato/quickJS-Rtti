@@ -102,6 +102,10 @@ export class AddressType extends ITypeDescriptor_ {
 			}
 		}
 	}
+	
+	get ClassName() {
+		return 'Address';
+	}
 }
 
 class AddressProvider extends Provider_ {
@@ -281,6 +285,10 @@ export class CustomerType extends ITypeDescriptor_ {
 	
 	CreateInstance() {
 		return new Customer();
+	}
+	
+	get ClassName() {
+		return 'Customer';
 	}
 	
 	static StorageName() {
