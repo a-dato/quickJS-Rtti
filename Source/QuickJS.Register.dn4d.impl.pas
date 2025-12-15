@@ -765,7 +765,7 @@ begin
       if CString.IsNullOrEmpty(cs) then
         Exit(JS_NULL);
 
-      var s := AnsiString(cs.ToString);
+      var s := UTF8Encode(cs.ToString);
       Exit(JS_NewStringLen(ctx, PAnsiChar(s), Length(s)));
     end;
 
