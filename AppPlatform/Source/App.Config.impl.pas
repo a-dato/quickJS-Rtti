@@ -27,6 +27,8 @@ type
     procedure RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
     procedure RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);
 
+    function  FindType(const Name: string; out AType: &Type) : Boolean;
+    function  FullName(const AType: &Type) : string;
     function  TypeByName(const Name: string) : &Type;
     function  TypeDescriptor(const AType: &Type): ITypeDescriptor;
     function  TypeDescriptorByName(const Name: string) : ITypeDescriptor;
@@ -62,6 +64,32 @@ destructor TAppConfig.Destroy;
 begin
   _TypeRegisteredHandlers := nil;
   inherited;
+end;
+
+function TAppConfig.FindType(const Name: string; out AType: &Type) : Boolean;
+begin
+  Result := False;
+  AType := Default(&Type);
+
+  for var e in _Types do
+  begin
+    Result := (e.Value <> nil) and CString.Equals(e.Value.FullName, Name);
+    if Result then
+    begin
+      AType := e.Key;
+      Exit;
+    end;
+  end;
+
+  Exit;
+end;
+
+function TAppConfig.FullName(const AType: &Type): string;
+begin
+  var td: ITypeDescriptor;
+  if _Types.TryGetValue(AType, td) and (td <> nil) then
+    Result := td.FullName else
+    Result := AType.FullName;
 end;
 
 function TAppConfig.TypeDescriptor(const AType: &Type): ITypeDescriptor;

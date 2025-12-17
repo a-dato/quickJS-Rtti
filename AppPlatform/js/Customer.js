@@ -48,7 +48,7 @@ export class AddressType extends ITypeDescriptor_ {
 
 	constructor() {
 		super();
-		this.Binder = new JSBinder();			// IContentBinder
+		// this.Binder = new JSBinder();			// IContentBinder
 		this.Provider = new AddressProvider();	// IContentProvider
 		this.PropertyDescriptor = {
 			// object property descriptor
@@ -207,7 +207,7 @@ export class CustomerType extends ITypeDescriptor_ {
 
 	constructor() {
 		super();
-		this.Binder = new JSBinder();			// IContentBinder
+		// this.Binder = new JSBinder();			// IContentBinder
 		this.Provider = new CustomerProvider();	// IContentProvider
 		this.PropertyDescriptor = {
 			Customer: {
@@ -237,7 +237,8 @@ export class CustomerType extends ITypeDescriptor_ {
 					Marshal: (ctx, item) => {
 						let json = {
 							ID: `${item.ID}`,
-							Name: `${item.Name}`
+							Name: `${item.Name}`,
+							Type: `${this.FullName}`
 						}
 						return JSON.stringify(json);
 					},
@@ -285,6 +286,10 @@ export class CustomerType extends ITypeDescriptor_ {
 	
 	CreateInstance() {
 		return new Customer();
+	}
+	
+	get FullName() {
+		return 'lynx.extension.customer';
 	}
 	
 	get ClassName() {

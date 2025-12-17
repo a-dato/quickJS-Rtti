@@ -34,6 +34,7 @@ type
     function  AddPropertyDescriptor(const Name: string; const Value: IPropertyDescriptor) : Boolean; virtual;
 
     function  get_ClassName: CString;
+    function  get_FullName: CString;
     function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor; virtual;
     function  get_StorageName: CString; virtual;
     function  get_Binder: IContentBinder; virtual;
@@ -78,6 +79,11 @@ end;
 function TTypeDescriptor.get_ClassName: CString;
 begin
   Result := _className;
+end;
+
+function TTypeDescriptor.get_FullName: CString;
+begin
+  Result := get_ClassName;
 end;
 
 function TTypeDescriptor.get_PropertyDescriptor(const Name: string): IPropertyDescriptor;

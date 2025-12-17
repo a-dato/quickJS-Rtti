@@ -34,6 +34,10 @@ export class IBaseInterface_ {
 		return this.constructor.name;
 	}
 
+	get FullName() {
+		return ClassName;
+	}
+
   GetHashCode() {
 		return this;
 	}

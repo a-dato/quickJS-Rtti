@@ -7,9 +7,7 @@ uses
   System.Collections.Generic,
   App.Config.intf,
   App.Storage.intf,
-  App.Windows.intf,
   App.Environment.intf,
-  ADato.ObjectModel.List.intf,
   App.Factory.intf;
 
 type

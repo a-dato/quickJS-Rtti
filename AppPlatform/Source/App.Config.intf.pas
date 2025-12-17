@@ -23,6 +23,8 @@ type
     procedure RegisterType(const AType: &Type; const ObjectType: ITypeDescriptor);
     procedure RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);
 
+    function  FindType(const Name: string; out AType: &Type) : Boolean;
+    function  FullName(const AType: &Type) : string;
     function  TypeByName(const Name: string) : &Type;
     function  TypeDescriptorByName(const Name: string) : ITypeDescriptor;
     function  TypeDescriptor(const AType: &Type): ITypeDescriptor;

@@ -295,6 +295,14 @@ end;
 
 procedure TForm1.Button6Click(Sender: TObject);
 begin
+  var t := _app.Config.TypeByName('Customer');
+  var ctx := TRttiContext.Create;
+  try
+    ctx.GetType(t.GetTypeInfo).QualifiedName;
+  finally
+    ctx.Free;
+  end;
+
   // var f := TForm1.Create(Self);
 end;
 
