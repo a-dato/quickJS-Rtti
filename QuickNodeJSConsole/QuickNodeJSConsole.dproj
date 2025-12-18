@@ -4,7 +4,7 @@
         <ProjectVersion>20.1</ProjectVersion>
         <FrameworkType>None</FrameworkType>
         <Base>True</Base>
-        <Config Condition="'$(Config)'==''">Release</Config>
+        <Config Condition="'$(Config)'==''">Tests</Config>
         <Platform Condition="'$(Platform)'==''">Win64</Platform>
         <ProjectName Condition="'$(ProjectName)'==''">QuickNodeJSConsole</ProjectName>
         <TargetedPlatforms>3</TargetedPlatforms>
@@ -148,7 +148,7 @@
         <VerInfo_Locale>1043</VerInfo_Locale>
     </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_2_Win64)'!=''">
-        <Debugger_RunParams>main.js Bruns.env</Debugger_RunParams>
+        <Debugger_RunParams>main.js</Debugger_RunParams>
     </PropertyGroup>
     <ItemGroup>
         <DelphiCompile Include="$(MainSource)">

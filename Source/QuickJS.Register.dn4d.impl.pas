@@ -1,4 +1,4 @@
-﻿unit QuickJS.Register.dn4d.impl;
+unit QuickJS.Register.dn4d.impl;
 
 interface
 
@@ -148,6 +148,26 @@ implementation
 
 uses
   System.SysUtils, System.Math;
+
+// Helper: Check if a JSValue is a JavaScript Array by checking constructor.name
+// Note: JS_IsArray from QuickJS doesn't work reliably, so we use this instead
+function IsJSArray(ctx: JSContext; Value: JSValueConst): Boolean;
+begin
+  Result := False;
+  if not JS_IsObject(Value) then
+    Exit;
+    
+  var ctorVal := JS_GetPropertyStr(ctx, Value, 'constructor');
+  var ctorNameVal := JS_GetPropertyStr(ctx, ctorVal, 'name');
+  var nameStr: PAnsiChar := JS_ToCString(ctx, ctorNameVal);
+  if nameStr <> nil then
+  begin
+    Result := UTF8ToString(nameStr) = 'Array';
+    JS_FreeCString(ctx, nameStr);
+  end;
+  JS_FreeValue(ctx, ctorNameVal);
+  JS_FreeValue(ctx, ctorVal);
+end;
 
 function TJSBaseObject.AsType(const Value: &Type) : CObject;
 begin
@@ -593,6 +613,18 @@ begin
       end
       else
       begin
+        // Check if this is a JS Array - use constructor.name since JS_IsArray doesn't work reliably
+        if IsJSArray(ctx, Value) then
+        begin
+          var virtualList := TJSVirtualListInterface.Create(Target, ctx, Value);
+          var ii: IInterface;
+          if virtualList.QueryInterface(Target.TypeData.GUID, ii) = S_OK then
+          begin
+            TValue.Make(@ii, Target, Result);
+            Exit;
+          end;
+        end;
+
         var obj_ref: IJSObject := TJSBaseObject.Create(ctx, Value);
 
         if Target = TypeInfo(IJSObject) then

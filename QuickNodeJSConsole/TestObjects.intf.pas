@@ -89,6 +89,8 @@ type
     function FindTestObjectByProperty(const Objects: IList<ITestObject>; const SearchValue: CString): ITestObject;
     function CreateTestObjectChain(const Count: Integer): IList<ITestObject>;
     function GetTestObjectsWithData(const Count: Integer): IList<ITestObject>;
+    // Memory test methods
+    function VerifyObjectsAlive(const Objects: IList<ITestObject>): Integer;
 
     property TestObjects: IList<ITestObject> read get_TestObjects;
     property MixedTestObjects: IList<IBaseInterface> read get_MixedTestObjects;
