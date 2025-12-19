@@ -207,7 +207,6 @@ begin
       function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
       var
         Info: string;
-        ObjPtr: Pointer;
         ObjType: string;
         ToStr: string;
         InterfaceList: string;
@@ -215,6 +214,11 @@ begin
         RttiType: TRttiType;
         Obj: TObject;
         i: Integer;
+        RefCount: Integer;
+        RefCountStr: string;
+        IntfOffset: NativeInt;
+        ClassHierarchy: string;
+        ParentClass: TClass;
       begin
         Result := JS_UNDEFINED;
         
@@ -241,7 +245,50 @@ begin
             Exit;
           end;
 
-          ObjPtr := Ptr;
+          // Calculate interface offset (difference between interface ptr and object ptr)
+          IntfOffset := NativeInt(Ptr) - NativeInt(Pointer(Obj));
+
+          // Try to get reference count via RTTI or known field
+          RefCount := -1;
+          RefCountStr := '<unknown>';
+          try
+            RttiCtx := TRttiContext.Create;
+            try
+              var objRttiType := RttiCtx.GetType(Obj.ClassType);
+              if objRttiType <> nil then
+              begin
+                var refCountField := objRttiType.GetField('FRefCount');
+                if refCountField <> nil then
+                begin
+                  RefCount := refCountField.GetValue(Obj).AsInteger;
+                  RefCountStr := IntToStr(RefCount);
+                end
+                else
+                begin
+                  // Try common field names
+                  refCountField := objRttiType.GetField('fRefCount');
+                  if refCountField <> nil then
+                  begin
+                    RefCount := refCountField.GetValue(Obj).AsInteger;
+                    RefCountStr := IntToStr(RefCount);
+                  end;
+                end;
+              end;
+            finally
+              RttiCtx.Free;
+            end;
+          except
+            RefCountStr := '<error reading>';
+          end;
+
+          // Build class hierarchy
+          ClassHierarchy := Obj.ClassName;
+          ParentClass := Obj.ClassParent;
+          while ParentClass <> nil do
+          begin
+            ClassHierarchy := ClassHierarchy + ' -> ' + ParentClass.ClassName;
+            ParentClass := ParentClass.ClassParent;
+          end;
 
           // Get type info using RTTI
           RttiCtx := TRttiContext.Create;
@@ -286,10 +333,15 @@ begin
               ToStr := '<ToString() failed>';
             end;
 
-            // Build info string
+            // Build info string with enhanced diagnostics
             Info := 'Object Info:' + #10 +
                     '  Type: ' + ObjType + #10 +
-                    '  Address: ' + IntToHex(NativeInt(ObjPtr), 16) + #10 +
+                    '  Class Hierarchy: ' + ClassHierarchy + #10 +
+                    '  Interface Ptr (raw): ' + IntToHex(NativeInt(Ptr), 16) + #10 +
+                    '  Object Ptr (TObject): ' + IntToHex(NativeInt(Pointer(Obj)), 16) + #10 +
+                    '  Interface Offset: ' + IntToStr(IntfOffset) + ' bytes' + #10 +
+                    '  RefCount: ' + RefCountStr + #10 +
+                    '  InstanceSize: ' + IntToStr(Obj.InstanceSize) + ' bytes' + #10 +
                     '  ToString: ' + ToStr + #10 +
                     '  Supported Interfaces: ' + InterfaceList;
 

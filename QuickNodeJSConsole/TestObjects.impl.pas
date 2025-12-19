@@ -11,6 +11,8 @@ uses
 type
   TTestObject = class(TBaseInterfacedObject, ITestObject)
   protected
+    FInstanceId: Integer;
+    class var FNextInstanceId: Integer;
     // ITestObject
     function get_TestArray: IList<CString>;
     function EchoDateTime(const ADateTime: CDateTime): CDateTime;
@@ -27,6 +29,7 @@ type
     function GetTestObject2List(const Count: Integer): IList<ITestObject2>;
   public
     constructor Create;
+    destructor Destroy; override;
   end;
 
   TTestObject2 = class(TBaseInterfacedObject, ITestObject2)
@@ -88,6 +91,7 @@ type
     function FindTestObjectByProperty(const Objects: IList<ITestObject>; const SearchValue: CString): ITestObject;
     function CreateTestObjectChain(const Count: Integer): IList<ITestObject>;
     function GetTestObjectsWithData(const Count: Integer): IList<ITestObject>;
+    function VerifyObjectsAlive(const Objects: IList<ITestObject>): Integer;
   public
     constructor Create;
   end;
@@ -99,6 +103,15 @@ implementation
 constructor TTestObject.Create;
 begin
   inherited Create;
+  Inc(FNextInstanceId);
+  FInstanceId := FNextInstanceId;
+  Writeln('[DELPHI] TTestObject.Create - Instance #', FInstanceId);
+end;
+
+destructor TTestObject.Destroy;
+begin
+  Writeln('[DELPHI] TTestObject.Destroy - Instance #', FInstanceId);
+  inherited;
 end;
 
 function TTestObject.get_TestArray: IList<CString>;
@@ -447,6 +460,21 @@ begin
     var testObj := TTestObject.Create;
     Result.Add(testObj);
   end;
+end;
+
+function TTestObject3.VerifyObjectsAlive(const Objects: IList<ITestObject>): Integer;
+begin
+  Writeln('[DELPHI] VerifyObjectsAlive called with ', Objects.Count, ' objects');
+  Result := 0;
+  for var i := 0 to Objects.Count - 1 do
+  begin
+    var obj := Objects[i];
+    // Access the TestArray to verify the object is alive and functional
+    var arr := obj.TestArray;
+    Writeln('[DELPHI]   Object ', i, ' is alive, TestArray.Count = ', arr.Count);
+    Inc(Result);
+  end;
+  Writeln('[DELPHI] VerifyObjectsAlive complete - ', Result, ' objects verified');
 end;
 
 // ITestObject inherited methods for TTestObject3
