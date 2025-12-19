@@ -11,7 +11,7 @@ uses
   QuickJS.Register.intf, quickjs_ng;
 
 type
-  TObjectConstuctor = reference to function: Pointer;
+  // TObjectConstuctor is now defined in QuickJS.Register.intf
 
   DefaultValueAttribute = class(TCustomAttribute)
   protected

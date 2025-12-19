@@ -87,24 +87,27 @@ end;
 procedure TQuickJSConsole.InitializeGlobalSettings;
 begin
   // One-time initialization - only needs to happen once
-  QuickJS.Register.impl.OutputLogString := TProc<string>(
+  // Set up the log output
+  var runtime := TJSRuntime.Shared;
+  runtime.LogString := TProc<string>(
     procedure(S: string)
     begin
       Writeln(S);
     end);
 
-  TJSRegister.RegisterObject('XMLHttpRequest', TypeInfo(IXMLHttpRequest), function : Pointer begin Result := TXMLHttpRequest.Create; end);
+  // Use runtime-based registration (new pattern)
+  runtime.RegisterObjectWithConstructor('XMLHttpRequest', TypeInfo(IXMLHttpRequest), function : Pointer begin Result := TXMLHttpRequest.Create; end);
 
   {$IFDEF TESTS}
   // Initialize the typed object system once
   TJSRegisterTypedObjects.Initialize;
 
-  // Register test object bridge definitions (one-time registration)
-  TestObjectBridgeDefinitions.RegisterWithObjectBridge(TJSRegister.ObjectBridgeResolver);
+  // Register test object bridge definitions on the runtime
+  TestObjectBridgeDefinitions.RegisterWithObjectBridge(runtime);
 
-  // Register TimeInterval record type (one-time registration)
-  TJSRegister.RegisterObject('TimeInterval', TypeInfo(TimeInterval));
-  TJSRegister.RegisterObject('TimeSpan', TypeInfo(CTimeSpan));
+  // Register record/enum types on the runtime (new pattern)
+  runtime.RegisterObjectType('TimeInterval', TypeInfo(TimeInterval));
+  runtime.RegisterObjectType('TimeSpan', TypeInfo(CTimeSpan));
   {$ENDIF}
 end;
 

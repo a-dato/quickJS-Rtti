@@ -13,17 +13,18 @@ type
 
   TObjectBridgeResolver = class(TInterfacedObject, IObjectBridgeResolver)
   private
-    class var _propertyDescriptors: TDictionary<string, TList<IObjectBridgePropertyDescriptor>>;
-    class var _methodDescriptors: TDictionary<string, TList<IObjectBridgeMethodDescriptor>>;
-    class var _interfaceMappings: TDictionary<PTypeInfo, TList<PTypeInfo>>; // Source -> List of potential targets (ordered by priority)
-    class var _isResolving: Boolean; // Recursion guard
+    // Instance fields - no longer class vars
+    FPropertyDescriptors: TDictionary<string, TList<IObjectBridgePropertyDescriptor>>;
+    FMethodDescriptors: TDictionary<string, TList<IObjectBridgeMethodDescriptor>>;
+    FInterfaceMappings: TDictionary<PTypeInfo, TList<PTypeInfo>>; // Source -> List of potential targets (ordered by priority)
+    FIsResolving: Boolean; // Recursion guard
     
-    class procedure InitializeResolvers;
-    class function TryGetPropertyDescriptor(const AObject: IRegisteredObject; const PropertyName: string): IPropertyDescriptor;
-    class function TryGetMethodDescriptor(const AObject: IRegisteredObject; const MethodName: string): IPropertyDescriptor;
+    procedure InitializeResolvers;
+    function TryGetPropertyDescriptor(const AObject: IRegisteredObject; const PropertyName: string): IPropertyDescriptor;
+    function TryGetMethodDescriptor(const AObject: IRegisteredObject; const MethodName: string): IPropertyDescriptor;
   public
-    class constructor Create;
-    class destructor Destroy;
+    constructor Create;
+    destructor Destroy; override;
     
     // IObjectBridgeResolver implementation
     function OnGetMemberByName(const AObject: IRegisteredObject; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean): IPropertyDescriptor;
@@ -43,54 +44,57 @@ uses
 
 { TObjectBridgeResolver }
 
-class constructor TObjectBridgeResolver.Create;
+constructor TObjectBridgeResolver.Create;
 begin
-  _isResolving := False;
+  inherited Create;
+  FIsResolving := False;
   InitializeResolvers;
 end;
 
-class destructor TObjectBridgeResolver.Destroy;
+destructor TObjectBridgeResolver.Destroy;
 begin
   // Free property descriptor lists
-  if Assigned(_propertyDescriptors) then
+  if Assigned(FPropertyDescriptors) then
   begin
-    for var descriptorList in _propertyDescriptors.Values do
+    for var descriptorList in FPropertyDescriptors.Values do
       descriptorList.Free;
-    _propertyDescriptors.Free;
+    FPropertyDescriptors.Free;
   end;
   
   // Free method descriptor lists
-  if Assigned(_methodDescriptors) then
+  if Assigned(FMethodDescriptors) then
   begin
-    for var descriptorList in _methodDescriptors.Values do
+    for var descriptorList in FMethodDescriptors.Values do
       descriptorList.Free;
-    _methodDescriptors.Free;
+    FMethodDescriptors.Free;
   end;
   
   // Free interface mapping lists
-  if Assigned(_interfaceMappings) then
+  if Assigned(FInterfaceMappings) then
   begin
-    for var mappingList in _interfaceMappings.Values do
+    for var mappingList in FInterfaceMappings.Values do
       mappingList.Free;
-    _interfaceMappings.Free;
+    FInterfaceMappings.Free;
   end;
+  
+  inherited Destroy;
 end;
 
-class procedure TObjectBridgeResolver.InitializeResolvers;
+procedure TObjectBridgeResolver.InitializeResolvers;
 begin
-  _propertyDescriptors := TDictionary<string, TList<IObjectBridgePropertyDescriptor>>.Create;
-  _methodDescriptors := TDictionary<string, TList<IObjectBridgeMethodDescriptor>>.Create;
-  _interfaceMappings := TDictionary<PTypeInfo, TList<PTypeInfo>>.Create;
+  FPropertyDescriptors := TDictionary<string, TList<IObjectBridgePropertyDescriptor>>.Create;
+  FMethodDescriptors := TDictionary<string, TList<IObjectBridgeMethodDescriptor>>.Create;
+  FInterfaceMappings := TDictionary<PTypeInfo, TList<PTypeInfo>>.Create;
 end;
 
-class function TObjectBridgeResolver.TryGetPropertyDescriptor(const AObject: IRegisteredObject; const PropertyName: string): IPropertyDescriptor;
+function TObjectBridgeResolver.TryGetPropertyDescriptor(const AObject: IRegisteredObject; const PropertyName: string): IPropertyDescriptor;
 begin
   Result := nil;
   var lowerPropertyName: string := LowerCase(PropertyName);
   
   // Look up descriptors by name in dictionary
   var descriptorList: TList<IObjectBridgePropertyDescriptor>;
-  if not _propertyDescriptors.TryGetValue(lowerPropertyName, descriptorList) then
+  if not FPropertyDescriptors.TryGetValue(lowerPropertyName, descriptorList) then
     Exit;
   
   // Only check CanHandle on descriptors with matching name
@@ -104,14 +108,14 @@ begin
   end;
 end;
 
-class function TObjectBridgeResolver.TryGetMethodDescriptor(const AObject: IRegisteredObject; const MethodName: string): IPropertyDescriptor;
+function TObjectBridgeResolver.TryGetMethodDescriptor(const AObject: IRegisteredObject; const MethodName: string): IPropertyDescriptor;
 begin
   Result := nil;
   var lowerMethodName: string := LowerCase(MethodName);
 
   // Look up descriptors by name in dictionary
   var descriptorList: TList<IObjectBridgeMethodDescriptor>;
-  if not _methodDescriptors.TryGetValue(lowerMethodName, descriptorList) then
+  if not FMethodDescriptors.TryGetValue(lowerMethodName, descriptorList) then
     Exit;
   
   // Only check CanHandle on descriptors with matching name
@@ -131,10 +135,10 @@ begin
   
   // Get or create the list for this property name
   var descriptorList: TList<IObjectBridgePropertyDescriptor>;
-  if not _propertyDescriptors.TryGetValue(lowerPropertyName, descriptorList) then
+  if not FPropertyDescriptors.TryGetValue(lowerPropertyName, descriptorList) then
   begin
     descriptorList := TList<IObjectBridgePropertyDescriptor>.Create;
-    _propertyDescriptors.Add(lowerPropertyName, descriptorList);
+    FPropertyDescriptors.Add(lowerPropertyName, descriptorList);
   end;
   
   // Insert at the beginning so later registrations take priority
@@ -147,10 +151,10 @@ begin
   
   // Get or create the list for this method name
   var descriptorList: TList<IObjectBridgeMethodDescriptor>;
-  if not _methodDescriptors.TryGetValue(lowerMethodName, descriptorList) then
+  if not FMethodDescriptors.TryGetValue(lowerMethodName, descriptorList) then
   begin
     descriptorList := TList<IObjectBridgeMethodDescriptor>.Create;
-    _methodDescriptors.Add(lowerMethodName, descriptorList);
+    FMethodDescriptors.Add(lowerMethodName, descriptorList);
   end;
   
   // Insert at the beginning so later registrations take priority
@@ -163,10 +167,10 @@ begin
   Handled := False;
   
   // Prevent infinite recursion
-  if _isResolving then
+  if FIsResolving then
     Exit;
   
-  _isResolving := True;
+  FIsResolving := True;
   try
     // Try properties if requested
     if TMemberType.Property in MemberTypes then
@@ -190,7 +194,7 @@ begin
       end;
     end;
   finally
-    _isResolving := False;
+    FIsResolving := False;
   end;
 end;
 
@@ -207,10 +211,10 @@ begin
   
   // Get or create the list for this source interface
   var mappingList: TList<PTypeInfo>;
-  if not _interfaceMappings.TryGetValue(SourceInterface, mappingList) then
+  if not FInterfaceMappings.TryGetValue(SourceInterface, mappingList) then
   begin
     mappingList := TList<PTypeInfo>.Create;
-    _interfaceMappings.Add(SourceInterface, mappingList);
+    FInterfaceMappings.Add(SourceInterface, mappingList);
   end;
   
   // Add to the beginning so later registrations take priority
@@ -226,7 +230,7 @@ begin
   
   // Look up mappings for this source interface
   var mappingList: TList<PTypeInfo>;
-  if not _interfaceMappings.TryGetValue(SourceInterface, mappingList) then
+  if not FInterfaceMappings.TryGetValue(SourceInterface, mappingList) then
     Exit;
   
   // Try each potential target interface in priority order

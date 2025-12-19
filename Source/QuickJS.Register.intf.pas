@@ -1,4 +1,4 @@
-﻿unit QuickJS.Register.intf;
+unit QuickJS.Register.intf;
 
 interface
 
@@ -9,7 +9,7 @@ uses
 
 
 type
-  TObjectConstuctor = function : Pointer;
+  TObjectConstuctor = reference to function : Pointer;
   TCustomObjectFactory = function(const ATypeInfo: PTypeInfo; const Args: TArray<TValue>) : Pointer of object;
 
   TObjectSupportsExtension = (Unknown, Supported, NotSupported);
@@ -103,15 +103,40 @@ type
   end;
 
   IJSRuntime = interface
+    ['{B5C8D2E1-3F4A-5B6C-7D8E-9F0A1B2C3D4E}']
     function  get_rt: JSRuntime;
     function  get_LogString: TProc<string>;
     procedure set_LogString(const Value: TProc<string>);
+    function  get_ObjectBridgeResolver: IInterface;
+    function  get_AutoRegister: Boolean;
+    procedure set_AutoRegister(const Value: Boolean);
 
     function  CreateContext: IJSContext;
     procedure OutputLog(const Value: string);
 
+    // Type registration - per-runtime
+    function  RegisterObjectType(ClassName: string; TypeInfo: PTypeInfo): IRegisteredObject;
+    function  RegisterObjectWithConstructor(ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject;
+    function  RegisterJSObject(const ctx: IJSContext; JSConstructor: JSValueConst; TypeInfo: PTypeInfo): IRegisteredObject;
+
+    procedure RegisterLiveObjectInstance(const ctx: IJSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean);
+    procedure RegisterLiveInterfaceInstance(const ctx: IJSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface);
+
+    function  TryGetRegisteredObjectFromJSValue(Value: JSValue; out AObject: TRegisteredObjectWithPtr): Boolean;
+    function  TryGetRegisteredObjectFromClassID(ClassID: JSClassID; out RegisteredObject: IRegisteredObject): Boolean;
+    function  TryGetRegisteredObjectFromTypeInfo(TypeInfo: PTypeInfo; out RegisteredObject: IRegisteredObject): Boolean;
+    function  TryGetRegisteredObjectFromConstructor(JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject): Boolean;
+    function  TryGetRegisteredJSObject(JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject): Boolean;
+    function  TryGetRegisteredInterface(const IID: TGuid; out RegisteredObject: IRegisteredObject): Boolean;
+
+    procedure SetCustomObjectFactory(const Factory: TCustomObjectFactory);
+    procedure RegisterContext(const Context: IJSContext);
+    procedure UnregisterContext(const Context: IJSContext);
+
     property rt: JSRuntime read get_rt;
     property LogString: TProc<string> read get_LogString write set_LogString;
+    property ObjectBridgeResolver: IInterface read get_ObjectBridgeResolver;
+    property AutoRegister: Boolean read get_AutoRegister write set_AutoRegister;
   end;
 
   IJSContext = interface

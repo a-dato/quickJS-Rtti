@@ -38,14 +38,12 @@ type
 
   public
     class procedure Initialize; // Context parameter removed - not needed
-  end;
-
-  TJSTypedConverter = class(JSConverter)
+    
+    // Typed converter methods - formerly in TJSTypedConverter, now override TJSRegister
     class function GetTypeFromJSObject(ctx: JSContext; Value: JSValueConst): &Type;
-
     function JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue; override;
-    function TValueToJSValue(ctx: JSContext; const Value: TValue) : JSValue; override;
-    function TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue; out ParamIsGenericValue: Boolean) : Boolean; override;
+    function TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue; override;
+    function TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue; out ParamIsGenericValue: Boolean): Boolean; override;
   end;
 
   TJSPropertyInfo = class(TBaseInterfacedObject, _PropertyInfo)
@@ -196,7 +194,7 @@ end;
 function TJSBaseObject.GetType: &Type;
 begin
   var ctr := JS_GetPropertyStr(_ctx, _value, 'constructor');
-  Result := TJSTypedConverter.GetTypeFromJSObject(_ctx, ctr);
+  Result := TJSRegisterTypedObjects.GetTypeFromJSObject(_ctx, ctr);
   JS_FreeValue(_ctx, ctr);
   // Result := &Type.Create(Self.ClassInfo);
 end;
@@ -217,10 +215,7 @@ class procedure TJSRegisterTypedObjects.Initialize;
 begin
   // Only initialize once - avoid recreating instances on every context creation
   if not (TJSRegister.Instance is TJSRegisterTypedObjects) then
-  begin
-    JSConverter.Instance := TJSTypedConverter.Create;
     TJSRegister.Instance := TJSRegisterTypedObjects.Create;
-  end;
 
   // These registrations are safe to call multiple times (they check if already registered)
   TJSRegister.RegisterObject('JSIEnumerableIterator', TypeInfo(TJSIEnumerableIterator));
@@ -497,8 +492,8 @@ begin
   Result := TMemberType.Iterator;
 end;
 
-{ TJSTypedConverter }
-class function TJSTypedConverter.GetTypeFromJSObject(ctx: JSContext; Value: JSValueConst): &Type;
+{ TJSRegisterTypedObjects - Typed Converter Methods }
+class function TJSRegisterTypedObjects.GetTypeFromJSObject(ctx: JSContext; Value: JSValueConst): &Type;
 begin
   var reg: IRegisteredObject;
 
@@ -533,7 +528,7 @@ begin
     Result := &Type.Unknown;
 end;
 
-function TJSTypedConverter.JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
+function TJSRegisterTypedObjects.JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
 begin
   if Target = nil then
   begin
@@ -784,7 +779,7 @@ begin
     Result := inherited;
 end;
 
-function TJSTypedConverter.TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue;
+function TJSRegisterTypedObjects.TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue;
 begin
   if Value.Kind = tkRecord then
   begin
@@ -829,7 +824,7 @@ begin
   Result := inherited;
 end;
 
-function TJSTypedConverter.TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue; out ParamIsGenericValue: Boolean) : Boolean;
+function TJSRegisterTypedObjects.TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue; out ParamIsGenericValue: Boolean): Boolean;
 begin
   if (Param.ParamType.TypeKind = tkRecord) and (Param.Handle = TypeInfo(CObject)) then
   begin
@@ -966,7 +961,7 @@ begin
   begin
     var val := JS_GetPropertyStr(_ctx, js_obj.Value, PAnsiChar(_name));
     if not TJSRuntime.Check(_ctx) then Exit;
-    Result := JSConverter.Instance.JSValueToTValue(_ctx, val, nil);
+    Result := TJSRegister.Instance.JSValueToTValue(_ctx, val, nil);
   end;
 
 //  var js_obj: JSObjectReference;
@@ -974,7 +969,7 @@ begin
 //  begin
 //    var val := JS_GetPropertyStr(_ctx, js_obj.Value, PAnsiChar(_name));
 //    if not TJSRuntime.Check(_ctx) then Exit;
-//    Result := JSConverter.Instance.JSValueToTValue(_ctx, val, nil);
+//    Result := TJSRegister.Instance.JSValueToTValue(_ctx, val, nil);
 //  end;
 end;
 
@@ -1013,14 +1008,14 @@ begin
   var js_obj: IJSObject;
   if obj.TryAsType<IJSObject>(js_obj) then
   begin
-    JS_SetPropertyStr(_ctx, js_obj.Value, PAnsiChar(_name), JSConverter.Instance.TValueToJSValue(_ctx, value.AsType<TValue>));
+    JS_SetPropertyStr(_ctx, js_obj.Value, PAnsiChar(_name), TJSRegister.Instance.TValueToJSValue(_ctx, value.AsType<TValue>));
     TJSRuntime.Check(_ctx);
   end;
 
 //  var js_obj: JSObjectReference;
 //  if obj.TryAsType<JSObjectReference>(js_obj) then
 //  begin
-//    JS_SetPropertyStr(_ctx, js_obj.Value, PAnsiChar(_name), JSConverter.Instance.TValueToJSValue(_ctx, value.AsType<TValue>));
+//    JS_SetPropertyStr(_ctx, js_obj.Value, PAnsiChar(_name), TJSRegister.Instance.TValueToJSValue(_ctx, value.AsType<TValue>));
 //    TJSRuntime.Check(_ctx);
 //  end;
 end;

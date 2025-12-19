@@ -6,13 +6,17 @@ uses
   System_,
   QuickJS.Register.ObjectBridgeTypes.intf,
   QuickJS.Register.ObjectBridge.intf,
+  QuickJS.Register.intf,
   System.TypInfo,
   TestObjects.intf;
 
 type
   TestObjectBridgeDefinitions = class
   public
-    class procedure RegisterWithObjectBridge(const ObjectBridgeResolver: IObjectBridgeResolver);
+    // New signature - takes runtime for type registrations
+    class procedure RegisterWithObjectBridge(const Runtime: IJSRuntime); overload;
+    // Legacy signature - uses the provided resolver directly
+    class procedure RegisterWithObjectBridge(const ObjectBridgeResolver: IObjectBridgeResolver); overload;
     class procedure AddAllInterfacePropertiesAndMethods(
       const SourceInterface: PTypeInfo; const TargetInterface: PTypeInfo;
       const ObjectBridgeResolver: IObjectBridgeResolver);
@@ -21,14 +25,27 @@ type
 implementation
 
 uses
-  System.SysUtils,
-  QuickJS.Register.intf, System.Rtti,
+  System.SysUtils, System.Rtti,
   System.Collections.Generic, System.Collections,
   QuickJS.Register.ObjectBridge.impl, QuickJS.Register.ObjectBridgeTypes.impl,
    QuickJS.Register.PropertyDescriptors.impl, QuickJS.Register.impl, quickjs_ng;
 
 { TestObjectBridgeDefinitions }
 
+// New version - registers definitions on a specific runtime
+class procedure TestObjectBridgeDefinitions.RegisterWithObjectBridge(const Runtime: IJSRuntime);
+var
+  ObjectBridgeResolver: IObjectBridgeResolver;
+begin
+  if Runtime = nil then Exit;
+  ObjectBridgeResolver := Runtime.ObjectBridgeResolver as IObjectBridgeResolver;
+  if ObjectBridgeResolver = nil then Exit;
+  
+  // Delegate to the resolver-based version
+  RegisterWithObjectBridge(ObjectBridgeResolver);
+end;
+
+// Legacy version - works directly with the resolver
 class procedure TestObjectBridgeDefinitions.RegisterWithObjectBridge(const ObjectBridgeResolver: IObjectBridgeResolver);
 begin
   // Generic IList<T> properties - matches any interface starting with "ilist<"

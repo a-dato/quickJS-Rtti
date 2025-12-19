@@ -11,11 +11,13 @@ uses
   QuickJS.Register.PropertyDescriptors.intf, QuickJS.Register.intf, quickjs_ng;
 
 type
+  {$M+}
   TJSIterator = class abstract
   public
     function MoveNext: Boolean; virtual; abstract;
     function Current: TValue; virtual; abstract;
   end;
+  {$M-}
 
   TJSObjectIterator = class(TJSIterator)
   protected
