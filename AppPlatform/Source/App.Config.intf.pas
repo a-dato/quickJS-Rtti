@@ -19,12 +19,14 @@ type
     function get_Types: List<&Type>;
 
     function AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
+    function WrapProperty(const AProperty: _PropertyInfo) : _PropertyInfo;
 
     procedure RegisterType(const AType: &Type; const ObjectType: ITypeDescriptor);
     procedure RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);
 
     function  FindType(const Name: string; out AType: &Type) : Boolean;
     function  FullName(const AType: &Type) : string;
+    function  TypeIsRegistered(const AType: &Type) : Boolean;
     function  TypeByName(const Name: string) : &Type;
     function  TypeDescriptorByName(const Name: string) : ITypeDescriptor;
     function  TypeDescriptor(const AType: &Type): ITypeDescriptor;

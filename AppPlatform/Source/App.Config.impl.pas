@@ -24,11 +24,14 @@ type
     function get_Types: List<&Type>;
 
     function  AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
+    function  WrapProperty(const AProperty: _PropertyInfo) : _PropertyInfo;
+
     procedure RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
     procedure RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);
 
     function  FindType(const Name: string; out AType: &Type) : Boolean;
     function  FullName(const AType: &Type) : string;
+    function  TypeIsRegistered(const AType: &Type) : Boolean;
     function  TypeByName(const Name: string) : &Type;
     function  TypeDescriptor(const AType: &Type): ITypeDescriptor;
     function  TypeDescriptorByName(const Name: string) : ITypeDescriptor;
@@ -146,6 +149,43 @@ begin
   {$ENDIF}
 end;
 
+function TAppConfig.WrapProperty(const AProperty: _PropertyInfo) : _PropertyInfo;
+begin
+  {$IFDEF APP_PLATFORM}
+  Result := AProperty;
+
+  var propType := AProperty.GetType;
+  var descriptor := TypeDescriptor(propType);
+  if descriptor <> nil then
+  begin
+    var prop_descriptor := descriptor.PropertyDescriptor[propType.Name];
+
+    if propType.IsOfType<IList> then
+      Result := TCollectionPropertyWithDescriptor.Create(Result, prop_descriptor) else
+      Result := TPropertyWithDescriptor.Create(Result, prop_descriptor);
+  end;
+
+  // Path property, like: Customer.Address
+  if AProperty.Name.Contains('.') then
+  begin
+    var sub_properties := AProperty.Name.Split(['.']);
+
+    var path: TArray<_PropertyInfo>;
+    SetLength(path, Length(sub_properties));
+    var property_type := AProperty.OwnerType;
+
+    for var i := 0 to High(sub_properties) do
+    begin
+      var sub_property := property_type.PropertyByName(sub_properties[i]);
+      path[i] := sub_property;
+      property_type := sub_property.GetType;
+    end;
+
+    Result := TPathProperty.Create(Result, path);
+  end;
+  {$ENDIF}
+end;
+
 procedure TAppConfig.RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
 begin
   _Types[AType] := TypeDescriptor {can be nil};
@@ -181,6 +221,11 @@ end;
 function TAppConfig.TypeDescriptorByName(const Name: string): ITypeDescriptor;
 begin
   Result := TypeDescriptor(TypeByName(Name));
+end;
+
+function TAppConfig.TypeIsRegistered(const AType: &Type): Boolean;
+begin
+  Result := _Types.ContainsKey(AType);
 end;
 
 function TAppConfig.TryGetWindowType(const Name: string; out WindowType : IWindowType) : Boolean;

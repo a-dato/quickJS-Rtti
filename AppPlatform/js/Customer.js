@@ -235,18 +235,21 @@ export class CustomerType extends ITypeDescriptor_ {
 				},
 				Marshaller: {
 					Marshal: (ctx, item) => {
-						let json = {
-							ID: `${item.ID}`,
-							Name: `${item.Name}`,
-							Type: `${this.FullName}`
+						if(item.ID != undefined) {
+							let json = {
+								ID: `${item.ID}`,
+								Name: `${item.Name}`,
+								Type: `${this.FullName}`
+							}
+							return JSON.stringify(json);
 						}
-						return JSON.stringify(json);
 					},
 					Unmarshal: (ctx, item) => {
 						console.log(item);
 						if(typeof item === 'string') {
 							var js = JSON.parse(item);
-							return new Customer(js.ID, js.Name)
+							if(js.ID != undefined)
+								return new Customer(js.ID, js.Name);
 							// return this.Provider.Lookup(js);
 						}
 					}
@@ -286,10 +289,6 @@ export class CustomerType extends ITypeDescriptor_ {
 	
 	CreateInstance() {
 		return new Customer();
-	}
-	
-	get FullName() {
-		return 'lynx.extension.customer';
 	}
 	
 	get ClassName() {
