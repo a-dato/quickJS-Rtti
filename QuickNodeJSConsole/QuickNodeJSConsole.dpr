@@ -107,7 +107,11 @@ begin
     end);
 
   // Use runtime-based registration (new pattern)
+  {$IFDEF TESTS}
+
+  {$ELSE}
   FRuntime.RegisterObjectWithConstructor('XMLHttpRequest', TypeInfo(IXMLHttpRequest), function : Pointer begin Result := TXMLHttpRequest.Create; end);
+  {$ENDIF}
 
   {$IFDEF TESTS}
   // Register test object bridge definitions on the runtime

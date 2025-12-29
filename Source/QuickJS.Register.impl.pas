@@ -2870,13 +2870,11 @@ var
   global : JSValue;
 
 const
-  std_helper : PAnsiChar =
+  // Keep only the explicitly allowed built-in helper(s) on globalThis.
+  // SECURITY: Do NOT expose QuickJS std/os here (filesystem/process access).
+  bjson_helper : PAnsiChar =
     'import * as bjson from ''qjs:bjson'';'#10+
-    'import * as std from ''qjs:std'';'#10+
-    'import * as os from ''qjs:os'';'#10+
-    'globalThis.bjson = bjson;'#10+
-    'globalThis.std = std;'#10+
-    'globalThis.os = os;'#10;
+    'globalThis.bjson = bjson;'#10;
 
   console_log : PAnsiChar = 'console.log=log;'#10;
 
@@ -2933,11 +2931,10 @@ begin
 
   js_std_add_helpers(_ctx, 0, nil);
 
-  js_init_module_std(_ctx, 'qjs:std');
-  js_init_module_os(_ctx, 'qjs:os');
+  // SECURITY: Do not register std/os modules (they enable filesystem/process access).
   js_init_module_bjson(_ctx, 'qjs:bjson');
 
-  eval_internal(std_helper, Length(std_helper), 'initialize', JS_EVAL_TYPE_MODULE);
+  eval_internal(bjson_helper, Length(bjson_helper), 'initialize', JS_EVAL_TYPE_MODULE);
 
   global := JS_GetGlobalObject(_ctx);
 
