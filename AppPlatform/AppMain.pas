@@ -1,4 +1,4 @@
-﻿unit AppMain;
+unit AppMain;
 
 interface
 
@@ -376,8 +376,6 @@ procedure TForm1.Initialize;
 begin
   if _context = nil then
   begin
-    QuickJS.Register.impl.OutputLogString := LogCallBack;
-
     TJSRegisterTypedObjects.Initialize;
 
 //    TJSRegister.RegisterObject(_context, 'ObjectList', TypeInfo(List<JSObjectReference>),
@@ -428,6 +426,7 @@ begin
     _quickJSBridge.RegisterExistingTypes;
 
     _context := TJSRegister.CreateContext;
+    _context.Runtime.LogString := LogCallBack;
 
     TJSRegister.RegisterLiveObject(_context, 'app', TypeInfo(IAppObject), _app);
 

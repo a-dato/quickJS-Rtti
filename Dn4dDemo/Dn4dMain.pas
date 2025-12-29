@@ -1,4 +1,4 @@
-﻿unit Dn4dMain;
+unit Dn4dMain;
 
 interface
 
@@ -219,14 +219,16 @@ uses
 {$R *.fmx}
 
 procedure TForm1.Initialize;
+var
+  rt: IJSRuntime;
 begin
   if _context = nil then
   begin
-    QuickJS.Register.impl.OutputLogString := LogCallBack;
+    rt := TJSRuntime.Create;
+    rt.LogString := LogCallBack;
+    _context := rt.CreateContext;
 
-    _context := TJSContext.Create(TJSRuntime.Create);
-
-    TJSRegisterTypedObjects.Initialize(_context);
+    TJSRegisterTypedObjects.Initialize;
 
     TRegisteredTypedObject.OnGetMemberByName := OnGetMemberByName;
 

@@ -11,7 +11,7 @@ uses
   System.Rtti,
   System.Collections,
   System.Collections.Generic,
-  QuickJS.Register.intf, quickjs_ng;
+  QuickJS.Register.intf, QuickJS.Register.impl, quickjs_ng;
 
 type
   IJSRegisteredObject = interface
@@ -25,6 +25,7 @@ type
 
   TJSVirtualInterface = class(TVirtualInterface, IJSObject)
   var
+    FRuntime: TJSRuntime;
     FTypeInfo: PTypeInfo;
     FObj: IJSObject;
     FImplementingInterfaces: List<TInterfaceRef>;
@@ -33,7 +34,7 @@ type
     procedure Invoke(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue);
 
   public
-    constructor Create(TypeInfo: PTypeInfo; const Obj: IJSObject); reintroduce;
+    constructor Create(const Runtime: TJSRuntime; TypeInfo: PTypeInfo; const Obj: IJSObject); reintroduce;
     destructor Destroy; override;
     function   QueryInterface(const IID: TGUID; out Obj): HResult; override;
 
@@ -64,6 +65,7 @@ type
   // Uses TVirtualInterface to dynamically implement any IList<T> interface
   TJSVirtualListInterface = class(TVirtualInterface)
   protected
+    FRuntime: TJSRuntime;
     FCtx: JSContext;
     FArrayValue: JSValue;
     FElementType: PTypeInfo;
@@ -78,7 +80,7 @@ type
     function GetEnumerator: IEnumerator;
     
   public
-    constructor Create(TypeInfo: PTypeInfo; ctx: JSContext; ArrayValue: JSValue); reintroduce;
+    constructor Create(const Runtime: TJSRuntime; TypeInfo: PTypeInfo; ctx: JSContext; ArrayValue: JSValue); reintroduce;
     destructor Destroy; override;
     function QueryInterface(const IID: TGUID; out Obj): HResult; override;
   end;
@@ -86,13 +88,12 @@ type
   function JSVariant(const Value: IInterface) : Variant;
   function JSVariantIsNull(const Value: Variant) : Boolean;
   function JSVariantIsUndefined(const Value: Variant) : Boolean;
-  function WrapIJSObjectInVirtualInterface(Target: PTypeInfo; const obj_ref: IJSObject) : TValue;
-  function WrapJSArrayInList(ctx: JSContext; ArrayValue: JSValue): IList;
+  function WrapIJSObjectInVirtualInterface(const Runtime: TJSRuntime; Target: PTypeInfo; const obj_ref: IJSObject) : TValue;
+  function WrapJSArrayInList(const Runtime: TJSRuntime; ctx: JSContext; ArrayValue: JSValue): IList;
 
 implementation
 
 uses
-  QuickJS.Register.impl,
   System.Variants;
 
 function JSVariant(const Value: IInterface) : Variant;
@@ -111,9 +112,10 @@ begin
 end;
 
 { TJSVirtualInterface }
-constructor TJSVirtualInterface.Create(TypeInfo: PTypeInfo; const Obj: IJSObject);
+constructor TJSVirtualInterface.Create(const Runtime: TJSRuntime; TypeInfo: PTypeInfo; const Obj: IJSObject);
 begin
   inherited Create(TypeInfo, Invoke);
+  FRuntime := Runtime;
   FTypeInfo := TypeInfo;
   FImplementingInterfaces := CList<TInterfaceRef>.Create(0);
   FObj := Obj;
@@ -192,7 +194,7 @@ begin
     // Call QuickJS, we expect an object to be returned. This object will be wrapped inside
     // an TJSVirtualInterface object as well and can be cast to the requested type
     var reg: IRegisteredObject;
-    if TJSRegister.TryGetRegisteredInterface(IID, reg) then
+    if FRuntime.TryGetRegisteredInterface(IID, reg) then
     begin
       var tp := TValue.From<&Type>(&Type.Create(reg.GetTypeInfo));
       var val := FObj.Invoke('QueryInterface', [tp], reg.GetTypeInfo);
@@ -209,18 +211,18 @@ begin
   end;
 end;
 
-function WrapIJSObjectInVirtualInterface(Target: PTypeInfo; const obj_ref: IJSObject) : TValue;
+function WrapIJSObjectInVirtualInterface(const Runtime: TJSRuntime; Target: PTypeInfo; const obj_ref: IJSObject) : TValue;
 begin
-  var virtual_interface := TJSVirtualInterface.Create(Target, obj_ref);
+  var virtual_interface := TJSVirtualInterface.Create(Runtime, Target, obj_ref);
   var ii: IInterface;
   if Interfaces.Supports(virtual_interface, Target.TypeData.GUID, ii) then
     TValue.Make(@ii, Target, Result);
 end;
 
-function WrapJSArrayInList(ctx: JSContext; ArrayValue: JSValue): IList;
+function WrapJSArrayInList(const Runtime: TJSRuntime; ctx: JSContext; ArrayValue: JSValue): IList;
 begin
   // For non-generic IList, we create a wrapper that implements IList directly
-  var wrapper := TJSVirtualListInterface.Create(TypeInfo(IList), ctx, ArrayValue);
+  var wrapper := TJSVirtualListInterface.Create(Runtime, TypeInfo(IList), ctx, ArrayValue);
   var ii: IInterface;
   if Interfaces.Supports(wrapper, IList, ii) then
     Result := IList(ii)
@@ -264,9 +266,10 @@ end;
 
 { TJSVirtualListInterface }
 
-constructor TJSVirtualListInterface.Create(TypeInfo: PTypeInfo; ctx: JSContext; ArrayValue: JSValue);
+constructor TJSVirtualListInterface.Create(const Runtime: TJSRuntime; TypeInfo: PTypeInfo; ctx: JSContext; ArrayValue: JSValue);
 begin
   inherited Create(TypeInfo, Invoke);
+  FRuntime := Runtime;
   FCtx := ctx;
   FArrayValue := JS_DupValue(ctx, ArrayValue);
   FTargetTypeInfo := TypeInfo;
@@ -318,13 +321,13 @@ end;
 function TJSVirtualListInterface.GetItemAt(Index: Integer): TValue;
 begin
   var elementVal := JS_GetPropertyUint32(FCtx, FArrayValue, UInt32(Index));
-  Result := JSConverter.Instance.JSValueToTValue(FCtx, elementVal, FElementType);
+  Result := FRuntime.JSValueToTValue(FCtx, elementVal, FElementType);
   JS_FreeValue(FCtx, elementVal);
 end;
 
 procedure TJSVirtualListInterface.SetItemAt(Index: Integer; const Value: TValue);
 begin
-  var jsVal := JSConverter.Instance.TValueToJSValue(FCtx, Value);
+  var jsVal := FRuntime.TValueToJSValue(FCtx, Value);
   JS_SetPropertyUint32(FCtx, FArrayValue, UInt32(Index), jsVal);
 end;
 
@@ -380,7 +383,7 @@ begin
   begin
     var index := Args[1].AsInteger;
     var value := Args[2];
-    var jsVal := JSConverter.Instance.TValueToJSValue(FCtx, value);
+    var jsVal := FRuntime.TValueToJSValue(FCtx, value);
     var indexVal := JS_NewInt32(FCtx, index);
     var deleteCountVal := JS_NewInt32(FCtx, 0);
     

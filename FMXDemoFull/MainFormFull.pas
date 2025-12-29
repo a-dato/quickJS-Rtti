@@ -1,4 +1,4 @@
-﻿unit MainFormFull;
+unit MainFormFull;
 
 interface
 
@@ -170,12 +170,14 @@ begin
 end;
 
 procedure TForm2.Initialize;
+var
+  rt: IJSRuntime;
 begin
   if _context = nil then
   begin
-    QuickJS.Register.impl.OutputLogString := LogCallBack;
-
-    _context := TJSContext.Create(TJSRuntime.Create);
+    rt := TJSRuntime.Create;
+    rt.LogString := LogCallBack;
+    _context := rt.CreateContext;
 
     TJSRegister.RegisterObject(_context.ctx, 'XMLHttpRequest', TypeInfo(IXMLHttpRequest), function : Pointer begin Result := TXMLHttpRequest.Create; end);
     TJSRegister.RegisterObject(_context.ctx, 'Resource', TypeInfo(IResource), function : Pointer begin Result := TResource.Create(-1, ''); end);

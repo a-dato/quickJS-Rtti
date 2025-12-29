@@ -39,10 +39,12 @@ procedure TForm1.InitializeQuickJS;
 begin
   if FContext = nil then
   begin
-    QuickJS.Register.impl.OutputLogString := LogCallBack;
     if FRuntime = nil then
+    begin
       FRuntime := TJSRuntime.Create;
-    FContext := TJSContext.Create(FRuntime);
+      FRuntime.LogString := LogCallBack;
+    end;
+    FContext := FRuntime.CreateContext;
   end;
 end;
 

@@ -25,10 +25,7 @@ type
     function ToString: CString;
   end;
 
-  TJSRegisterTypedObjects = class(TJSRegister)
-//  const
-//    tkJSType = TTypeKind(Ord(tkMRecord) + 1);
-
+  TJSRegisterTypedObjects = class(TJSRuntime)
   protected
     function CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; override;
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject; override;
@@ -37,9 +34,9 @@ type
     procedure RegisterEnumConstants(const ctx: IJSContext; const Reg: IRegisteredObject; const EnumInfo: EnumInformation);
 
   public
-    class procedure Initialize; // Context parameter removed - not needed
+    constructor Create;
     
-    // Typed converter methods - formerly in TJSTypedConverter, now override TJSRegister
+    // Typed converter methods - formerly in TJSTypedConverter, now override TJSRuntime
     class function GetTypeFromJSObject(ctx: JSContext; Value: JSValueConst): &Type;
     function JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue; override;
     function TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue; override;
@@ -48,6 +45,7 @@ type
 
   TJSPropertyInfo = class(TBaseInterfacedObject, _PropertyInfo)
   protected
+    _Runtime: TJSRuntime;
     _ctx: JSContext;
     _ownerType: &Type;
     _name: AnsiString;
@@ -64,7 +62,7 @@ type
     function  GetValue(const obj: CObject; const index: array of CObject): CObject;
     procedure SetValue(const obj: CObject; const value: CObject; const index: array of CObject; ExecuteTriggers: Boolean = false);
   public
-    constructor Create(Ctx: JSContext; const AOwnerType: &Type; Name: AnsiString);
+    constructor Create(const Runtime: TJSRuntime; Ctx: JSContext; const AOwnerType: &Type; Name: AnsiString);
 
     function ToString: CString; override;
   end;
@@ -88,7 +86,7 @@ type
     function GetProperties : PropertyInfoArray;
 
   public
-    constructor Create(Ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo);
+    constructor Create(const Runtime: TJSRuntime; Ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo);
     destructor Destroy; override;
 
     function GetType : &Type;
@@ -211,26 +209,24 @@ end;
 
 { TJSRegisterTypedObjects }
 
-class procedure TJSRegisterTypedObjects.Initialize;
+constructor TJSRegisterTypedObjects.Create;
 begin
-  // Only initialize once - avoid recreating instances on every context creation
-  if not (TJSRegister.Instance is TJSRegisterTypedObjects) then
-    TJSRegister.Instance := TJSRegisterTypedObjects.Create;
-
-  // These registrations are safe to call multiple times (they check if already registered)
-  TJSRegister.RegisterObject('JSIEnumerableIterator', TypeInfo(TJSIEnumerableIterator));
+  inherited Create;
+  
+  // Register dn4d-specific types
+  RegisterObjectType('JSIEnumerableIterator', TypeInfo(TJSIEnumerableIterator));
   // Register CTimeSpan record so it can be constructed in JS
-  TJSRegister.RegisterObject('TimeSpan', TypeInfo(CTimeSpan));
+  RegisterObjectType('TimeSpan', TypeInfo(CTimeSpan));
 end;
 
 function TJSRegisterTypedObjects.CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject;
 begin
-  Result := TRegisteredTypedObject.Create(ATypeInfo, AConstructor);
+  Result := TRegisteredTypedObject.Create(Self as TJSRuntime, ATypeInfo, AConstructor);
 end;
 
 function TJSRegisterTypedObjects.CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject;
 begin
-  Result := TRegisteredJSObject.Create(ctx, JSConstructor, ATypeInfo);
+  Result := TRegisteredJSObject.Create(Self as TJSRuntime, ctx, JSConstructor, ATypeInfo);
 end;
 
 procedure TJSRegisterTypedObjects.InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
@@ -495,17 +491,18 @@ end;
 { TJSRegisterTypedObjects - Typed Converter Methods }
 class function TJSRegisterTypedObjects.GetTypeFromJSObject(ctx: JSContext; Value: JSValueConst): &Type;
 begin
+  var runtime := TJSRuntime.GetRuntimeFromContext(ctx);
   var reg: IRegisteredObject;
 
   // Did we get a constructor?
   if JS_IsConstructor(ctx, Value) then
   begin
     // Registered Delphi object?
-    if TJSRegister.TryGetRegisteredObjectFromConstructor(Value, reg) then
+    if runtime.TryGetRegisteredObjectFromConstructor(Value, reg) then
       Exit(&Type.Create(reg.GetTypeInfo));
 
     // Registered JS Object?
-    if not TJSRegister.TryGetRegisteredJSObject(Value, reg) then
+    if not runtime.TryGetRegisteredJSObject(Value, reg) then
     begin
       var n := JS_GetPropertyStr(ctx, Value, 'name');
       var name := JS_ToCString(ctx, n);
@@ -515,7 +512,7 @@ begin
       tp.Kind := TTypeKind.tkInterface;
       tp.Name := name;
 
-      reg := TJSRegister.RegisterJSObject(TJSRuntime.Context[ctx], Value, tp);
+      reg := runtime.RegisterJSObject(TJSRuntime.Context[ctx], Value, tp);
 
       JS_FreeCString(ctx, name);
       JS_FreeValue(ctx, n);
@@ -564,12 +561,12 @@ begin
 
     else if JS_IsObject(Value) then
     begin
-      var ptr := TJSRegister.GetObjectFromJSValue(Value, False {Is NOT object type?});
+      var ptr := TJSRuntime.GetObjectFromJSValue(Value, False {Is NOT object type?});
 
       if ptr <> nil {Object points to a Delphi object} then
         TValue.Make(@ptr, Target, Result) else
         // Result := TValue.From<JSObjectReference>(JSObjectReference.Create(ctx, Value));
-        Result := TValue.From<IJSObject>(TJSBaseObject.Create(ctx, Value));
+        Result := TValue.From<IJSObject>(TJSBaseObject.Create(Self as TJSRuntime, ctx, Value));
     end;
 
     Exit;
@@ -590,7 +587,7 @@ begin
     if JS_IsObject(Value) then
     begin
       var obj: TRegisteredObjectWithPtr;
-      if TJSRegister.TryGetRegisteredObjectFromJSValue(Value, {out}obj) then
+      if Self.TryGetRegisteredObjectFromJSValue(ctx, Value, {out}obj) then
       begin
         if (Target <> obj.Reg.GetTypeInfo) and not Interfaces.Supports(IInterface(obj.Ptr), Target.TypeData.GUID, obj.Ptr) then
           raise ArgumentException.Create('Interface not supported: ' + Target.Name);
@@ -611,7 +608,7 @@ begin
         // Check if this is a JS Array - use constructor.name since JS_IsArray doesn't work reliably
         if IsJSArray(ctx, Value) then
         begin
-          var virtualList := TJSVirtualListInterface.Create(Target, ctx, Value);
+          var virtualList := TJSVirtualListInterface.Create(Self as TJSRuntime, Target, ctx, Value);
           var ii: IInterface;
           if virtualList.QueryInterface(Target.TypeData.GUID, ii) = S_OK then
           begin
@@ -620,11 +617,11 @@ begin
           end;
         end;
 
-        var obj_ref: IJSObject := TJSBaseObject.Create(ctx, Value);
+        var obj_ref: IJSObject := TJSBaseObject.Create(Self as TJSRuntime, ctx, Value);
 
         if Target = TypeInfo(IJSObject) then
           Result := TValue.From<IJSObject>(obj_ref) else
-          Result := WrapIJSObjectInVirtualInterface(Target, obj_ref);
+          Result := WrapIJSObjectInVirtualInterface(Self as TJSRuntime, Target, obj_ref);
       end;
 
       Exit;
@@ -693,7 +690,7 @@ begin
       else if JS_IsObject(Value) then
       begin
         var obj: TRegisteredObjectWithPtr;
-        if TJSRegister.TryGetRegisteredObjectFromJSValue(Value, {out}obj) then
+        if Self.TryGetRegisteredObjectFromJSValue(ctx, Value, {out}obj) then
         begin
           var v: TValue;
           if obj.Reg.Kind in [tkInterface, tkClass] then
@@ -702,7 +699,7 @@ begin
             TValue.Make(obj.Ptr, obj.Reg.GetTypeInfo, v);
           Result := TValue.From<CObject>(CObject.From<TValue>(v));
         end else
-          Result := TValue.From<CObject>(CObject.From<IJSObject>(TJSBaseObject.Create(ctx, Value)));
+          Result := TValue.From<CObject>(CObject.From<IJSObject>(TJSBaseObject.Create(Self as TJSRuntime, ctx, Value)));
           // Result := TValue.From<CObject>(CObject.From<JSObjectReference>(JSObjectReference.Create(ctx, Value)));
       end else
         Result := TValue.From<CObject>(CObject.Create(nil))
@@ -766,7 +763,7 @@ begin
       // Generic record unwrap: if JS value is a registered record wrapper, unwrap to record pointer
       if JS_IsObject(Value) then
       begin
-        var recPtr := TJSRegister.GetObjectFromJSValue(Value, True {PointerIsAnObject to unwrap TRecordReference});
+        var recPtr := TJSRuntime.GetObjectFromJSValue(Value, True {PointerIsAnObject to unwrap TRecordReference});
         if recPtr <> nil then
         begin
           TValue.Make(recPtr, Target, Result);
@@ -803,14 +800,14 @@ begin
         Exit(JS_NULL);
 
       var u_milis := DateTimeOffset.ToUnixTimeMiliSeconds(dt.Ticks);
-      Exit(TJSRegister.JS_NewDate(ctx, u_milis));
+      Exit(TJSRuntime.JS_NewDate(ctx, u_milis));
     end;
 
 
     if Value.TypeInfo = TypeInfo(&Type) then
     begin
       var reg: IRegisteredObject;
-      if TJSRegister.TryGetRegisteredObjectFromTypeInfo(Value.AsType<&Type>.GetTypeInfo, reg) and not JS_IsUndefined(reg.JSConstructor) then
+      if Self.TryGetRegisteredObjectFromTypeInfo(Value.AsType<&Type>.GetTypeInfo, reg) and not JS_IsUndefined(reg.JSConstructor) then
         Exit(JS_DupValue(ctx, reg.JSConstructor));
     end;
   end
@@ -872,9 +869,9 @@ end;
 
 { TRegisteredJSObject }
 
-constructor TRegisteredJSObject.Create(Ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo);
+constructor TRegisteredJSObject.Create(const Runtime: TJSRuntime; Ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo);
 begin
-  inherited Create(ATypeInfo, nil);
+  inherited Create(Runtime, ATypeInfo, nil);
   _ctx := Ctx;
   _JSConstructor := JS_DupValue(Ctx, JSConstructor);
 end;
@@ -893,7 +890,7 @@ type
 
 begin
   {$IFDEF DEBUG}
-  var s := TJSRegister.Describe(_ctx, _JSConstructor);
+  var s := TJSRuntime.Describe(_ctx, _JSConstructor);
   {$ENDIF}
 
   var proto := JS_GetPropertyStr(_ctx, _JSConstructor, 'prototype');
@@ -916,7 +913,7 @@ begin
       if JS_IsUndefined(jsPropType) then
       begin
         SetLength(Result, Length(Result) + 1);
-        Result[High(Result)] := TJSPropertyInfo.Create(_ctx, ownerType, ansistr);
+        Result[High(Result)] := TJSPropertyInfo.Create(FRuntime, _ctx, ownerType, ansistr);
       end;
 
       JS_FreeValue(_ctx, jsPropType);
@@ -937,8 +934,9 @@ end;
 
 { TJSPropertyInfo }
 
-constructor TJSPropertyInfo.Create(Ctx: JSContext; const AOwnerType: &Type; Name: AnsiString);
+constructor TJSPropertyInfo.Create(const Runtime: TJSRuntime; Ctx: JSContext; const AOwnerType: &Type; Name: AnsiString);
 begin
+  _Runtime := Runtime;
   _ctx := Ctx;
   _ownerType := AOwnerType;
   _name := Name;
@@ -961,7 +959,7 @@ begin
   begin
     var val := JS_GetPropertyStr(_ctx, js_obj.Value, PAnsiChar(_name));
     if not TJSRuntime.Check(_ctx) then Exit;
-    Result := TJSRegister.Instance.JSValueToTValue(_ctx, val, nil);
+    Result := _Runtime.JSValueToTValue(_ctx, val, nil);
   end;
 
 //  var js_obj: JSObjectReference;
@@ -1008,7 +1006,7 @@ begin
   var js_obj: IJSObject;
   if obj.TryAsType<IJSObject>(js_obj) then
   begin
-    JS_SetPropertyStr(_ctx, js_obj.Value, PAnsiChar(_name), TJSRegister.Instance.TValueToJSValue(_ctx, value.AsType<TValue>));
+    JS_SetPropertyStr(_ctx, js_obj.Value, PAnsiChar(_name), _Runtime.TValueToJSValue(_ctx, value.AsType<TValue>));
     TJSRuntime.Check(_ctx);
   end;
 

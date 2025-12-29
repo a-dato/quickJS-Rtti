@@ -28,6 +28,11 @@ uses
 type
   TQuickJSConsole = class
   private
+    // Runtime is created once and used throughout
+    // IMPORTANT: Must be IJSRuntime (not TJSRuntime) to hold a proper reference count.
+    // Otherwise, when the context is destroyed, it releases its _runtime reference
+    // which would destroy the runtime (TInterfacedObject ref count goes to 0).
+    FRuntime: IJSRuntime;
     // Context and test objects are created per-run to avoid memory leaks
     FContext: IJSContext;
     {$IFDEF TESTS}
@@ -87,34 +92,37 @@ end;
 procedure TQuickJSConsole.InitializeGlobalSettings;
 begin
   // One-time initialization - only needs to happen once
+  // Create the runtime instance
+  {$IFDEF TESTS}
+  FRuntime := TJSRegisterTypedObjects.Create;
+  {$ELSE}
+  FRuntime := TJSRuntime.Create;
+  {$ENDIF}
+  
   // Set up the log output
-  var runtime := TJSRuntime.Shared;
-  runtime.LogString := TProc<string>(
+  FRuntime.LogString := TProc<string>(
     procedure(S: string)
     begin
       Writeln(S);
     end);
 
   // Use runtime-based registration (new pattern)
-  runtime.RegisterObjectWithConstructor('XMLHttpRequest', TypeInfo(IXMLHttpRequest), function : Pointer begin Result := TXMLHttpRequest.Create; end);
+  FRuntime.RegisterObjectWithConstructor('XMLHttpRequest', TypeInfo(IXMLHttpRequest), function : Pointer begin Result := TXMLHttpRequest.Create; end);
 
   {$IFDEF TESTS}
-  // Initialize the typed object system once
-  TJSRegisterTypedObjects.Initialize;
-
   // Register test object bridge definitions on the runtime
-  TestObjectBridgeDefinitions.RegisterWithObjectBridge(runtime);
+  TestObjectBridgeDefinitions.RegisterWithObjectBridge(FRuntime);
 
-  // Register record/enum types on the runtime (new pattern)
-  runtime.RegisterObjectType('TimeInterval', TypeInfo(TimeInterval));
-  runtime.RegisterObjectType('TimeSpan', TypeInfo(CTimeSpan));
+  // Register record/enum types on the runtime
+  // Note: TimeSpan (CTimeSpan) is already registered by TJSRegisterTypedObjects.Create
+  FRuntime.RegisterObjectType('TimeInterval', TypeInfo(TimeInterval));
   {$ENDIF}
 end;
 
 procedure TQuickJSConsole.CreateContextAndRegisterObjects;
 begin
   // Create a fresh context for this run
-  FContext := TJSRegister.CreateContext;
+  FContext := FRuntime.CreateContext;
 
   {$IFDEF TESTS}
   // Create and register the test objects for this context
@@ -125,9 +133,9 @@ begin
   FTestObject := FTestObject3 as ITestObject;
 
   // Register live objects with the new context
-  TJSRegister.RegisterLiveObject(FContext, 'testObj', TypeInfo(ITestObject), FTestObject);
-  TJSRegister.RegisterLiveObject(FContext, 'testObj2', TypeInfo(ITestObject2), FTestObject2);
-  TJSRegister.RegisterLiveObject(FContext, 'testObj3', TypeInfo(ITestObject3), FTestObject3);
+  FRuntime.RegisterLiveInterfaceInstance(FContext, 'testObj', TypeInfo(ITestObject), FTestObject);
+  FRuntime.RegisterLiveInterfaceInstance(FContext, 'testObj2', TypeInfo(ITestObject2), FTestObject2);
+  FRuntime.RegisterLiveInterfaceInstance(FContext, 'testObj3', TypeInfo(ITestObject3), FTestObject3);
   {$ENDIF}
 end;
 

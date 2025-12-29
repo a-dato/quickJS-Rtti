@@ -17,7 +17,7 @@ type
   TObjectBridgeDefaultDefinitions = class
   public
     // Registers a set of default ObjectBridge descriptors (e.g., forEach)
-    class procedure Initialize(const Resolver: IObjectBridgeResolver);
+    class procedure Initialize(const Runtime: IJSRuntime);
   end;
 
 implementation
@@ -162,9 +162,12 @@ begin
   end;
 end;
 
-class procedure TObjectBridgeDefaultDefinitions.Initialize(const Resolver: IObjectBridgeResolver);
+class procedure TObjectBridgeDefaultDefinitions.Initialize(const Runtime: IJSRuntime);
+var
+  Resolver: IObjectBridgeResolver;
 begin
-  if Resolver = nil then Exit;
+  if Runtime = nil then Exit;
+  Resolver := Runtime.ObjectBridgeResolver as IObjectBridgeResolver;
 
   // IsDelphiObject: boolean property that returns true for all Delphi objects
   // This allows JS code to distinguish Delphi objects from pure JS objects
@@ -394,7 +397,7 @@ begin
           while enumerator.MoveNext do
           begin
             var current := enumerator.GetCurrent;
-            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
+            var target := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -466,7 +469,7 @@ begin
           for var i := startIdx to endIdx - 1 do
           begin
             var item := listHelper.GetItem(i);
-            var v := JSConverter.Instance.TValueToJSValue(ctx, item);
+            var v := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, item);
             // Use string index to avoid depending on Uint32 setter availability
             var s := AnsiString(outIndex.ToString);
             JS_SetPropertyStr(ctx, jsArr, PAnsiChar(s), v);
@@ -513,7 +516,7 @@ begin
           while enumerator.MoveNext do
           begin
             var current := enumerator.GetCurrent;
-            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
+            var target := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -569,7 +572,7 @@ begin
         count := listHelper.GetCount;
         if count <= 1 then
         begin
-          Result := JSConverter.Instance.TValueToJSValue(ctx, TValue.From<IInterface>(IInterface(Ptr)));
+          Result := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, TValue.From<IInterface>(IInterface(Ptr)));
           Exit;
         end;
 
@@ -591,8 +594,8 @@ begin
           begin
             if hasCompareFunc then
             begin
-              item1 := JSConverter.Instance.TValueToJSValue(ctx, A);
-              item2 := JSConverter.Instance.TValueToJSValue(ctx, B);
+              item1 := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, A);
+              item2 := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, B);
               call_argv[0] := item1;
               call_argv[1] := item2;
               compareResult := JS_Call(ctx, compareFunc, JS_Null, 2, @call_argv[0]);
@@ -619,7 +622,7 @@ begin
           listHelper.SetItem(i, items[i]);
 
         // Return same list reference
-        Result := JSConverter.Instance.TValueToJSValue(ctx, TValue.From<IInterface>(IInterface(Ptr)));
+        Result := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, TValue.From<IInterface>(IInterface(Ptr)));
       end
     )
   );
@@ -655,7 +658,7 @@ begin
           while enumerator.MoveNext do
           begin
             var current := enumerator.GetCurrent;
-            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
+            var target := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -714,7 +717,7 @@ begin
           while enumerator.MoveNext do
           begin
             var current := enumerator.GetCurrent;
-            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
+            var target := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -773,7 +776,7 @@ begin
           while enumerator.MoveNext do
           begin
             var current := enumerator.GetCurrent;
-            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
+            var target := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -832,7 +835,7 @@ begin
           while enumerator.MoveNext do
           begin
             var current := enumerator.GetCurrent;
-            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
+            var target := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -894,7 +897,7 @@ begin
           while enumerator.MoveNext do
           begin
             var current := enumerator.GetCurrent;
-            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
+            var target := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, current);
             var indexValue := JS_NewInt32(ctx, index);
 
             var call_argv: array of JSValueConst;
@@ -953,7 +956,7 @@ begin
           while enumerator.MoveNext do
           begin
             var current := enumerator.GetCurrent;
-            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
+            var target := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, current);
             
             // Use string comparison for equality
             var targetStr: PAnsiChar;
@@ -1009,7 +1012,7 @@ begin
           while enumerator.MoveNext do
           begin
             var current := enumerator.GetCurrent;
-            var target := JSConverter.Instance.TValueToJSValue(ctx, current);
+            var target := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, current);
             
             // Use string comparison for equality
             var targetStr: PAnsiChar;
@@ -1079,7 +1082,7 @@ begin
           while enumerator.MoveNext do
           begin
             var current := enumerator.GetCurrent;
-            var currentValue := JSConverter.Instance.TValueToJSValue(ctx, current);
+            var currentValue := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, current);
             
             if isFirstIteration and not hasInitialValue then
             begin
@@ -1090,7 +1093,7 @@ begin
             else
             begin
               var indexValue := JS_NewInt32(ctx, index);
-              var arrayValue := JSConverter.Instance.TValueToJSValue(ctx, TValue.From<IInterface>(IInterface(Ptr)));
+              var arrayValue := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, TValue.From<IInterface>(IInterface(Ptr)));
 
               var call_argv: array of JSValueConst;
               SetLength(call_argv, 4);

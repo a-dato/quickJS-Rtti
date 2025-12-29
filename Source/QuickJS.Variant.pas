@@ -1,4 +1,4 @@
-﻿unit QuickJS.Variant;
+unit QuickJS.Variant;
 
 interface
 
@@ -87,7 +87,7 @@ var
 implementation
 
 uses
-  System.SysUtils, QuickJS.Register.dn4d.intf, QuickJS.Register.intf,
+  System.SysUtils, QuickJS.Register.dn4d.intf, QuickJS.Register.intf, QuickJS.Register.impl,
   System.TypInfo;
 
 function VarJSVariantCreate(const Value: IInterface): Variant;
@@ -164,7 +164,9 @@ begin
       // QuickJS returns an object, wrap it inside interface and return a callable object
       if r.TypeInfo = TypeInfo(IJSObject) then
       begin
-        var wrapped := WrapIJSObjectInVirtualInterface(TypeInfo(IInterface), r.AsType<IJSObject>);
+        var jsObj := r.AsType<IJSObject>;
+        var runtime := TJSRuntime.GetRuntimeFromContext(jsObj.Ctx);
+        var wrapped := WrapIJSObjectInVirtualInterface(runtime, TypeInfo(IInterface), jsObj);
         TJSVariantVarData(Dest).Instance := wrapped.AsInterface;
       end
       // QuickJS returns undefined or nil
