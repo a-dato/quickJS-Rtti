@@ -135,6 +135,9 @@
     <PropertyGroup Condition="'$(Cfg_1_Win64)'!=''">
         <Debugger_RunParams>main.js</Debugger_RunParams>
     </PropertyGroup>
+    <PropertyGroup Condition="'$(Cfg_6)'!=''">
+        <DCC_Define>PARALLELIZATION_TEST;$(DCC_Define)</DCC_Define>
+    </PropertyGroup>
     <PropertyGroup Condition="'$(Cfg_6_Win64)'!=''">
         <DCC_Define>TESTS;$(DCC_Define)</DCC_Define>
         <Manifest_File>(None)</Manifest_File>

@@ -100,11 +100,11 @@ begin
   {$ENDIF}
   
   // Set up the log output
-  FRuntime.LogString := TProc<string>(
+  FRuntime.LogString :=
     procedure(S: string)
     begin
       Writeln(S);
-    end);
+    end;
 
   // Use runtime-based registration (new pattern)
   {$IFDEF TESTS}
@@ -112,6 +112,7 @@ begin
   {$ELSE}
   FRuntime.RegisterObjectWithConstructor('XMLHttpRequest', TypeInfo(IXMLHttpRequest), function : Pointer begin Result := TXMLHttpRequest.Create; end);
   {$ENDIF}
+
 
   {$IFDEF TESTS}
   // Register test object bridge definitions on the runtime
@@ -478,6 +479,27 @@ begin
   FJavaScriptFilePath := JSFilePath;
   FEnvFilePath := EnvFilePath;
   
+  {$IFDEF PARALLELIZATION_TEST}
+  // Run 20 times to stress repeated context create/destroy cycles
+  Writeln('Running 20 iterations (PARALLELIZATION_TEST)...');
+  Writeln('');
+  for var iteration := 1 to 20 do
+  begin
+    Write(Format('Iteration %d/20...', [iteration]));
+    // Run the script (context is created/destroyed inside RunJavaScriptFile)
+    RunJavaScriptFile(FJavaScriptFilePath, TimeoutSeconds);
+    // Stop immediately on any exception/error (RunJavaScriptFile sets ExitCode <> 0)
+    if ExitCode <> 0 then
+    begin
+      Writeln(' FAILED');
+      Break;
+    end;
+    Writeln(' OK');
+  end;
+  Writeln('');
+  if ExitCode = 0 then
+    Writeln('Completed all iterations.');
+  {$ELSE}
   {$IFDEF RUN_100X}
   // Run 100 times to test for memory leaks
   Writeln('Running 100 iterations to test for memory leaks...');
@@ -499,6 +521,7 @@ begin
   {$ELSE}
   // Run the script once (context is created/destroyed inside RunJavaScriptFile)
   RunJavaScriptFile(FJavaScriptFilePath, TimeoutSeconds);
+  {$ENDIF}
   {$ENDIF}
   
   // Only wait if execution was successful (ExitCode = 0)

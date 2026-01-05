@@ -2102,13 +2102,55 @@ begin
   if JS_HasException(ctx) then
   begin
     var exp := JS_GetException(ctx);
+    try
+      var rt := IJSContext(_ActiveContexts[ctx]).Runtime;
 
-    var str := JS_ToCString(ctx, exp);
-    var s: string := UTF8ToString(str);
-    JS_FreeCString(ctx, str);
+      // Prefer rich error details (name/message/stack) when possible.
+      if JS_IsError(ctx, exp) then
+      begin
+        var err: string := '';
 
-    var rt := IJSContext(_ActiveContexts[ctx]).Runtime;
-    rt.OutputLog(s);
+        var name := JS_GetPropertyStr(ctx, exp, 'name');
+        if not JS_IsUndefined(name) then
+        begin
+          var str: PAnsiChar := JS_ToCString(ctx, name);
+          err := UTF8ToString(str);
+          JS_FreeCString(ctx, str);
+          JS_FreeValue(ctx, name);
+        end;
+
+        var msg := JS_GetPropertyStr(ctx, exp, 'message');
+        if not JS_IsUndefined(msg) then
+        begin
+          var str: PAnsiChar := JS_ToCString(ctx, msg);
+          err := err + ': ' + UTF8ToString(str);
+          JS_FreeCString(ctx, str);
+          JS_FreeValue(ctx, msg);
+        end;
+
+        var stack := JS_GetPropertyStr(ctx, exp, 'stack');
+        if not JS_IsUndefined(stack) then
+        begin
+          var str: PAnsiChar := JS_ToCString(ctx, stack);
+          err := err + #13#10 + UTF8ToString(str);
+          JS_FreeCString(ctx, str);
+          JS_FreeValue(ctx, stack);
+        end;
+
+        rt.OutputLog(err);
+      end
+      else
+      begin
+        var str := JS_ToCString(ctx, exp);
+        try
+          rt.OutputLog(UTF8ToString(str));
+        finally
+          JS_FreeCString(ctx, str);
+        end;
+      end;
+    finally
+      JS_FreeValue(ctx, exp);
+    end;
 
     Result := False;
   end;
@@ -2776,7 +2818,8 @@ begin
   var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(filename), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
   bytecode := TJSRuntime.WaitForJobs(_ctx, bytecode);
 
-  if not TJSRuntime.Check(_ctx, bytecode) then Exit;
+  if not TJSRuntime.Check(_ctx, bytecode)
+    then Exit;
   JS_EvalFunction(_ctx, bytecode);
 
   bytecode := TJSRuntime.WaitForJobs(_ctx, bytecode);
@@ -2835,15 +2878,17 @@ begin
   begin
      str := JS_ToCString(ctx, argv[i]);
      if not Assigned(str) then
-        exit(JS_EXCEPTION);
+       Exit(JS_EXCEPTION);
 
-     var s: string := UTF8ToString(str);
-     if (runtime <> nil) and Assigned(runtime._LogString) then
-       runtime._LogString(s)
-     else
-       Write(s);
+     var s: string;
+     try
+       s := UTF8ToString(str);
+     finally
+       JS_FreeCString(ctx, str);
+     end;
 
-     JS_FreeCString(ctx, str);
+     if runtime <> nil then
+       runtime.OutputLog(s);
   end;
 
   Result := JS_UNDEFINED;
