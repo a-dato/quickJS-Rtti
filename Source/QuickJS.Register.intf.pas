@@ -119,8 +119,6 @@ type
     function  RegisterObjectWithConstructor(ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject;
     function  RegisterJSObject(const ctx: IJSContext; JSConstructor: JSValueConst; TypeInfo: PTypeInfo): IRegisteredObject;
 
-    procedure RegisterLiveObjectInstance(const ctx: IJSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean);
-    procedure RegisterLiveInterfaceInstance(const ctx: IJSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface);
 
     function  TryGetRegisteredObjectFromJSValue(Value: JSValue; out AObject: TRegisteredObjectWithPtr): Boolean;
     function  TryGetRegisteredObjectFromClassID(ClassID: JSClassID; out RegisteredObject: IRegisteredObject): Boolean;
@@ -133,6 +131,11 @@ type
     procedure RegisterContext(const Context: IJSContext);
     procedure UnregisterContext(const Context: IJSContext);
 
+    // Converter methods - virtual, override in derived runtimes (e.g. dn4d)
+    function JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
+    function TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue;
+    function GetDefaultValue(const Param: TRttiParameter): TValue;
+
     property rt: JSRuntime read get_rt;
     property LogString: TProc<string> read get_LogString write set_LogString;
     property ObjectBridgeResolver: IInterface read get_ObjectBridgeResolver;
@@ -142,12 +145,19 @@ type
   IJSContext = interface
     function get_ctx: JSContext;
     function get_Runtime: IJSRuntime;
+    function  get_LogString: TProc<string>;
+    procedure set_LogString(const Value: TProc<string>);
 
     procedure eval(const Code: string; const CodeContext: string);
     function  eval_with_result(const Code: string; const CodeContext: string): TValue;
+    procedure OutputLog(const Value: string);
+
+    procedure RegisterLiveObjectInstance(ObjectName: string; AObject: TObject; OwnsObject: Boolean);
+    procedure RegisterLiveInterfaceInstance(ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface);
 
     property ctx: JSContext read get_ctx;
     property runtime: IJSRuntime read get_Runtime;
+    property LogString: TProc<string> read get_LogString write set_LogString;
   end;
 
   IJSExtendableObject = interface
@@ -160,19 +170,7 @@ type
   TOnGetMemberByName = function(const AObject: IRegisteredObject; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean) : IPropertyDescriptor of Object;
   TOnGetMemberNames = function(const AObject: IRegisteredObject; MemberTypes: TMemberTypes; var Handled: Boolean) : TArray<string> of Object;
 
-type
-  TJSValueToTValueFunc = function(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
-  TTValueToJSValueFunc = function(ctx: JSContext; const Value: TValue): JSValue;
-  TGetDefaultValueFunc = function(const Param: TRttiParameter): TValue;
-
-  TJSConverterFuncs = record
-    JSValueToTValue: TJSValueToTValueFunc;
-    TValueToJSValue: TTValueToJSValueFunc;
-    GetDefaultValue: TGetDefaultValueFunc;
-  end;
-
 var
-  JSConverterFuncs: TJSConverterFuncs;
   // Shared RTTI context for performance (initialized in QuickJS.Register.impl)
   _RttiContext: TRttiContext;
 

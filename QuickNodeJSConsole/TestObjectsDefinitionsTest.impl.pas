@@ -183,6 +183,9 @@ var
           Result := JS_UNDEFINED;
           if Ptr = nil then Exit;
           
+          // Get the runtime from context for converter methods
+          var runtime := IJSRuntime(JS_GetRuntimeOpaque(JS_GetRuntime(ctx)));
+          
           // Cast to source interface and query for target interface
           var sourceIntf: IInterface := IInterface(Ptr);
           var targetIntf: IInterface;
@@ -196,14 +199,14 @@ var
             for var i := 0 to High(params) do
             begin
               if i < argc then
-                args[i] := JSConverterFuncs.JSValueToTValue(ctx, PJSValueConstArr(argv)[i], params[i].ParamType.Handle)
+                args[i] := runtime.JSValueToTValue(ctx, PJSValueConstArr(argv)[i], params[i].ParamType.Handle)
               else
-                args[i] := JSConverterFuncs.GetDefaultValue(params[i]);
+                args[i] := runtime.GetDefaultValue(params[i]);
             end;
             
             var targetValue := TValue.From<IInterface>(targetIntf);
             var resultValue := localMethod.Invoke(targetValue, args);
-            Result := JSConverterFuncs.TValueToJSValue(ctx, resultValue);
+            Result := runtime.TValueToJSValue(ctx, resultValue);
           end;
         end));
   end;

@@ -505,7 +505,7 @@ type
   procedure JS_SetRuntimeInfo(rt : JSRuntime; const info : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
   procedure JS_SetMemoryLimit(rt : JSRuntime; limit : size_t); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
   procedure JS_SetGCThreshold(rt : JSRuntime; gc_threshold : size_t); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
-  procedure JS_SetMaxStackSize(ctx: JSContext; stack_size:size_t); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
+  procedure JS_SetMaxStackSize(rt: JSRuntime; stack_size:size_t); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
 
   function  JS_NewRuntime2(const mf : PJSMallocFunctions; opaque : Pointer) : JSRuntime; cdecl; external {$IFDEF mswindows}QJSDLL{$endif};
   procedure JS_FreeRuntime(rt : JSRuntime); cdecl; external {$IFDEF mswindows}QJSDLL{$endif};

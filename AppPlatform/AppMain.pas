@@ -69,6 +69,7 @@ type
 
   public
     class var _quickJSBridge: IAppQuickJSBridge;
+    class var _runtime: IJSRuntime;
 
     _context: IJSContext;
     _test: ITestObject;
@@ -376,62 +377,61 @@ procedure TForm1.Initialize;
 begin
   if _context = nil then
   begin
-    TJSRegisterTypedObjects.Initialize;
+    // Create the runtime instance
+    _runtime := TJSRuntimeDN4D.Create;
 
-//    TJSRegister.RegisterObject(_context, 'ObjectList', TypeInfo(List<JSObjectReference>),
-//      function : Pointer begin
-//        Result := CList<JSObjectReference>.Create;
-//      end);
-
-    TJSRegister.RegisterObject('List', TypeInfo(List<CObject>),
+    // Register types with constructors
+    _runtime.RegisterObjectWithConstructor('List', TypeInfo(List<CObject>),
       function : Pointer begin
         Result := CList<CObject>.Create;
       end);
 
-    TJSRegister.RegisterObject('ObjectModel', TypeInfo(IObjectListModelChangeTracking),
+    _runtime.RegisterObjectWithConstructor('ObjectModel', TypeInfo(IObjectListModelChangeTracking),
       function : Pointer begin
         Result := TObjectListModelWithChangeTracking<IJSObject>.Create(nil);
       end);
 
-    TJSRegister.RegisterObject('JSBinder', TypeInfo(IContentBinder),
+    _runtime.RegisterObjectWithConstructor('JSBinder', TypeInfo(IContentBinder),
       function : Pointer begin
         Result := TFrameBinder.Create();
       end);
 
-    TJSRegister.RegisterObject('XMLHttpRequest', TypeInfo(IXMLHttpRequest),
+    _runtime.RegisterObjectWithConstructor('XMLHttpRequest', TypeInfo(IXMLHttpRequest),
       function : Pointer begin
         Result := TXMLHttpRequest.Create;
       end);
 
-    TJSRegister.RegisterObject('IBaseInterface', TypeInfo(IBaseInterface), nil);
-    TJSRegister.RegisterObject('IComponent', TypeInfo(IComponent), nil);
-    TJSRegister.RegisterObject('IAddingNew', TypeInfo(IAddingNew), nil);
-    TJSRegister.RegisterObject('IAddRange', TypeInfo(IAddRange), nil);
-    TJSRegister.RegisterObject('ICloneable', TypeInfo(ICloneable), nil);
-    TJSRegister.RegisterObject('IEditState', TypeInfo(IEditState), nil);
-    TJSRegister.RegisterObject('IEditableModel', TypeInfo(IEditableModel), nil);
-    TJSRegister.RegisterObject('IOnItemChangedSupport', TypeInfo(IOnItemChangedSupport), nil);
-    TJSRegister.RegisterObject('IUpdatableObject', TypeInfo(IUpdatableObject), nil);
-    // TJSRegister.RegisterObject('IProject', TypeInfo(IProject), nil);
-    TJSRegister.RegisterObject('IStorage', TypeInfo(IStorage), nil);
-    TJSRegister.RegisterObject('IStorageSupport', TypeInfo(IStorageSupport), nil);
+    // Register interface types (no constructor)
+    _runtime.RegisterObjectType('IBaseInterface', TypeInfo(IBaseInterface));
+    _runtime.RegisterObjectType('IComponent', TypeInfo(IComponent));
+    _runtime.RegisterObjectType('IAddingNew', TypeInfo(IAddingNew));
+    _runtime.RegisterObjectType('IAddRange', TypeInfo(IAddRange));
+    _runtime.RegisterObjectType('ICloneable', TypeInfo(ICloneable));
+    _runtime.RegisterObjectType('IEditState', TypeInfo(IEditState));
+    _runtime.RegisterObjectType('IEditableModel', TypeInfo(IEditableModel));
+    _runtime.RegisterObjectType('IOnItemChangedSupport', TypeInfo(IOnItemChangedSupport));
+    _runtime.RegisterObjectType('IUpdatableObject', TypeInfo(IUpdatableObject));
+    _runtime.RegisterObjectType('IStorage', TypeInfo(IStorage));
+    _runtime.RegisterObjectType('IStorageSupport', TypeInfo(IStorageSupport));
 
-    TJSRegister.RegisterObject('ITestObject', TypeInfo(ITestObject),
+    _runtime.RegisterObjectWithConstructor('ITestObject', TypeInfo(ITestObject),
       function : Pointer begin
         Result := TTestObject.Create;
       end);
 
     // Create the QuickJS bridge to automatically register types with QuickJS
-    _quickJSBridge := CreateAppQuickJSBridge(_app.Config);
+    _quickJSBridge := CreateAppQuickJSBridge(_app.Config, _runtime);
     _quickJSBridge.RegisterExistingTypes;
 
-    _context := TJSRegister.CreateContext;
-    _context.Runtime.LogString := LogCallBack;
+    // Create context from runtime
+    _context := _runtime.CreateContext;
+    _context.LogString := LogCallBack;
 
-    TJSRegister.RegisterLiveObject(_context, 'app', TypeInfo(IAppObject), _app);
+    // Register live object instances
+    _context.RegisterLiveInterfaceInstance('app', TypeInfo(IAppObject), _app);
 
     _test := TTestObject.Create;
-    TJSRegister.RegisterLiveObject(_context, 'tst', TypeInfo(ITestObject), _test);
+    _context.RegisterLiveInterfaceInstance('tst', TypeInfo(ITestObject), _test);
 
     // Run initialization code from mmInitialize
     _context.eval(mmInitialize.Lines.Text, '<initialize>');

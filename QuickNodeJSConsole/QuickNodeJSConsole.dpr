@@ -94,7 +94,7 @@ begin
   // One-time initialization - only needs to happen once
   // Create the runtime instance
   {$IFDEF TESTS}
-  FRuntime := TJSRegisterTypedObjects.Create;
+  FRuntime := TJSRuntimeDN4D.Create;
   {$ELSE}
   FRuntime := TJSRuntime.Create;
   {$ENDIF}
@@ -119,7 +119,7 @@ begin
   TestObjectBridgeDefinitions.RegisterWithObjectBridge(FRuntime);
 
   // Register record/enum types on the runtime
-  // Note: TimeSpan (CTimeSpan) is already registered by TJSRegisterTypedObjects.Create
+  // Note: TimeSpan (CTimeSpan) is already registered by TJSRuntimeDN4D.Create
   FRuntime.RegisterObjectType('TimeInterval', TypeInfo(TimeInterval));
   {$ENDIF}
 end;

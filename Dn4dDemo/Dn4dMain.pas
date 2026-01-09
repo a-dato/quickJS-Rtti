@@ -228,7 +228,7 @@ begin
     rt.LogString := LogCallBack;
     _context := rt.CreateContext;
 
-    TJSRegisterTypedObjects.Initialize;
+    TJSRuntimeDN4D.Initialize;
 
     TRegisteredTypedObject.OnGetMemberByName := OnGetMemberByName;
 

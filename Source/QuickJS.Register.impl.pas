@@ -53,7 +53,6 @@ type
 
   TJSRuntime = class(TInterfacedObject, IJSRuntime)
   protected
-    class var _ActiveContexts: TDictionary<JSContext, Pointer {Unsafe IJSContext pointer}>;
     var _rt: JSRuntime;
     var _LogString: TProc<string>;
 
@@ -66,7 +65,7 @@ type
     var FRegisteredJSObjects: TDictionary<JSValueConst, IRegisteredObject>;
     var FRegisteredInterfaces: TDictionary<TGuid, IRegisteredObject>;
     var FObjectBridgeResolver: IObjectBridgeResolver;
-    var FAllContexts: TList<Pointer {Unsafe IJSContext pointer}>;
+    var FOwnedContexts: TList<Pointer {Unsafe IJSContext pointer}>;
     var FPendingRegistrations: TList<TRegistrationInfo>;
     var FRegisteredEnums: TDictionary<PTypeInfo, string>;
     var FCustomObjectFactory: TCustomObjectFactory;
@@ -81,8 +80,6 @@ type
     procedure OutputLog(const Value: string);
 
     class function get_Context(const Value: JSContext) : IJSContext; static;
-    class procedure InternalRegisterContext(Ctx: JSContext; const Context: IJSContext); static;
-    class procedure InternalUnRegisterContext(Ctx: JSContext); static;
 
     procedure InitializeExotics;
     procedure AddRegisteredObjectWithClassID(const RegisteredObject: IRegisteredObject);
@@ -148,8 +145,6 @@ type
     function  RegisterObjectWithConstructor(ClassName: string; TypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject;
     function  RegisterJSObject(const ctx: IJSContext; JSConstructor: JSValueConst; TypeInfo: PTypeInfo): IRegisteredObject;
 
-    procedure RegisterLiveObjectInstance(const ctx: IJSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean);
-    procedure RegisterLiveInterfaceInstance(const ctx: IJSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface);
 
     function  TryGetRegisteredObjectFromJSValue(Value: JSValue; out AObject: TRegisteredObjectWithPtr): Boolean; overload;
     function  TryGetRegisteredObjectFromJSValue(ctx: JSContext; Value: JSValue; out AObject: TRegisteredObjectWithPtr): Boolean; overload;
@@ -163,11 +158,11 @@ type
     procedure RegisterContext(const Context: IJSContext);
     procedure UnregisterContext(const Context: IJSContext);
 
-    // Converter methods (moved from TJSRuntime)
+    // Converter methods - virtual, override in derived runtimes (e.g. dn4d)
     function JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue; virtual;
     function TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue; virtual;
     function TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue; out ParamIsGenericValue: Boolean): Boolean; virtual;
-    class function GetDefaultValue(const Param: TRttiParameter): TValue; static;
+    function GetDefaultValue(const Param: TRttiParameter): TValue; virtual;
 
     // Helper methods (moved from TJSRuntime)
     procedure Clear(ClearAll: Boolean);
@@ -195,9 +190,12 @@ type
   protected
     _ctx: JSContext;
     _runtime: IJSRuntime;
+    _LogString: TProc<string>;
 
     function  get_ctx: JSContext;
     function  get_Runtime: IJSRuntime;
+    function  get_LogString: TProc<string>;
+    procedure set_LogString(const Value: TProc<string>);
 
     function  eval_internal(Buf: PAnsiChar; buf_len: Integer; FileName: PAnsiChar; eval_flags: Integer): Integer;
 
@@ -211,7 +209,11 @@ type
   public
     constructor Create(const Runtime: IJSRuntime);
     procedure eval(const Code: string; const CodeContext: string);
-    procedure  BeforeDestruction; override;
+    procedure OutputLog(const Value: string);
+    procedure BeforeDestruction; override;
+
+    procedure RegisterLiveObjectInstance(ObjectName: string; AObject: TObject; OwnsObject: Boolean);
+    procedure RegisterLiveInterfaceInstance(ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface);
   end;
 
   TJSIndexedPropertyAccessor = class
@@ -314,21 +316,6 @@ implementation
 uses
   System.Classes, QuickJS.VirtualMethod.impl, QuickJS.Register.ObjectBridge.impl,
   QuickJS.Register.ObjectBridgeDefaultDefinitions.impl;
-
-function _JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
-begin
-  Result := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).JSValueToTValue(ctx, Value, Target);
-end;
-
-function _TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue;
-begin
-  Result := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, Value);
-end;
-
-function _GetDefaultValue(const Param: TRttiParameter): TValue;
-begin
-  Result := TJSRuntime.GetDefaultValue(Param);
-end;
 
 function AtomToString(ctx: JSContext; Atom: JSAtom) : string;
 begin
@@ -524,7 +511,7 @@ end;
 
 { TJSRuntime - Converter methods }
 
-class function TJSRuntime.GetDefaultValue(const Param: TRttiParameter): TValue;
+function TJSRuntime.GetDefaultValue(const Param: TRttiParameter): TValue;
 begin
   var attr := Param.GetAttributes;
   for var a in attr do
@@ -2032,7 +2019,7 @@ begin
   FRegisteredObjectsByConstructor.Free;
   FRegisteredJSObjects.Free;
   FRegisteredInterfaces.Free;
-  FAllContexts.Free;
+  FOwnedContexts.Free;
   FPendingRegistrations.Free;
   FRegisteredEnums.Free;
   FObjectBridgeResolver := nil;
@@ -2090,7 +2077,9 @@ begin
       JS_FreeValue(ctx, stack);
     end;
 
-    IJSContext(_ActiveContexts[ctx]).Runtime.OutputLog(err);
+    var jsctx := TJSRuntime.Context[ctx];
+    if jsctx <> nil then
+      jsctx.OutputLog(err);
     Result := False;
   end;
 end;
@@ -2103,7 +2092,9 @@ begin
   begin
     var exp := JS_GetException(ctx);
     try
-      var rt := IJSContext(_ActiveContexts[ctx]).Runtime;
+      var jsctx := TJSRuntime.Context[ctx];
+      if jsctx = nil then
+        Exit(False);
 
       // Prefer rich error details (name/message/stack) when possible.
       if JS_IsError(ctx, exp) then
@@ -2137,13 +2128,13 @@ begin
           JS_FreeValue(ctx, stack);
         end;
 
-        rt.OutputLog(err);
+        jsctx.OutputLog(err);
       end
       else
       begin
         var str := JS_ToCString(ctx, exp);
         try
-          rt.OutputLog(UTF8ToString(str));
+          jsctx.OutputLog(UTF8ToString(str));
         finally
           JS_FreeCString(ctx, str);
         end;
@@ -2158,19 +2149,14 @@ end;
 
 procedure TJSRuntime.InitializeGlobals;
 begin
-  _ActiveContexts := TDictionary<JSContext, Pointer {Unsafe IJSContext pointer}>.Create;
-
   // Load QuickJS library if not already loaded
-  // Note: Cannot use Exit in class constructors - must complete
   if not IsQuickJSLoaded then
-    LoadQuickJS; // Will set QuickJSLoaded flag if successful
-
+    LoadQuickJS;
 end;
 
 procedure TJSRuntime.FinalizeGlobals;
 begin
-  if (_ActiveContexts <> nil) then
-    _ActiveContexts.Free;
+  // No global state to clean up - context tracking is now per-context via JS_SetContextOpaque
 end;
 
 constructor TJSRuntime.Create;
@@ -2178,13 +2164,16 @@ begin
   // Load QuickJS library if not already loaded
   if not IsQuickJSLoaded then
     LoadQuickJS;
-    
-  // Initialize the shared context dictionary if needed
-  if _ActiveContexts = nil then
-    _ActiveContexts := TDictionary<JSContext, Pointer {Unsafe IJSContext pointer}>.Create;
   
   _rt := JS_NewRuntime;
   js_std_init_handlers(_rt);
+  
+  // Set a generous native stack size limit.
+  // The stack_top is recorded at runtime creation, but JS may be called from
+  // much deeper in the Delphi call stack, causing false "Maximum call stack size exceeded" errors.
+  // Setting to 64MB accommodates deep call stacks while still protecting against infinite JS recursion.
+  // Note: Setting to 0 would disable the check entirely.
+  JS_SetMaxStackSize(_rt, 64 * 1024 * 1024);
   
   // Store Self in runtime opaque data for static callback access
   JS_SetRuntimeOpaque(_rt, Self);
@@ -2197,7 +2186,7 @@ begin
   FRegisteredObjectsByConstructor := TDictionary<JSValueConst, IRegisteredObject>.Create;
   FRegisteredJSObjects := TDictionary<JSValueConst, IRegisteredObject>.Create;
   FRegisteredInterfaces := TDictionary<TGuid, IRegisteredObject>.Create;
-  FAllContexts := TList<Pointer>.Create;
+  FOwnedContexts := TList<Pointer>.Create;
   FPendingRegistrations := TList<TRegistrationInfo>.Create;
   FRegisteredEnums := TDictionary<PTypeInfo, string>.Create;
 
@@ -2206,11 +2195,6 @@ begin
 
   // Initialize exotics
   InitializeExotics;
-
-  // Hook up converter functions
-  JSConverterFuncs.JSValueToTValue := _JSValueToTValue;
-  JSConverterFuncs.TValueToJSValue := _TValueToJSValue;
-  JSConverterFuncs.GetDefaultValue := _GetDefaultValue;
 
   // Register default ObjectBridge mappings (e.g. forEach)
   TObjectBridgeDefaultDefinitions.Initialize(Self);
@@ -2249,32 +2233,14 @@ end;
 
 class function TJSRuntime.get_Context(const Value: JSContext): IJSContext;
 begin
-  TMonitor.Enter(_ActiveContexts);
-  try
-    Result := IJSContext(_ActiveContexts[Value]);
-  finally
-    TMonitor.Exit(_ActiveContexts);
-  end;
-end;
-
-class procedure TJSRuntime.InternalRegisterContext(Ctx: JSContext; const Context: IJSContext);
-begin
-  TMonitor.Enter(_ActiveContexts);
-  try
-    _ActiveContexts.Add(Ctx, Pointer(Context));
-  finally
-    TMonitor.Exit(_ActiveContexts);
-  end;
-end;
-
-class procedure TJSRuntime.InternalUnRegisterContext(Ctx: JSContext);
-begin
-  TMonitor.Enter(_ActiveContexts);
-  try
-    _ActiveContexts.Remove(Ctx);
-  finally
-    TMonitor.Exit(_ActiveContexts);
-  end;
+  // Use QuickJS's built-in context opaque data instead of a global dictionary
+  // Note: We store an object pointer (TJSContext), not an interface pointer.
+  // Must cast through the class first to get proper interface conversion.
+  var ptr := JS_GetContextOpaque(Value);
+  if ptr <> nil then
+    Result := TJSContext(ptr)  // TJSContext -> IJSContext via implicit conversion
+  else
+    Result := nil;
 end;
 
 procedure TJSRuntime.set_LogString(const Value: TProc<string>);
@@ -2438,11 +2404,11 @@ end;
 
 procedure TJSRuntime.RegisterContext(const Context: IJSContext);
 begin
-  TMonitor.Enter(FAllContexts);
+  TMonitor.Enter(FOwnedContexts);
   try
-    FAllContexts.Add(Pointer(Context));
+    FOwnedContexts.Add(Pointer(Context));
   finally
-    TMonitor.Exit(FAllContexts);
+    TMonitor.Exit(FOwnedContexts);
   end;
 
   // Apply all registered enums to this new context
@@ -2486,11 +2452,11 @@ end;
 
 procedure TJSRuntime.UnregisterContext(const Context: IJSContext);
 begin
-  TMonitor.Enter(FAllContexts);
+  TMonitor.Enter(FOwnedContexts);
   try
-    FAllContexts.Remove(Pointer(Context));
+    FOwnedContexts.Remove(Pointer(Context));
   finally
-    TMonitor.Exit(FAllContexts);
+    TMonitor.Exit(FOwnedContexts);
   end;
 end;
 
@@ -2515,15 +2481,15 @@ begin
     end;
     
     // Apply to all existing contexts
-    TMonitor.Enter(FAllContexts);
+    TMonitor.Enter(FOwnedContexts);
     try
-      for var i := 0 to FAllContexts.Count - 1 do
+      for var i := 0 to FOwnedContexts.Count - 1 do
       begin
-        var ctx: IJSContext := IJSContext(FAllContexts[i]);
+        var ctx: IJSContext := IJSContext(FOwnedContexts[i]);
         InternalRegisterEnum(ctx, TypeInfo, ClassName);
       end;
     finally
-      TMonitor.Exit(FAllContexts);
+      TMonitor.Exit(FOwnedContexts);
     end;
     
     Exit(nil); // Enums don't return a registered object
@@ -2560,11 +2526,11 @@ begin
   end;
 
   // Apply to all existing contexts
-  TMonitor.Enter(FAllContexts);
+  TMonitor.Enter(FOwnedContexts);
   try
-    for var i := 0 to FAllContexts.Count - 1 do
+    for var i := 0 to FOwnedContexts.Count - 1 do
     begin
-      var ctx: IJSContext := IJSContext(FAllContexts[i]);
+      var ctx: IJSContext := IJSContext(FOwnedContexts[i]);
       InternalRegisterType(ctx, Result, ClassName);
       
       if not FRegisteredObjectsByClassID.ContainsKey(Result.ClassID) then
@@ -2574,7 +2540,7 @@ begin
         FRegisteredObjectsByConstructor.Add(Result.JSConstructor, Result);
     end;
   finally
-    TMonitor.Exit(FAllContexts);
+    TMonitor.Exit(FOwnedContexts);
   end;
 end;
 
@@ -2588,65 +2554,6 @@ begin
     FRegisteredJSObjects.Add(JSConstructor, Result);
   finally
     TMonitor.Exit(FRegisteredJSObjects);
-  end;
-end;
-
-// Interface method implementations (with distinct names to avoid Delphi interface overload issues)
-procedure TJSRuntime.RegisterLiveObjectInstance(const ctx: IJSContext; ObjectName: string; AObject: TObject; OwnsObject: Boolean);
-begin
-  TMonitor.Enter(FRegisteredObjectsByType);
-  try
-    var tp := PTypeInfo(AObject.ClassInfo);
-    var reg: IRegisteredObject := nil;
-
-    if not FRegisteredObjectsByType.TryGetValue(tp, reg) then
-    begin
-      RegisterObjectType(AObject.ClassName, tp);
-      reg := FRegisteredObjectsByType[tp];
-    end;
-
-    var global := JS_GetGlobalObject(ctx.ctx);
-    var jsval := JS_NewObjectClass(ctx.ctx, reg.ClassID);
-
-    var ptr: Pointer;
-    if OwnsObject then
-      ptr := Pointer(AObject)
-    else
-      ptr := TObjectReference.Create(TObject(AObject));
-
-    JS_SetOpaque(jsval, ptr);
-    var s: UTF8String := UTF8Encode(ObjectName);
-    JS_SetPropertyStr(ctx.ctx, global, PAnsiChar(s), jsval);
-    JS_FreeValue(ctx.ctx, global);
-  finally
-    TMonitor.Exit(FRegisteredObjectsByType);
-  end;
-end;
-
-procedure TJSRuntime.RegisterLiveInterfaceInstance(const ctx: IJSContext; ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface);
-begin
-  TMonitor.Enter(FRegisteredObjectsByType);
-  try
-    var reg: IRegisteredObject := nil;
-
-    if not FRegisteredObjectsByType.TryGetValue(TypeInfo, reg) then
-    begin
-      RegisterObjectType(string(TypeInfo.Name), TypeInfo);
-      reg := FRegisteredObjectsByType[TypeInfo];
-    end;
-
-    var jsctx := ctx.ctx;
-    var global := JS_GetGlobalObject(jsctx);
-    var jsval := JS_NewObjectClass(jsctx, reg.ClassID);
-
-    // Bump ref count required
-    AInterface._AddRef;
-    JS_SetOpaque(jsval, Pointer(AInterface));
-    var s: UTF8String := UTF8Encode(ObjectName);
-    JS_SetPropertyStr(jsctx, global, PAnsiChar(s), jsval);
-    JS_FreeValue(jsctx, global);
-  finally
-    TMonitor.Exit(FRegisteredObjectsByType);
   end;
 end;
 
@@ -2756,7 +2663,10 @@ procedure TJSContext.BeforeDestruction;
 begin
   if _ctx <> nil then
   begin
-    TJSRuntime.InternalUnRegisterContext(_ctx);
+    // Clear the context opaque data before freeing
+    if IsQuickJSLoaded then
+      JS_SetContextOpaque(_ctx, nil);
+    
     if _runtime <> nil then
       (_runtime as TJSRuntime).UnregisterContext(Self);
     
@@ -2765,7 +2675,7 @@ begin
       try
         JS_FreeContext(_ctx);
       except
-
+        // Ignore exceptions during cleanup
       end;
     end;
   end;
@@ -2784,7 +2694,9 @@ begin
   end;
   
   _ctx := JS_NewContext(_runtime.rt);
-  TJSRuntime.InternalRegisterContext(_ctx, IJSContext(Self));
+  
+  // Store Self in context opaque data - allows retrieval from JSContext in callbacks
+  JS_SetContextOpaque(_ctx, Pointer(Self));
   
   // Register this context with the runtime for type registrations
   (_runtime as TJSRuntime).RegisterContext(Self);
@@ -2870,9 +2782,9 @@ class function TJSContext.logme(ctx : JSContext; {%H-}this_val : JSValueConst; a
 var
   i : Integer;
   str : PAnsiChar;
-  runtime: TJSRuntime;
+  jsctx: IJSContext;
 begin
-  runtime := TJSRuntime.GetRuntimeFromContext(ctx);
+  jsctx := TJSRuntime.Context[ctx];
   
   for i := 0 to Pred(argc) do
   begin
@@ -2887,8 +2799,8 @@ begin
        JS_FreeCString(ctx, str);
      end;
 
-     if runtime <> nil then
-       runtime.OutputLog(s);
+     if jsctx <> nil then
+       jsctx.OutputLog(s);
   end;
 
   Result := JS_UNDEFINED;
@@ -2908,6 +2820,81 @@ end;
 function TJSContext.get_Runtime: IJSRuntime;
 begin
   Result := _runtime;
+end;
+
+function TJSContext.get_LogString: TProc<string>;
+begin
+  Result := _LogString;
+end;
+
+procedure TJSContext.set_LogString(const Value: TProc<string>);
+begin
+  _LogString := Value;
+end;
+
+procedure TJSContext.OutputLog(const Value: string);
+begin
+  if Assigned(_LogString) then
+    _LogString(Value);
+end;
+
+procedure TJSContext.RegisterLiveObjectInstance(ObjectName: string; AObject: TObject; OwnsObject: Boolean);
+begin
+  var runtime := _runtime as TJSRuntime;
+  TMonitor.Enter(runtime.FRegisteredObjectsByType);
+  try
+    var tp := PTypeInfo(AObject.ClassInfo);
+    var reg: IRegisteredObject := nil;
+
+    if not runtime.FRegisteredObjectsByType.TryGetValue(tp, reg) then
+    begin
+      runtime.RegisterObjectType(AObject.ClassName, tp);
+      reg := runtime.FRegisteredObjectsByType[tp];
+    end;
+
+    var global := JS_GetGlobalObject(_ctx);
+    var jsval := JS_NewObjectClass(_ctx, reg.ClassID);
+
+    var ptr: Pointer;
+    if OwnsObject then
+      ptr := Pointer(AObject)
+    else
+      ptr := TObjectReference.Create(TObject(AObject));
+
+    JS_SetOpaque(jsval, ptr);
+    var s: UTF8String := UTF8Encode(ObjectName);
+    JS_SetPropertyStr(_ctx, global, PAnsiChar(s), jsval);
+    JS_FreeValue(_ctx, global);
+  finally
+    TMonitor.Exit(runtime.FRegisteredObjectsByType);
+  end;
+end;
+
+procedure TJSContext.RegisterLiveInterfaceInstance(ObjectName: string; TypeInfo: PTypeInfo; const AInterface: IInterface);
+begin
+  var runtime := _runtime as TJSRuntime;
+  TMonitor.Enter(runtime.FRegisteredObjectsByType);
+  try
+    var reg: IRegisteredObject := nil;
+
+    if not runtime.FRegisteredObjectsByType.TryGetValue(TypeInfo, reg) then
+    begin
+      runtime.RegisterObjectType(string(TypeInfo.Name), TypeInfo);
+      reg := runtime.FRegisteredObjectsByType[TypeInfo];
+    end;
+
+    var global := JS_GetGlobalObject(_ctx);
+    var jsval := JS_NewObjectClass(_ctx, reg.ClassID);
+
+    // Bump ref count required
+    AInterface._AddRef;
+    JS_SetOpaque(jsval, Pointer(AInterface));
+    var s: UTF8String := UTF8Encode(ObjectName);
+    JS_SetPropertyStr(_ctx, global, PAnsiChar(s), jsval);
+    JS_FreeValue(_ctx, global);
+  finally
+    TMonitor.Exit(runtime.FRegisteredObjectsByType);
+  end;
 end;
 
 procedure TJSContext.Initialize;

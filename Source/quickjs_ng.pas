@@ -506,7 +506,7 @@ type
   TJS_SetRuntimeInfo = procedure(rt : JSRuntime; const info : {$IFDEF FPC}PChar{$Else}PAnsiChar{$EndIf}); cdecl;
   TJS_SetMemoryLimit = procedure(rt : JSRuntime; limit : size_t); cdecl;
   TJS_SetGCThreshold = procedure(rt : JSRuntime; gc_threshold : size_t); cdecl;
-  TJS_SetMaxStackSize = procedure(ctx: JSContext; stack_size:size_t); cdecl;
+  TJS_SetMaxStackSize = procedure(rt: JSRuntime; stack_size:size_t); cdecl;
   TJS_NewRuntime2 = function(const mf : PJSMallocFunctions; opaque : Pointer) : JSRuntime; cdecl;
   TJS_FreeRuntime = procedure(rt : JSRuntime); cdecl;
   TJS_GetRuntimeOpaque = function(rt : JSRuntime) : Pointer; cdecl;

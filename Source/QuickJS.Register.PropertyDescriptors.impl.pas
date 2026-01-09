@@ -163,6 +163,7 @@ end;
 function TRttiMethodPropertyDescriptor.Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
 begin
   var method := SelectMethodMatchArguments(ctx, argc, argv);
+  var runtime := IJSRuntime(JS_GetRuntimeOpaque(JS_GetRuntime(ctx)));
 
   try
     var params := Method.GetParameters;
@@ -174,8 +175,8 @@ begin
       for var i := 0 to High(params) do
       begin
         if i < argc then
-          arr[i] := JSConverterFuncs.JSValueToTValue(ctx, PJSValueConstArr(argv)[i], params[i].ParamType.Handle) else
-          arr[i] := JSConverterFuncs.GetDefaultValue(params[i]);
+          arr[i] := runtime.JSValueToTValue(ctx, PJSValueConstArr(argv)[i], params[i].ParamType.Handle) else
+          arr[i] := runtime.GetDefaultValue(params[i]);
       end;
     end;
 
@@ -188,7 +189,7 @@ begin
       TValue.Make(Ptr, FTypeInfo, vt);
 
     v := Method.Invoke(vt, arr);
-    Result := JSConverterFuncs.TValueToJSValue(ctx, v);
+    Result := runtime.TValueToJSValue(ctx, v);
   except
     on E: Exception do
     begin

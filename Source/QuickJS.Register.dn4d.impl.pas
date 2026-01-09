@@ -25,7 +25,7 @@ type
     function ToString: CString;
   end;
 
-  TJSRegisterTypedObjects = class(TJSRuntime)
+  TJSRuntimeDN4D = class(TJSRuntime)
   protected
     function CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject; override;
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject; override;
@@ -192,7 +192,7 @@ end;
 function TJSBaseObject.GetType: &Type;
 begin
   var ctr := JS_GetPropertyStr(_ctx, _value, 'constructor');
-  Result := TJSRegisterTypedObjects.GetTypeFromJSObject(_ctx, ctr);
+  Result := TJSRuntimeDN4D.GetTypeFromJSObject(_ctx, ctr);
   JS_FreeValue(_ctx, ctr);
   // Result := &Type.Create(Self.ClassInfo);
 end;
@@ -207,9 +207,9 @@ begin
   Invoke('toString', nil, TypeInfo(CString)).TryAsType<CString>(Result);
 end;
 
-{ TJSRegisterTypedObjects }
+{ TJSRuntimeDN4D }
 
-constructor TJSRegisterTypedObjects.Create;
+constructor TJSRuntimeDN4D.Create;
 begin
   inherited Create;
   
@@ -219,17 +219,17 @@ begin
   RegisterObjectType('TimeSpan', TypeInfo(CTimeSpan));
 end;
 
-function TJSRegisterTypedObjects.CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject;
+function TJSRuntimeDN4D.CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject;
 begin
   Result := TRegisteredTypedObject.Create(Self as TJSRuntime, ATypeInfo, AConstructor);
 end;
 
-function TJSRegisterTypedObjects.CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject;
+function TJSRuntimeDN4D.CreateRegisteredJSObject(ctx: JSContext; JSConstructor: JSValueConst; ATypeInfo: PTypeInfo) : IRegisteredObject;
 begin
   Result := TRegisteredJSObject.Create(Self as TJSRuntime, ctx, JSConstructor, ATypeInfo);
 end;
 
-procedure TJSRegisterTypedObjects.InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
+procedure TJSRuntimeDN4D.InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string);
 begin
   // Call base implementation to register the type
   inherited InternalRegisterType(ctx, Reg, ClassName);
@@ -247,7 +247,7 @@ begin
   end;
 end;
 
-procedure TJSRegisterTypedObjects.RegisterEnumConstants(const ctx: IJSContext; const Reg: IRegisteredObject; const EnumInfo: EnumInformation);
+procedure TJSRuntimeDN4D.RegisterEnumConstants(const ctx: IJSContext; const Reg: IRegisteredObject; const EnumInfo: EnumInformation);
 begin
   // Get the constructor function from global object
   var jsctx := ctx.ctx;
@@ -488,8 +488,8 @@ begin
   Result := TMemberType.Iterator;
 end;
 
-{ TJSRegisterTypedObjects - Typed Converter Methods }
-class function TJSRegisterTypedObjects.GetTypeFromJSObject(ctx: JSContext; Value: JSValueConst): &Type;
+{ TJSRuntimeDN4D - Typed Converter Methods }
+class function TJSRuntimeDN4D.GetTypeFromJSObject(ctx: JSContext; Value: JSValueConst): &Type;
 begin
   var runtime := TJSRuntime.GetRuntimeFromContext(ctx);
   var reg: IRegisteredObject;
@@ -508,7 +508,7 @@ begin
       var name := JS_ToCString(ctx, n);
 
       var tp: PTypeInfo := New(PTypeInfo);
-      // tp.Kind := TJSRegisterTypedObjects.tkJSType;
+      // tp.Kind := TJSRuntimeDN4D.tkJSType;
       tp.Kind := TTypeKind.tkInterface;
       tp.Name := name;
 
@@ -525,7 +525,7 @@ begin
     Result := &Type.Unknown;
 end;
 
-function TJSRegisterTypedObjects.JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
+function TJSRuntimeDN4D.JSValueToTValue(ctx: JSContext; Value: JSValueConst; Target: PTypeInfo): TValue;
 begin
   if Target = nil then
   begin
@@ -776,7 +776,7 @@ begin
     Result := inherited;
 end;
 
-function TJSRegisterTypedObjects.TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue;
+function TJSRuntimeDN4D.TValueToJSValue(ctx: JSContext; const Value: TValue): JSValue;
 begin
   if Value.Kind = tkRecord then
   begin
@@ -821,7 +821,7 @@ begin
   Result := inherited;
 end;
 
-function TJSRegisterTypedObjects.TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue; out ParamIsGenericValue: Boolean): Boolean;
+function TJSRuntimeDN4D.TestParamsAreCompatible(ctx: JSContext; const Param: TRttiParameter; Value: JSValue; out ParamIsGenericValue: Boolean): Boolean;
 begin
   if (Param.ParamType.TypeKind = tkRecord) and (Param.Handle = TypeInfo(CObject)) then
   begin
