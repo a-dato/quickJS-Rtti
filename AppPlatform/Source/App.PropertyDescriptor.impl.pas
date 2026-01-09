@@ -37,11 +37,13 @@ type
     procedure set_Visible(const Value: Boolean);
   end;
 
-  TPropertyWithDescriptor = class(CPropertyWrapper, IPropertyDescriptor, INotifyPropertyChanged)
+  TPropertyWithDescriptor = class(CPropertyWrapper, IPropertyDescriptor, INotifyPropertyChanged, ICustomProperty)
   protected
     _PropertyDescriptor: IPropertyDescriptor;
     _Marshaller: IMarshaller;
     _Notifiers: List<INotify>;
+
+    function  get_CustomProperty: ICustomProperty;
 
     function  GetValue(const obj: CObject; const index: array of CObject): CObject; override;
     procedure SetValue(const obj: CObject; const Value: CObject; const index: array of CObject; ExecuteTriggers: Boolean = false); override;
@@ -53,6 +55,7 @@ type
   public
     constructor Create(const AProperty: _PropertyInfo; const ADescriptor: IPropertyDescriptor);
 
+    property CustomProperty: ICustomProperty read get_CustomProperty implements ICustomProperty;
     property PropertyDescriptor: IPropertyDescriptor read _PropertyDescriptor implements IPropertyDescriptor;
   end;
 
@@ -187,6 +190,11 @@ begin
   Result := inherited;
   if _marshaller <> nil then
     Result := _marshaller.Unmarshal(obj, Result);
+end;
+
+function TPropertyWithDescriptor.get_CustomProperty: ICustomProperty;
+begin
+  Interfaces.Supports<ICustomProperty>(_property, Result);
 end;
 
 procedure TPropertyWithDescriptor.Remove(const Value: INotify);

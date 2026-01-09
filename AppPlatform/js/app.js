@@ -35,7 +35,7 @@ export class IBaseInterface_ {
 	}
 
 	get FullName() {
-		return ClassName;
+		return 'lynx.extension.' + this.ClassName.toLowerCase();
 	}
 
   GetHashCode() {
