@@ -163,7 +163,9 @@ end;
 function TRttiMethodPropertyDescriptor.Call(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue;
 begin
   var method := SelectMethodMatchArguments(ctx, argc, argv);
-  var runtime := IJSRuntime(JS_GetRuntimeOpaque(JS_GetRuntime(ctx)));
+  // Get runtime through context interface - avoids circular dependency with QuickJS.Register.impl
+  var jsContext := IJSContext(JS_GetContextOpaque(ctx));
+  var runtime := jsContext.Runtime;
 
   try
     var params := Method.GetParameters;

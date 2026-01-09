@@ -2233,12 +2233,12 @@ end;
 
 class function TJSRuntime.get_Context(const Value: JSContext): IJSContext;
 begin
-  // Use QuickJS's built-in context opaque data instead of a global dictionary
-  // Note: We store an object pointer (TJSContext), not an interface pointer.
-  // Must cast through the class first to get proper interface conversion.
+  // Use QuickJS's built-in context opaque data
+  // We store the IJSContext interface pointer directly (not object pointer)
+  // This allows retrieval without knowing concrete class, avoiding circular dependencies
   var ptr := JS_GetContextOpaque(Value);
   if ptr <> nil then
-    Result := TJSContext(ptr)  // TJSContext -> IJSContext via implicit conversion
+    Result := IJSContext(ptr)  // Direct interface pointer retrieval
   else
     Result := nil;
 end;
@@ -2695,8 +2695,9 @@ begin
   
   _ctx := JS_NewContext(_runtime.rt);
   
-  // Store Self in context opaque data - allows retrieval from JSContext in callbacks
-  JS_SetContextOpaque(_ctx, Pointer(Self));
+  // Store interface pointer in context opaque data - allows retrieval without knowing concrete class
+  // This enables PropertyDescriptors to get IJSRuntime through IJSContext.Runtime without circular dependency
+  JS_SetContextOpaque(_ctx, Pointer(Self as IJSContext));
   
   // Register this context with the runtime for type registrations
   (_runtime as TJSRuntime).RegisterContext(Self);

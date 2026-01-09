@@ -183,8 +183,9 @@ var
           Result := JS_UNDEFINED;
           if Ptr = nil then Exit;
           
-          // Get the runtime from context for converter methods
-          var runtime := IJSRuntime(JS_GetRuntimeOpaque(JS_GetRuntime(ctx)));
+          // Get the runtime through context interface
+          var jsContext := IJSContext(JS_GetContextOpaque(ctx));
+          var runtime := jsContext.Runtime;
           
           // Cast to source interface and query for target interface
           var sourceIntf: IInterface := IInterface(Ptr);
