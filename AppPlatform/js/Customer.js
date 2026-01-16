@@ -255,7 +255,8 @@ export class CustomerType extends ITypeDescriptor_ {
 					}
 				},
 				Picklist: {
-					Items: (filter) => { 
+					Items: (filter) => {
+						this.InitCustomerStorage();
 						return app.Storage[CustomerType.StorageName()];
 					}
 				}
@@ -286,6 +287,14 @@ export class CustomerType extends ITypeDescriptor_ {
 			}
 		}
 	} 
+	
+	InitCustomerStorage() {
+		if(!app.HasStorage(CustomerType.StorageName())) {
+			let storage = app.AddStorage(CustomerType, CustomerType.StorageName());
+			let data = CustomerType.Instance.Provider.Data();
+			storage.Attach(data);
+		}
+	}
 	
 	CreateInstance() {
 		return new Customer();

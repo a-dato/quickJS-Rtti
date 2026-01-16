@@ -15,28 +15,6 @@ type
     function Format(const Item: CObject) : CString;
   end;
 
-  TPropertyDescriptor = class(TBaseInterfacedObject, IPropertyDescriptor)
-  protected
-    _Picklist: IPicklist;
-    _EditorType: EditorType;
-    _Visible: Boolean;
-
-    function  get_EqualityComparer: IEqualityComparer;
-    function  get_Formatter: IFormatter;
-    procedure set_Formatter(const Value: IFormatter);
-    function  get_IsCollectionProperty: Boolean; virtual;
-    function  get_Marshaller: IMarshaller;
-    procedure set_Marshaller(const Value: IMarshaller);
-    function  get_Notify: INotify;
-    procedure set_Notify(const Value: INotify);
-    function  get_Picklist: IPicklist;
-    procedure set_Picklist(const Value: IPicklist);
-    function  get_EditorType: EditorType;
-    procedure set_EditorType(const Value: EditorType);
-    function  get_Visible: Boolean;
-    procedure set_Visible(const Value: Boolean);
-  end;
-
   TPropertyWithDescriptor = class(CPropertyWrapper, IPropertyDescriptor, INotifyPropertyChanged, ICustomProperty)
   protected
     _PropertyDescriptor: IPropertyDescriptor;
@@ -76,77 +54,6 @@ uses
 
 { TObjectsConfig }
 
-{ TPropertyDescriptor }
-
-function TPropertyDescriptor.get_EditorType: EditorType;
-begin
-  Result := _EditorType;
-end;
-
-function TPropertyDescriptor.get_EqualityComparer: IEqualityComparer;
-begin
-
-end;
-
-function TPropertyDescriptor.get_Formatter: IFormatter;
-begin
-
-end;
-
-function TPropertyDescriptor.get_IsCollectionProperty: Boolean;
-begin
-  Result := False;
-end;
-
-function TPropertyDescriptor.get_Picklist: IPicklist;
-begin
-  Result := _Picklist;
-end;
-
-function TPropertyDescriptor.get_Visible: Boolean;
-begin
-  Result := _Visible;
-end;
-
-procedure TPropertyDescriptor.set_EditorType(const Value: EditorType);
-begin
-  _EditorType := Value;
-end;
-
-procedure TPropertyDescriptor.set_Formatter(const Value: IFormatter);
-begin
-
-end;
-
-function TPropertyDescriptor.get_Marshaller: IMarshaller;
-begin
-
-end;
-
-function TPropertyDescriptor.get_Notify: INotify;
-begin
-
-end;
-
-procedure TPropertyDescriptor.set_Marshaller(const Value: IMarshaller);
-begin
-
-end;
-
-procedure TPropertyDescriptor.set_Notify(const Value: INotify);
-begin
-
-end;
-
-procedure TPropertyDescriptor.set_Picklist(const Value: IPicklist);
-begin
-  _PickList := Value;
-end;
-
-procedure TPropertyDescriptor.set_Visible(const Value: Boolean);
-begin
-  _Visible := Value;
-end;
 
 { TPicklist }
 
@@ -210,7 +117,7 @@ begin
     for var notify in _Notifiers do
       val := notify.OnChanging(obj, val);
 
-  if _marshaller <> nil then
+  if (_marshaller <> nil) and (Value.IsInterface or Value.IsObject) then
     val := _marshaller.Marshal(obj, Value) else
     val := Value;
 

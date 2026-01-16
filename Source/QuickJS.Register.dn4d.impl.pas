@@ -21,8 +21,11 @@ type
     procedure Dispose;
     function GetObject: TObject;
     function GetType: &Type;
-    function Equals(const other: CObject): Boolean;
-    function ToString: CString;
+    function Equals(const other: CObject): Boolean; reintroduce; virtual;
+    function ToString: CString; reintroduce; virtual;
+
+  public
+    function GetHashCode: Integer; override;
   end;
 
   TJSRuntimeDN4D = class(TJSRuntime)
@@ -194,12 +197,20 @@ begin
   var ctr := JS_GetPropertyStr(_ctx, _value, 'constructor');
   Result := TJSRuntimeDN4D.GetTypeFromJSObject(_ctx, ctr);
   JS_FreeValue(_ctx, ctr);
-  // Result := &Type.Create(Self.ClassInfo);
 end;
 
 function TJSBaseObject.Equals(const other: CObject): Boolean;
 begin
-  Result := (other <> nil) and (GetHashCode = other.GetHashCode);
+  var argv: TArray<TValue>;
+  SetLength(argv, 1);
+  argv[0] := other.AsType<TValue>;
+  Invoke('Equals', argv, TypeInfo(Boolean)).TryAsType<Boolean>(Result);
+  // Result := (other <> nil) and (GetHashCode = other.GetHashCode);
+end;
+
+function TJSBaseObject.GetHashCode: Integer;
+begin
+  Invoke('GetHashCode', nil, TypeInfo(Integer)).TryAsType<Integer>(Result);
 end;
 
 function TJSBaseObject.ToString: CString;
@@ -590,7 +601,7 @@ begin
       if Self.TryGetRegisteredObjectFromJSValue(ctx, Value, {out}obj) then
       begin
         if (Target <> obj.Reg.GetTypeInfo) and not Interfaces.Supports(IInterface(obj.Ptr), Target.TypeData.GUID, obj.Ptr) then
-          raise ArgumentException.Create('Interface not supported: ' + Target.Name);
+          raise ArgumentException.Create('Interface not supported: ' + string(Target.Name));
 
         TValue.Make(@obj.Ptr, Target, Result);
 
@@ -983,7 +994,7 @@ end;
 
 function TJSPropertyInfo.get_Name: CString;
 begin
-  Result := _name;
+  Result := string(_name);
 end;
 
 function TJSPropertyInfo.get_OwnerType: &Type;
