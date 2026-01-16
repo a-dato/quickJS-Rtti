@@ -1962,7 +1962,12 @@ end;
 
 function TRegisteredObject.get_ObjectSupportsIndexing: Boolean;
 begin
-  Assert(False);
+  // Check if type supports list-like indexing via get_Item method
+  var tp := _RttiContext.GetType(FTypeInfo);
+  if tp = nil then Exit(False);
+  
+  // Check for get_Item method (standard pattern for indexed access in this codebase)
+  Result := tp.GetMethod('get_Item') <> nil;
 end;
 
 procedure TRegisteredObject.set_ObjectSupportsExtension(const Value: TObjectSupportsExtension);
