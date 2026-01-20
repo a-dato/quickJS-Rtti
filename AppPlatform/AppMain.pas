@@ -197,13 +197,10 @@ end;
 
 procedure TForm1.btnCustomerClick(Sender: TObject);
 begin
-  var w: IWindow := TWindow.Create(&Type.Unknown, nil);
-  w := nil;
-
-//  _app.Environment.CreateWindow(TProject.Type, _app.Environment.MainWindow)
-//    .CreateFrame('Projects')
-//      .Bind(_app.Storage[TProject.TypeDescriptor.StorageName])
-//        .Show(nil);
+  _app.Environment.CreateWindow(TProject.Type, _app.Environment.MainWindow)
+    .CreateFrame('Projects')
+      .Bind(_app.Storage[TProject.TypeDescriptor.StorageName])
+        .Show(nil);
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);

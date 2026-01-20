@@ -25,39 +25,42 @@ object ProjectFrame: TProjectFrame
       'lectable>True</Selectable><AllowResize>False</AllowResize><Allow' +
       'Hide>False</AllowHide><HideWhenEmpty>False</HideWhenEmpty><HideG' +
       'rid>False</HideGrid><IgnoreHeightByRowCalculation>False</IgnoreH' +
-      'eightByRowCalculation></Visualisation><SortAndFilter><Sort>None<' +
-      '/Sort><ShowSortMenu>False</ShowSortMenu><ShowFilterMenu>False</S' +
-      'howFilterMenu></SortAndFilter><SubControlSettings><SubInfoContro' +
-      'lClass>Custom</SubInfoControlClass></SubControlSettings><Hierarc' +
-      'hy><ShowHierarchy>False</ShowHierarchy><Indent>0</Indent></Hiera' +
-      'rchy></Item><Item type="TDCTreeColumn"><Caption>ID</Caption><Pro' +
-      'pertyName>ID</PropertyName><InfoControlClass>Text</InfoControlCl' +
-      'ass><WidthSettings><WidthType>Pixel</WidthType><Width>50</Width>' +
-      '<WidthMin>50</WidthMin><WidthMax>50</WidthMax></WidthSettings><V' +
-      'isualisation><Visible>True</Visible><Frozen>False</Frozen><ReadO' +
-      'nly>False</ReadOnly><Selectable>True</Selectable><AllowResize>Fa' +
-      'lse</AllowResize><AllowHide>False</AllowHide><HideWhenEmpty>Fals' +
-      'e</HideWhenEmpty><HideGrid>False</HideGrid><IgnoreHeightByRowCal' +
-      'culation>False</IgnoreHeightByRowCalculation></Visualisation><So' +
-      'rtAndFilter><Sort>None</Sort><ShowSortMenu>False</ShowSortMenu><' +
-      'ShowFilterMenu>False</ShowFilterMenu></SortAndFilter><SubControl' +
-      'Settings><SubInfoControlClass>Custom</SubInfoControlClass></SubC' +
-      'ontrolSettings><Hierarchy><ShowHierarchy>False</ShowHierarchy><I' +
-      'ndent>0</Indent></Hierarchy></Item><Item type="TDCTreeColumn"><C' +
-      'aption>Name</Caption><PropertyName>Name</PropertyName><InfoContr' +
-      'olClass>Text</InfoControlClass><WidthSettings><WidthType>Pixel</' +
-      'WidthType><Width>50</Width><WidthMin>50</WidthMin><WidthMax>50</' +
-      'WidthMax></WidthSettings><Visualisation><Visible>True</Visible><' +
-      'Frozen>False</Frozen><ReadOnly>False</ReadOnly><Selectable>True<' +
-      '/Selectable><AllowResize>False</AllowResize><AllowHide>False</Al' +
-      'lowHide><HideWhenEmpty>False</HideWhenEmpty><HideGrid>False</Hid' +
-      'eGrid><IgnoreHeightByRowCalculation>False</IgnoreHeightByRowCalc' +
-      'ulation></Visualisation><SortAndFilter><Sort>None</Sort><ShowSor' +
-      'tMenu>False</ShowSortMenu><ShowFilterMenu>False</ShowFilterMenu>' +
-      '</SortAndFilter><SubControlSettings><SubInfoControlClass>Custom<' +
-      '/SubInfoControlClass></SubControlSettings><Hierarchy><ShowHierar' +
-      'chy>False</ShowHierarchy><Indent>0</Indent></Hierarchy></Item></' +
-      'Columns>'#13#10
+      'eightByRowCalculation><HorzAlign>Default</HorzAlign><VertAlign>D' +
+      'efault</VertAlign></Visualisation><SortAndFilter><Sort>None</Sor' +
+      't><ShowSortMenu>False</ShowSortMenu><ShowFilterMenu>False</ShowF' +
+      'ilterMenu></SortAndFilter><SubControlSettings><SubInfoControlCla' +
+      'ss>Custom</SubInfoControlClass></SubControlSettings><Hierarchy><' +
+      'ShowHierarchy>False</ShowHierarchy><Indent>0</Indent></Hierarchy' +
+      '></Item><Item type="TDCTreeColumn"><Caption>ID</Caption><Propert' +
+      'yName>ID</PropertyName><InfoControlClass>Text</InfoControlClass>' +
+      '<WidthSettings><WidthType>Pixel</WidthType><Width>50</Width><Wid' +
+      'thMin>50</WidthMin><WidthMax>50</WidthMax></WidthSettings><Visua' +
+      'lisation><Visible>True</Visible><Frozen>False</Frozen><ReadOnly>' +
+      'False</ReadOnly><Selectable>True</Selectable><AllowResize>False<' +
+      '/AllowResize><AllowHide>False</AllowHide><HideWhenEmpty>False</H' +
+      'ideWhenEmpty><HideGrid>False</HideGrid><IgnoreHeightByRowCalcula' +
+      'tion>False</IgnoreHeightByRowCalculation><HorzAlign>Default</Hor' +
+      'zAlign><VertAlign>Default</VertAlign></Visualisation><SortAndFil' +
+      'ter><Sort>None</Sort><ShowSortMenu>False</ShowSortMenu><ShowFilt' +
+      'erMenu>False</ShowFilterMenu></SortAndFilter><SubControlSettings' +
+      '><SubInfoControlClass>Custom</SubInfoControlClass></SubControlSe' +
+      'ttings><Hierarchy><ShowHierarchy>False</ShowHierarchy><Indent>0<' +
+      '/Indent></Hierarchy></Item><Item type="TDCTreeColumn"><Caption>D' +
+      'escription</Caption><PropertyName>Description</PropertyName><Inf' +
+      'oControlClass>Text</InfoControlClass><WidthSettings><WidthType>P' +
+      'ixel</WidthType><Width>50</Width><WidthMin>50</WidthMin><WidthMa' +
+      'x>50</WidthMax></WidthSettings><Visualisation><Visible>True</Vis' +
+      'ible><Frozen>False</Frozen><ReadOnly>False</ReadOnly><Selectable' +
+      '>True</Selectable><AllowResize>False</AllowResize><AllowHide>Fal' +
+      'se</AllowHide><HideWhenEmpty>False</HideWhenEmpty><HideGrid>Fals' +
+      'e</HideGrid><IgnoreHeightByRowCalculation>False</IgnoreHeightByR' +
+      'owCalculation><HorzAlign>Default</HorzAlign><VertAlign>Default</' +
+      'VertAlign></Visualisation><SortAndFilter><Sort>None</Sort><ShowS' +
+      'ortMenu>False</ShowSortMenu><ShowFilterMenu>False</ShowFilterMen' +
+      'u></SortAndFilter><SubControlSettings><SubInfoControlClass>Custo' +
+      'm</SubInfoControlClass></SubControlSettings><Hierarchy><ShowHier' +
+      'archy>False</ShowHierarchy><Indent>0</Indent></Hierarchy></Item>' +
+      '</Columns>'#13#10
   end
   object Layout1: TLayout
     Align = Top
@@ -74,10 +77,10 @@ object ProjectFrame: TProjectFrame
       Text = 'Project:'
       TabOrder = 0
     end
-    object IProject_Name_1: TLabel
+    object IProject_Description_1: TLabel
       Position.X = 86.000000000000000000
       Position.Y = 8.000000000000000000
-      Text = 'IProject_Name_1'
+      Text = 'IProject_Description_1'
       TabOrder = 1
     end
     object Button2: TButton
@@ -104,22 +107,22 @@ object ProjectFrame: TProjectFrame
     Size.Width = 605.000000000000000000
     Size.Height = 494.000000000000000000
     Size.PlatformDefault = False
-    TabIndex = 1
+    TabIndex = 0
     TabOrder = 2
     TabPosition = PlatformDefault
     Sizes = (
       605s
-      489s
+      468s
       605s
-      489s)
+      468s)
     object tbGeneral: TTabItem
       CustomIcon = <
         item
         end>
       TextSettings.Trimming = None
-      IsSelected = False
-      Size.Width = 1.000000000000000000
-      Size.Height = 5.000000000000000000
+      IsSelected = True
+      Size.Width = 61.000000000000000000
+      Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = ''
       TabOrder = 0
@@ -136,7 +139,7 @@ object ProjectFrame: TProjectFrame
         Text = 'Description'
         TabOrder = 5
       end
-      object IProject_Name_2: TEdit
+      object IProject_Description_2: TEdit
         Touch.InteractiveGestures = [LongTap, DoubleTap]
         TabOrder = 7
         Position.X = 160.000000000000000000
@@ -243,9 +246,9 @@ object ProjectFrame: TProjectFrame
         item
         end>
       TextSettings.Trimming = None
-      IsSelected = True
-      Size.Width = 1.000000000000000000
-      Size.Height = 5.000000000000000000
+      IsSelected = False
+      Size.Width = 93.000000000000000000
+      Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = ''
       TabOrder = 0
@@ -255,26 +258,28 @@ object ProjectFrame: TProjectFrame
       inline IProject_Customers_Model: TCustomerFrame
         Align = Client
         Size.Width = 605.000000000000000000
-        Size.Height = 489.000000000000000000
+        Size.Height = 468.000000000000000000
         Size.PlatformDefault = False
         inherited Customer_Model: TDataControl
-          Size.Height = 397.000000000000000000
+          Size.Height = 376.000000000000000000
         end
         inherited Layout1: TLayout
           Size.Width = 605.000000000000000000
         end
         inherited Splitter1: TSplitter
-          Size.Height = 397.000000000000000000
+          Size.Height = 376.000000000000000000
         end
         inherited TabPages: TTabControl
           Size.Width = 399.000000000000000000
-          Size.Height = 397.000000000000000000
+          Size.Height = 376.000000000000000000
           Sizes = (
             399s
-            392s
+            350s
             399s
-            392s)
+            350s)
           inherited tbGeneral: TTabItem
+            Size.Width = 61.000000000000000000
+            Size.Height = 26.000000000000000000
             ExplicitSize.cx = 61.000000000000000000
             ExplicitSize.cy = 26.000000000000000000
             inherited lyEditors: TLayout
@@ -282,12 +287,14 @@ object ProjectFrame: TProjectFrame
             end
           end
           inherited tbCustomfields: TTabItem
+            Size.Width = 93.000000000000000000
+            Size.Height = 26.000000000000000000
             ExplicitSize.cx = 93.000000000000000000
             ExplicitSize.cy = 26.000000000000000000
           end
         end
         inherited Layout2: TLayout
-          Position.Y = 447.000000000000000000
+          Position.Y = 426.000000000000000000
           Size.Width = 605.000000000000000000
         end
       end

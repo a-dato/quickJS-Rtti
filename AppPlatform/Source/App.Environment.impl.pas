@@ -43,10 +43,11 @@ type
 
   protected
     _formClass: TFormClass;
+    _windows: List<IWindow>;
     _appActions: IAppActions;
 
     function get_MainWindow: IWindow;
-
+    function get_Windows: List<IWindow>;
     function get_TickCount: Integer;
 
     function CreateWindow(const AType: &Type; const AOwner: IComponent)  : IWindow;
@@ -101,6 +102,8 @@ constructor Environment.Create(const AClass: TFormClass; const AppActions: IAppA
 begin
   _formClass := AClass;
   _appActions := AppActions;
+
+  _windows := CList<IWindow>.Create;
 end;
 
 function Environment.CreateWindow(const AType: &Type; const AOwner: IComponent) : IWindow;
@@ -110,7 +113,9 @@ begin
 //    raise ArgumentException.Create('AOwner must be of type TComponent');
 
   var f := _formClass.Create(nil);
-  Result := TWindow.Create(AType, f);
+  var wnd: IWindow := TWindow.Create(AType, f);
+  _windows.Add(wnd);
+  Result := wnd;
 end;
 
 function Environment.get_MainWindow: IWindow;
@@ -124,6 +129,11 @@ end;
 function Environment.get_TickCount: Integer;
 begin
   Result := System_.Environment.TickCount;
+end;
+
+function Environment.get_Windows: List<IWindow>;
+begin
+  Result := _windows;
 end;
 
 // IAppActions

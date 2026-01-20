@@ -16,13 +16,13 @@ type
     IProject_Model: TDataControl;
     Layout1: TLayout;
     Label1: TLabel;
-    IProject_Name_1: TLabel;
+    IProject_Description_1: TLabel;
     Splitter1: TSplitter;
     TabPages: TTabControl;
     Customers: TTabItem;
     tbGeneral: TTabItem;
     Label2: TLabel;
-    IProject_Name_2: TEdit;
+    IProject_Description_2: TEdit;
     Layout2: TLayout;
     Button1: TButton;
     ActionList1: TActionList;
