@@ -10,7 +10,7 @@ uses
   App.intf, System.Actions, FMX.ActnList, FMX.StdCtrls, System.Net.URLClient,
   System.Net.HttpClient, System.Net.HttpClientComponent, System_,
   Project.intf, System.Collections, System.Collections.Generic, System.Rtti,
-  App.Environment.intf, App.Windows.intf, App.QuickJSBridge.intf;
+  App.Environment.intf, App.Windows.intf, App.QuickJSBridge.intf, FMX.TabControl;
 
 type
   {$M+}
@@ -20,7 +20,7 @@ type
 
   TForm1 = class(TForm)
     Layout1: TLayout;
-    mmCode: TMemo;
+    mmCustomers: TMemo;
     mmLog: TMemo;
     ActionList1: TActionList;
     acExecute: TAction;
@@ -41,6 +41,12 @@ type
     TestFunc2: TButton;
     Button6: TButton;
     Button7: TButton;
+    TabControl1: TTabControl;
+    tsCustomers: TTabItem;
+    tsOpenProject: TTabItem;
+    Memo1: TMemo;
+    tsPolarion: TTabItem;
+    mmPolarion: TMemo;
     procedure acExecuteExecute(Sender: TObject);
     procedure btnCustomerClick(Sender: TObject);
     procedure btnExecResultClick(Sender: TObject);
@@ -60,6 +66,8 @@ type
     procedure LogCallBack(S: string);
 
     function CreateTestFunc : TTestFunc;
+    function GetMemoFromActiveTab: TMemo;
+    function GetCode: AnsiString;
     { Private declarations }
 
   protected
@@ -172,14 +180,39 @@ uses
 
 {$R *.fmx}
 
+function TForm1.GetMemoFromActiveTab : TMemo;
+
+  function Search(Controls: TControlList) : TMemo;
+  begin
+    Result := nil;
+
+    for var c in Controls do
+    begin
+      if c is TMemo then
+        Result := c as TMemo else
+        Result := Search(c.Controls);
+
+      if Result <> nil then
+        Exit(Result);
+    end;
+  end;
+
+begin
+  Result := Search(TabControl1.ActiveTab.Controls);
+end;
+
+function TForm1.GetCode : AnsiString;
+begin
+  var mm := GetMemoFromActiveTab;
+  if mm <> nil then
+    Result := AnsiString(mm.Lines.Text);
+end;
+
 procedure TForm1.acExecuteExecute(Sender: TObject);
 begin
   mmLog.Lines.Clear;
   var st := TStopWatch.StartNew;
-
-  var b: AnsiString := AnsiString(mmCode.Lines.Text);
-  _context.eval(mmCode.Lines.Text, '<eval>');
-
+  _context.eval(GetCode, '<eval>');
   mmLog.Lines.Add('done: ' + st.ElapsedMilliseconds.ToString + 'ms');
 end;
 
@@ -188,8 +221,7 @@ begin
   mmLog.Lines.Clear;
   var st := TStopWatch.StartNew;
 
-  var b: AnsiString := AnsiString(mmCode.Lines.Text);
-  var r := _context.eval_with_result(mmCode.Lines.Text, '<eval>');
+  var r := _context.eval_with_result(GetCode, '<eval>');
 
   mmLog.Lines.Add('result: ' + r.ToString);
   mmLog.Lines.Add('done: ' + st.ElapsedMilliseconds.ToString + 'ms');
@@ -356,9 +388,12 @@ begin
   TProject.TypeDescriptor.Binder := TFrameBinder.Create();
   TProject.TypeDescriptor.Provider := ProjectProvider.Create(TProject.TypeDescriptor);
 
-  _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
   _app.Factory.RegisterType(TProject.Type, function : CObject begin
     Result := CObject.From<IProject>(TProject.Create);
+  end);
+
+  _app.Factory.RegisterCollection(TProject.Type, function : CObject begin
+    Result := CObject.From<List<IProject>>(CList<IProject>.Create);
   end);
 
   var storage := _app.AddStorage(TProject.Type, TProject.TypeDescriptor.StorageName);
@@ -410,6 +445,8 @@ begin
     _runtime.RegisterObjectType('IUpdatableObject', TypeInfo(IUpdatableObject));
     _runtime.RegisterObjectType('IStorage', TypeInfo(IStorage));
     _runtime.RegisterObjectType('IStorageSupport', TypeInfo(IStorageSupport));
+
+    _runtime.RegisterObjectType('IProject', TProject.Type.GetTypeInfo);
 
     _runtime.RegisterObjectWithConstructor('ITestObject', TypeInfo(ITestObject),
       function : Pointer begin
@@ -478,7 +515,9 @@ end;
 
 procedure TForm1.Timer1Timer(Sender: TObject);
 begin
-  lblPosition.Text := Format('Position: %d:%d', [mmCode.CaretPosition.Line + 1, mmCode.CaretPosition.Pos]);
+  var mm := GetMemoFromActiveTab;
+  if mm <> nil then
+    lblPosition.Text := Format('Position: %d:%d', [mm.CaretPosition.Line + 1, mm.CaretPosition.Pos]);
 end;
 
 procedure TForm1.TestFuncClick(Sender: TObject);

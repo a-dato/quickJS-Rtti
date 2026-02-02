@@ -39,6 +39,18 @@ type
     function  TryCreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; out AObject: CObject) : Boolean; overload;
     function  TryCreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject; out AObject: CObject) : Boolean; overload;
 
+  protected
+    // Collections
+    var _collectiondict: Dictionary<&Type, TValue>;
+
+    function GetCollectionConstructor(const AType: &Type) : TValue;
+    function TryGetCollectionConstructor(const AType: &Type; out AConstructor: TValue) : Boolean;
+    function GetCollectionConstructorFunc<T>(const AType: &Type; const AConstructor: TValue) : T;
+
+    procedure RegisterCollection(const AType: &Type; const Func: TCreatorFunc_0);   // Returns collection of AType (IList<T>, ICollection<T>)
+    function  CreateCollection(const AType: &Type) : CObject; overload;
+    function  TryCreateCollection(const AType: &Type; out AObject: CObject) : Boolean; overload;
+
     function  NextID: Int64;
     procedure ResetID(const Value: Int64);
   public
@@ -57,6 +69,7 @@ uses
 constructor TAppFactory.Create;
 begin
   _dict := CDictionary<&Type, TValue>.Create(10, TypeEqualityComparer.Create);
+  _collectiondict := CDictionary<&Type, TValue>.Create(10, TypeEqualityComparer.Create);
 end;
 
 function TAppFactory.GetConstructor(const AType: &Type) : TValue;
@@ -201,6 +214,45 @@ begin
   if TryGetConstructor(AType, c) then
   begin
     AObject := GetConstructorFunc<TCreatorFunc_4>(AType, c)(Param0, Param1, Param2, Param3);
+    Result := True;
+  end else
+    Result := False;
+end;
+
+// Collections
+function TAppFactory.GetCollectionConstructor(const AType: &Type) : TValue;
+begin
+  if not _collectiondict.TryGetValue(AType, Result) then
+    raise ETypeNotSupported.Create(AType.Name);
+end;
+
+function TAppFactory.TryGetCollectionConstructor(const AType: &Type; out AConstructor: TValue) : Boolean;
+begin
+  Result := _collectiondict.TryGetValue(AType, AConstructor)
+end;
+
+function TAppFactory.GetCollectionConstructorFunc<T>(const AType: &Type; const AConstructor: TValue) : T;
+begin
+  if not AConstructor.TryAsType<T>(Result) then
+    raise EConstructorNotSupported.Create(CString.Format('Constructor for collection of type {0} should be called without arguments', AType.Name))
+end;
+
+function TAppFactory.CreateCollection(const AType: &Type): CObject;
+begin
+  Result := GetCollectionConstructorFunc<TCreatorFunc_0>(AType, GetCollectionConstructor(AType))();
+end;
+
+procedure TAppFactory.RegisterCollection(const AType: &Type; const Func: TCreatorFunc_0);
+begin
+  _collectiondict[AType] := TValue.From<TCreatorFunc_0>(Func);
+end;
+
+function TAppFactory.TryCreateCollection(const AType: &Type; out AObject: CObject): Boolean;
+begin
+  var c: TValue;
+  if TryGetCollectionConstructor(AType, c) then
+  begin
+    AObject := GetCollectionConstructorFunc<TCreatorFunc_0>(AType, c)();
     Result := True;
   end else
     Result := False;

@@ -119,32 +119,6 @@ object Form1: TForm1
       OnClick = Button7Click
     end
   end
-  object mmCode: TMemo
-    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
-    DataDetectorTypes = []
-    Lines.Strings = (
-      
-        'let storage = app.AddStorage(CustomerType, CustomerType.StorageN' +
-        'ame());'
-      'let data = CustomerType.Instance.Provider.Data();'
-      'storage.Attach(data);'
-      ''
-      
-        'const w = app.Environment.CreateWindow(Customer, app.Environment' +
-        '.MainWindow);'
-      'w.CreateFrame('#39'Projects'#39');'
-      'w.Bind(storage);'
-      'w.Show();')
-    StyledSettings = [Size, Style, FontColor]
-    TextSettings.Font.Family = 'Fira Code'
-    Align = Client
-    Size.Width = 673.000000000000000000
-    Size.Height = 388.000000000000000000
-    Size.PlatformDefault = False
-    TabOrder = 3
-    Viewport.Width = 673.000000000000000000
-    Viewport.Height = 388.000000000000000000
-  end
   object mmLog: TMemo
     Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
     DataDetectorTypes = []
@@ -154,8 +128,8 @@ object Form1: TForm1
     Size.Height = 145.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
-    Viewport.Width = 946.000000000000000000
-    Viewport.Height = 145.000000000000000000
+    Viewport.Width = 942.000000000000000000
+    Viewport.Height = 141.000000000000000000
   end
   object Splitter1: TSplitter
     Align = Bottom
@@ -173,7 +147,7 @@ object Form1: TForm1
     Size.Width = 946.000000000000000000
     Size.Height = 22.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 7
+    TabOrder = 6
     object lblPosition: TLabel
       Align = Left
       Size.Width = 120.000000000000000000
@@ -199,23 +173,182 @@ object Form1: TForm1
       'AddressType.register();'
       'CustomerType.register();'
       ''
+      
+        'import {OpenProjectType, OPProject} from '#39'../../js/OpenProject.j' +
+        's'#39';'
+      'OpenProjectType.register();'
+      '// Token = base64('#39'apikey:'#39' + API_KEY);'
+      
+        'OpenProject.Token = '#39'YXBpa2V5OjU1NGFkYTljNmQ4ZDIzMDBlMjllMjNmNzg' +
+        'zNWM0ZTNlZWNlM2ZkNjAwZjAxNzVmODkyZGQzMzA5OTFjZDk0MWY='#39';'
+      ''
+      ''
+      '/*'
+      'SmartSheet'
       'import {SMSheet, SMProject} from '#39'../../js/SmartSheet.js'#39';'
       'SMSheet.register();'
       'SMSheet.Token = '#39'HPQgqT91fnVkihhyV0IugSjDtscZFqf6np4nr'#39';'
+      '*/'
       ''
+      '/*'
+      'SalesForce'
       
-        '//import {SFAccount, SFAccountType} from '#39'../../js/SalesForceAcc' +
-        'ount.js'#39';'
-      '//SFAccountType.register();'
+        'import {SFAccount, SFAccountType} from '#39'../../js/SalesForceAccou' +
+        'nt.js'#39';'
+      'SFAccountType.register();'
+      '*/'
       '')
     Align = Left
     Position.Y = 65.000000000000000000
     Size.Width = 273.000000000000000000
     Size.Height = 388.000000000000000000
     Size.PlatformDefault = False
-    TabOrder = 11
-    Viewport.Width = 273.000000000000000000
-    Viewport.Height = 388.000000000000000000
+    TabOrder = 10
+    Viewport.Width = 269.000000000000000000
+    Viewport.Height = 368.000000000000000000
+  end
+  object TabControl1: TTabControl
+    Align = Client
+    Size.Width = 673.000000000000000000
+    Size.Height = 388.000000000000000000
+    Size.PlatformDefault = False
+    TabIndex = 2
+    TabOrder = 14
+    TabPosition = PlatformDefault
+    Sizes = (
+      673s
+      362s
+      673s
+      362s
+      673s
+      362s)
+    object tsCustomers: TTabItem
+      CustomIcon = <
+        item
+        end>
+      TextSettings.Trimming = None
+      IsSelected = False
+      Size.Width = 77.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'Customers'
+      ExplicitSize.cx = 77.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object mmCustomers: TMemo
+        Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+        DataDetectorTypes = []
+        Lines.Strings = (
+          
+            'let storage = app.AddStorage(CustomerType, CustomerType.StorageN' +
+            'ame());'
+          'let data = CustomerType.Instance.Provider.Data();'
+          'storage.Attach(data);'
+          ''
+          
+            'const w = app.Environment.CreateWindow(Customer, app.Environment' +
+            '.MainWindow);'
+          'w.CreateFrame('#39'Projects'#39');'
+          'w.Bind(storage);'
+          'w.Show();')
+        StyledSettings = [Size, Style, FontColor]
+        TextSettings.Font.Family = 'Fira Code'
+        Align = Client
+        Size.Width = 673.000000000000000000
+        Size.Height = 362.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 3
+        Viewport.Width = 669.000000000000000000
+        Viewport.Height = 358.000000000000000000
+      end
+    end
+    object tsOpenProject: TTabItem
+      CustomIcon = <
+        item
+        end>
+      TextSettings.Trimming = None
+      IsSelected = False
+      Size.Width = 86.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'OpenProject'
+      ExplicitSize.cx = 86.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object Memo1: TMemo
+        Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+        DataDetectorTypes = []
+        Lines.Strings = (
+          'let projects = await OpenProject.Projects();'
+          'let project = projects[0];'
+          'await project.Load();'
+          'console.log(project.Tasks[0]);'
+          ''
+          'project.Tasks.map(item => console.log(item));')
+        StyledSettings = [Size, Style, FontColor]
+        TextSettings.Font.Family = 'Fira Code'
+        Align = Client
+        Size.Width = 673.000000000000000000
+        Size.Height = 362.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 3
+        Viewport.Width = 669.000000000000000000
+        Viewport.Height = 358.000000000000000000
+      end
+    end
+    object tsPolarion: TTabItem
+      CustomIcon = <
+        item
+        end>
+      TextSettings.Trimming = None
+      IsSelected = True
+      Size.Width = 64.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'Polarion'
+      object mmPolarion: TMemo
+        Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+        DataDetectorTypes = []
+        Lines.Strings = (
+          
+            'let f = fetch('#39'https://testdrive.polarion.com/polarion/rest/v1/p' +
+            'rojects'#39','
+          '{'
+          '  method: '#39'GET'#39','
+          '  headers: {'
+          
+            '    '#39'Authorization'#39': `Bearer eyJraWQiOiI4N2ZjNmYxNy1hYzEwYzgzMy0' +
+            'yOTMxODMzNy01ZTk5MDA3MSIsInR5cCI6IkpXVCIsImFsZyI6IlJTMjU2In0.eyJ' +
+            'zdWIiOiI5ZjA2MzQwNjYxMzg0OTJlOTllMWQ5OGMxZDM4YTg0YSIsImlkIjoiMTJ' +
+            'lZjA5MDMtN2YwMDAxMDEtMmUxYTkxMTYtNGViYzI2MmQiLCJleHAiOjE3Nzc1MDA' +
+            'wMDAsImlhdCI6MTc2OTg0NDE4MX0.SwtlqwXKVmmAh-O6kAPLxidaI-KHnaJRQJo' +
+            '5Cj-MvbYsEAkaFQ9dCkO99Cxn_8asXMeZSUzNF9nFTHLlxy979e5KH5DrHw-x01W' +
+            'xsccUN8zOTTQTzP1FgJWm_mrEYNEbG2sQsR0_wPqjGJC-QHNRQMO07o6zca3_47_' +
+            'xtrHwKLChgTYFlhwLiIN3tYJhuPSJVTGYYDT1vbp7cbBiMpNEy6QTRKPi8sZ7L7k' +
+            'RKQHQfVRblJjgvksgfernBp-E7uLWYndNEv2BI6UFP9Ab5Xmv67EcjtDkEZMKuZt' +
+            'AIy5cawiX1ng8_2JiAJK28vlw3T2DSxnJrzjMCppxI4YmDU4VYg`,'
+          '    '#39'Content-Type'#39': '#39'application/json'#39
+          '   }'#9#9
+          '});'#9#9
+          ''
+          'console.log(f);'
+          'let data = await f.Json();'
+          'console.log(data);')
+        StyledSettings = [Size, Style, FontColor]
+        TextSettings.Font.Family = 'Fira Code'
+        Align = Client
+        Size.Width = 673.000000000000000000
+        Size.Height = 362.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 3
+        Viewport.Width = 669.000000000000000000
+        Viewport.Height = 342.000000000000000000
+      end
+    end
   end
   object ActionList1: TActionList
     Left = 376

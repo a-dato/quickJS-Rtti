@@ -7,7 +7,6 @@ uses
   System.Collections.Generic,
   App.Windows.intf,
   App.TypeDescriptor.intf,
-  QuickJS.Register.dn4d.intf,
   App.PropertyDescriptor.intf;
 
 type

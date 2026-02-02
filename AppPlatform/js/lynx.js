@@ -153,3 +153,13 @@ export class Task_ extends Object_ {
 		return super.QueryInterface(type);
 	}
 }
+
+export class Dependency_ extends Object_ {
+	QueryInterface(type) {
+		if(type === ITaskDependency) {
+			return this;
+		}
+		return super.QueryInterface(type);
+	}
+}
+
