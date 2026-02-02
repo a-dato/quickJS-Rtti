@@ -178,9 +178,7 @@ object Form1: TForm1
         's'#39';'
       'OpenProjectType.register();'
       '// Token = base64('#39'apikey:'#39' + API_KEY);'
-      
-        'OpenProject.Token = '#39'YXBpa2V5OjU1NGFkYTljNmQ4ZDIzMDBlMjllMjNmNzg' +
-        'zNWM0ZTNlZWNlM2ZkNjAwZjAxNzVmODkyZGQzMzA5OTFjZDk0MWY='#39';'
+      'OpenProject.Token = '#39#39';'
       ''
       ''
       '/*'
@@ -310,6 +308,8 @@ object Form1: TForm1
       StyleLookup = ''
       TabOrder = 0
       Text = 'Polarion'
+      ExplicitSize.cx = 64.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
       object mmPolarion: TMemo
         Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
         DataDetectorTypes = []
@@ -320,17 +320,7 @@ object Form1: TForm1
           '{'
           '  method: '#39'GET'#39','
           '  headers: {'
-          
-            '    '#39'Authorization'#39': `Bearer eyJraWQiOiI4N2ZjNmYxNy1hYzEwYzgzMy0' +
-            'yOTMxODMzNy01ZTk5MDA3MSIsInR5cCI6IkpXVCIsImFsZyI6IlJTMjU2In0.eyJ' +
-            'zdWIiOiI5ZjA2MzQwNjYxMzg0OTJlOTllMWQ5OGMxZDM4YTg0YSIsImlkIjoiMTJ' +
-            'lZjA5MDMtN2YwMDAxMDEtMmUxYTkxMTYtNGViYzI2MmQiLCJleHAiOjE3Nzc1MDA' +
-            'wMDAsImlhdCI6MTc2OTg0NDE4MX0.SwtlqwXKVmmAh-O6kAPLxidaI-KHnaJRQJo' +
-            '5Cj-MvbYsEAkaFQ9dCkO99Cxn_8asXMeZSUzNF9nFTHLlxy979e5KH5DrHw-x01W' +
-            'xsccUN8zOTTQTzP1FgJWm_mrEYNEbG2sQsR0_wPqjGJC-QHNRQMO07o6zca3_47_' +
-            'xtrHwKLChgTYFlhwLiIN3tYJhuPSJVTGYYDT1vbp7cbBiMpNEy6QTRKPi8sZ7L7k' +
-            'RKQHQfVRblJjgvksgfernBp-E7uLWYndNEv2BI6UFP9Ab5Xmv67EcjtDkEZMKuZt' +
-            'AIy5cawiX1ng8_2JiAJK28vlw3T2DSxnJrzjMCppxI4YmDU4VYg`,'
+          '    '#39'Authorization'#39': `Bearer `,'
           '    '#39'Content-Type'#39': '#39'application/json'#39
           '   }'#9#9
           '});'#9#9
@@ -346,7 +336,7 @@ object Form1: TForm1
         Size.PlatformDefault = False
         TabOrder = 3
         Viewport.Width = 669.000000000000000000
-        Viewport.Height = 342.000000000000000000
+        Viewport.Height = 358.000000000000000000
       end
     end
   end
