@@ -527,10 +527,12 @@ begin
   // Only wait if execution was successful (ExitCode = 0)
   if ExitCode = 0 then
   begin
+    {$IFDEF DEBUG}
     if AutoCloseSeconds > 0 then
       WaitForExitWithAutoClose(AutoCloseSeconds)
     else
       WaitForExit;
+    {$ENDIF}
   end;
 end;
 

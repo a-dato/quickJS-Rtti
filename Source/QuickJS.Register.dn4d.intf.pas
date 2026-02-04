@@ -43,7 +43,7 @@ type
 
   TJSVirtualListInterface = class;
   
-  // Enumerator for TJSVirtualListInterface
+  // Enumerator for TJSVirtualListInterface (non-generic, returns CObject)
   TJSVirtualListEnumerator = class(TBaseInterfacedObject, IEnumerator)
   protected
     FList: TJSVirtualListInterface;
@@ -61,6 +61,26 @@ type
     property Current: CObject read get_Current;
   end;
   
+  // Virtual enumerator interface that implements IEnumerator<T> with properly typed Current
+  // Uses TVirtualInterface to dynamically implement any IEnumerator<T> interface
+  TJSVirtualEnumeratorInterface = class(TVirtualInterface)
+  protected
+    FList: TJSVirtualListInterface;
+    FIndex: Integer;
+    FCount: Integer;
+    FElementType: PTypeInfo;
+    
+    procedure Invoke(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue);
+    
+    function GetCurrentTyped: TValue;
+    function MoveNext: Boolean;
+    procedure Reset;
+    
+  public
+    constructor Create(AList: TJSVirtualListInterface; EnumeratorTypeInfo: PTypeInfo; ElementType: PTypeInfo); reintroduce;
+    function QueryInterface(const IID: TGUID; out Obj): HResult; override;
+  end;
+  
   // Virtual list interface that wraps a JavaScript array
   // Uses TVirtualInterface to dynamically implement any IList<T> interface
   TJSVirtualListInterface = class(TVirtualInterface)
@@ -70,6 +90,7 @@ type
     FArrayValue: JSValue;
     FElementType: PTypeInfo;
     FTargetTypeInfo: PTypeInfo;
+    FEnumeratorTypeInfo: PTypeInfo;
     
     procedure Invoke(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue);
     
@@ -78,6 +99,7 @@ type
     function GetItemAt(Index: Integer): TValue;
     procedure SetItemAt(Index: Integer; const Value: TValue);
     function GetEnumerator: IEnumerator;
+    function CreateTypedEnumerator: TValue;
     
   public
     constructor Create(const Runtime: TJSRuntime; TypeInfo: PTypeInfo; ctx: JSContext; ArrayValue: JSValue); reintroduce;
@@ -264,6 +286,72 @@ begin
   FIndex := -1;
 end;
 
+{ TJSVirtualEnumeratorInterface }
+
+constructor TJSVirtualEnumeratorInterface.Create(AList: TJSVirtualListInterface; EnumeratorTypeInfo: PTypeInfo; ElementType: PTypeInfo);
+begin
+  inherited Create(EnumeratorTypeInfo, Invoke);
+  FList := AList;
+  FIndex := -1;
+  FCount := AList.GetCount;
+  FElementType := ElementType;
+end;
+
+function TJSVirtualEnumeratorInterface.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  Result := inherited QueryInterface(IID, Obj);
+  if Result = S_OK then
+    Exit;
+    
+  // For any interface request, return self - we'll handle all calls through Invoke
+  Result := S_OK;
+  Pointer(Obj) := Pointer(Self as IInterface);
+  if Pointer(Obj) <> nil then
+    IInterface(Obj)._AddRef;
+end;
+
+function TJSVirtualEnumeratorInterface.GetCurrentTyped: TValue;
+begin
+  Result := FList.GetItemAt(FIndex);
+end;
+
+function TJSVirtualEnumeratorInterface.MoveNext: Boolean;
+begin
+  Inc(FIndex);
+  Result := FIndex < FCount;
+end;
+
+procedure TJSVirtualEnumeratorInterface.Reset;
+begin
+  FIndex := -1;
+end;
+
+procedure TJSVirtualEnumeratorInterface.Invoke(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue);
+begin
+  var methodName := Method.Name;
+  
+  if methodName = 'MoveNext' then
+  begin
+    Result := TValue.From<Boolean>(MoveNext);
+  end
+  else if methodName = 'get_Current' then
+  begin
+    // Return the properly typed value
+    Result := GetCurrentTyped;
+  end
+  else if methodName = 'Reset' then
+  begin
+    Reset;
+    Result := TValue.Empty;
+  end
+  else if methodName = 'Dispose' then
+  begin
+    Result := TValue.Empty;
+  end
+  else
+    Result := TValue.Empty;
+end;
+
 { TJSVirtualListInterface }
 
 constructor TJSVirtualListInterface.Create(const Runtime: TJSRuntime; TypeInfo: PTypeInfo; ctx: JSContext; ArrayValue: JSValue);
@@ -273,18 +361,24 @@ begin
   FCtx := ctx;
   FArrayValue := JS_DupValue(ctx, ArrayValue);
   FTargetTypeInfo := TypeInfo;
+  FEnumeratorTypeInfo := nil;
+  FElementType := nil;
   
   // Determine element type from the target interface's get_Item return type
+  // and enumerator type from GetEnumerator return type
   var rttiCtx := TRttiContext.Create;
   try
     var rttiType := rttiCtx.GetType(TypeInfo);
     if rttiType is TRttiInterfaceType then
+    begin
       for var method in TRttiInterfaceType(rttiType).GetMethods do
+      begin
         if (method.Name = 'get_Item') and (method.ReturnType <> nil) then
-        begin
-          FElementType := method.ReturnType.Handle;
-          Break;
-        end;
+          FElementType := method.ReturnType.Handle
+        else if (method.Name = 'GetEnumerator') and (method.ReturnType <> nil) then
+          FEnumeratorTypeInfo := method.ReturnType.Handle;
+      end;
+    end;
   finally
     rttiCtx.Free;
   end;
@@ -334,6 +428,26 @@ end;
 function TJSVirtualListInterface.GetEnumerator: IEnumerator;
 begin
   Result := TJSVirtualListEnumerator.Create(Self);
+end;
+
+function TJSVirtualListInterface.CreateTypedEnumerator: TValue;
+begin
+  // If we have a typed enumerator interface (IEnumerator<T>), create a virtual enumerator
+  // that returns properly typed values from Current
+  if (FEnumeratorTypeInfo <> nil) and (FElementType <> nil) then
+  begin
+    var virtualEnumerator := TJSVirtualEnumeratorInterface.Create(Self, FEnumeratorTypeInfo, FElementType);
+    var ii: IInterface;
+    if virtualEnumerator.QueryInterface(FEnumeratorTypeInfo.TypeData.GUID, ii) = S_OK then
+    begin
+      TValue.Make(@ii, FEnumeratorTypeInfo, Result);
+      Exit;
+    end;
+  end;
+  
+  // Fall back to non-generic enumerator
+  var enumerator := GetEnumerator;
+  Result := TValue.From<IEnumerator>(enumerator);
 end;
 
 procedure TJSVirtualListInterface.Invoke(Method: TRttiMethod; const Args: TArray<TValue>; out Result: TValue);
@@ -422,8 +536,8 @@ begin
   end
   else if methodName = 'GetEnumerator' then
   begin
-    var enumerator := GetEnumerator;
-    Result := TValue.From<IEnumerator>(enumerator);
+    // Use typed enumerator to support for..in loops with generic IList<T>
+    Result := CreateTypedEnumerator;
   end
   else if methodName = 'get_InnerType' then
   begin

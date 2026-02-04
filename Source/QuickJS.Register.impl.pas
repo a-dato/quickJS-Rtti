@@ -176,6 +176,7 @@ type
     class function GetObjectFromJSValue(Value: JSValueConst; PointerIsAnObject: Boolean) : Pointer; static;
 
     class function GetRuntimeFromContext(ctx: JSContext): TJSRuntime; static;
+    class function GetRuntimeIntfFromContext(ctx: JSContext): IJSRuntime; static;
     function  TryLoadQuickJS: Boolean;
 
     class property Context[const Value: JSContext]: IJSContext read get_Context;
@@ -505,6 +506,15 @@ begin
   var jsctx := TJSRuntime.Context[ctx];
   if jsctx <> nil then
     Result := jsctx.Runtime as TJSRuntime
+  else
+    Result := nil;
+end;
+
+class function TJSRuntime.GetRuntimeIntfFromContext(ctx: JSContext): IJSRuntime;
+begin
+  var jsctx := TJSRuntime.Context[ctx];
+  if jsctx <> nil then
+    Result := jsctx.Runtime
   else
     Result := nil;
 end;
