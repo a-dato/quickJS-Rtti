@@ -139,12 +139,12 @@ end;
 // IAppActions
 function Environment.Close(const AObject: CObject): Boolean;
 begin
-
+  Result := False;
 end;
 
 function Environment.IsOpen(const AObject: CObject): Boolean;
 begin
-
+  Result := False;
 end;
 
 function Environment.Open(const AObject: CObject): Boolean;

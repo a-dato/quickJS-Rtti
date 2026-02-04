@@ -25,6 +25,10 @@ type
   IAppFactory = interface(IBaseInterface)
     ['{ED9DEEB4-F0FD-4996-8CF4-B8B817D2EFCB}']
 
+    procedure RegisterCollection(const AType: &Type; const Func: TCreatorFunc_0);   // Returns collection of AType (IList<T>, ICollection<T>)
+    function  CreateCollection(const AType: &Type) : CObject; overload;
+    function  TryCreateCollection(const AType: &Type; out AObject: CObject) : Boolean; overload;
+
     procedure RegisterType(const AType: &Type; const Func: TCreatorFunc_0);
     procedure RegisterType_1(const AType: &Type; const Func: TCreatorFunc_1);
     procedure RegisterType_2(const AType: &Type; const Func: TCreatorFunc_2);

@@ -169,9 +169,9 @@ begin
 //          else
 //            raise Exception.Create('Invalid parameter in call to: ' + Method.Name);
 //        end else
-    name := Method.Name.Substring(4);
+    name := AnsiString(Method.Name.Substring(4));
   end else
-    name := Method.Name;
+    name := AnsiString(Method.Name);
 
   var rt: PTypeInfo := nil;
   if Method.ReturnType <> nil then

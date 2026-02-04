@@ -72,7 +72,7 @@ end;
 
 function TStorage.Contains(const Value: CObject): Boolean;
 begin
-
+  Result := False;
 end;
 
 { TAppStorage }
@@ -92,6 +92,7 @@ end;
 
 function TStorage.Attach(const Value: IList) : Boolean;
 begin
+  Result := True;
   _data := Value;
 end;
 
