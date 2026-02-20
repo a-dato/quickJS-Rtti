@@ -210,7 +210,7 @@ object Form1: TForm1
     Size.Width = 673.000000000000000000
     Size.Height = 388.000000000000000000
     Size.PlatformDefault = False
-    TabIndex = 2
+    TabIndex = 0
     TabOrder = 14
     TabPosition = PlatformDefault
     Sizes = (
@@ -225,7 +225,7 @@ object Form1: TForm1
         item
         end>
       TextSettings.Trimming = None
-      IsSelected = False
+      IsSelected = True
       Size.Width = 77.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
@@ -247,7 +247,8 @@ object Form1: TForm1
           
             'const w = app.Environment.CreateWindow(Customer, app.Environment' +
             '.MainWindow);'
-          'w.CreateFrame('#39'Projects'#39');'
+          '//w.CreateFrame('#39'Projects'#39');'
+          'w.CreateFrame('#39'Customers'#39');'
           'w.Bind(storage);'
           'w.Show();')
         StyledSettings = [Size, Style, FontColor]
@@ -301,7 +302,7 @@ object Form1: TForm1
         item
         end>
       TextSettings.Trimming = None
-      IsSelected = True
+      IsSelected = False
       Size.Width = 64.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False

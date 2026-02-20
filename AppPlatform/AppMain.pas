@@ -340,11 +340,11 @@ procedure TForm1.Button7Click(Sender: TObject);
 begin
   var c := _app.Storage['Customers'][0];
   var t := c.GetType;
-  var prop := t.PropertyByName('Address');
+//  var prop := t.PropertyByName('Address');
+//  var a := prop.GetValue(c, []);
 
-  var a := prop.GetValue(c, []);
-//  for var p in props do
-//    ShowMessage(p.Name);
+  for var p in t.GetProperties do
+    ShowMessage(p.Name);
 
 //  var customerType := _app.Config.TypeByName('Customer');
 //

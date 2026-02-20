@@ -2570,6 +2570,13 @@ begin
   finally
     TMonitor.Exit(FRegisteredJSObjects);
   end;
+
+  TMonitor.Enter(FRegisteredObjectsByType);
+  try
+    FRegisteredObjectsByType.Add(TypeInfo, Result);
+  finally
+    TMonitor.Exit(FRegisteredObjectsByType);
+  end;
 end;
 
 // Convenience overloads (not part of interface)
