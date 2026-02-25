@@ -1120,6 +1120,99 @@ begin
       end
     )
   );
+
+  // concat: merge the source collection with additional arrays/values into a new JS array
+  // Follows JS Array.prototype.concat() semantics:
+  //   delphiList.concat(arg1, arg2, ...) => new JS array
+  // Each argument can be a Delphi enumerable, a JS array, or a plain value.
+  Resolver.AddMethodDescriptor(
+    TObjectBridgeMethodDescriptor.Create(
+      'concat',
+      // Object checker: supports enumeration?
+      function(const AObject: IRegisteredObject): Boolean
+      begin
+        Result := (AObject <> nil) and AObject.ObjectSupportsEnumeration;
+      end,
+      // Method caller implementation
+      function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
+      var
+        enumerator: TRttiEnumeratorHelper;
+      begin
+        var jsArr := JS_NewArray(ctx);
+        var outIndex := 0;
+
+        // 1. Add all elements from the source (this) collection
+        if TRttiEnumeratorHelper.TryGetEnumerator(IInterface(Ptr), enumerator) then
+        begin
+          while enumerator.MoveNext do
+          begin
+            var current := enumerator.GetCurrent;
+            var v := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, current);
+            var s := AnsiString(outIndex.ToString);
+            JS_SetPropertyStr(ctx, jsArr, PAnsiChar(s), v);
+            inc(outIndex);
+          end;
+        end;
+
+        // 2. Process each argument
+        for var argIdx := 0 to argc - 1 do
+        begin
+          var arg := PJSValueConstArr(argv)[argIdx];
+
+          // Check if the argument is a JS array
+          if JS_IsArray(ctx, arg) <> 0 then
+          begin
+            // Get the length of the JS array
+            var lengthVal := JS_GetPropertyStr(ctx, arg, 'length');
+            var arrLen: Int32 := 0;
+            JS_ToInt32(ctx, @arrLen, lengthVal);
+            JS_FreeValue(ctx, lengthVal);
+
+            for var i := 0 to arrLen - 1 do
+            begin
+              var elem := JS_GetPropertyUint32(ctx, arg, UInt32(i));
+              var s := AnsiString(outIndex.ToString);
+              JS_SetPropertyStr(ctx, jsArr, PAnsiChar(s), elem);
+              inc(outIndex);
+            end;
+          end
+          else if JS_IsObject(arg) then
+          begin
+            // Try to unwrap as a Delphi enumerable object
+            var argEnumerator: TRttiEnumeratorHelper;
+            var argPtr := TJSRuntime.GetObjectFromJSValue(arg, False);
+            if (argPtr <> nil) and TRttiEnumeratorHelper.TryGetEnumerator(IInterface(argPtr), argEnumerator) then
+            begin
+              while argEnumerator.MoveNext do
+              begin
+                var current := argEnumerator.GetCurrent;
+                var v := (TJSRuntime.Context[ctx].Runtime as TJSRuntime).TValueToJSValue(ctx, current);
+                var s := AnsiString(outIndex.ToString);
+                JS_SetPropertyStr(ctx, jsArr, PAnsiChar(s), v);
+                inc(outIndex);
+              end;
+            end
+            else
+            begin
+              // Not an enumerable Delphi object, add the value as-is
+              var s := AnsiString(outIndex.ToString);
+              JS_SetPropertyStr(ctx, jsArr, PAnsiChar(s), JS_DupValue(ctx, arg));
+              inc(outIndex);
+            end;
+          end
+          else
+          begin
+            // Primitive value - add directly
+            var s := AnsiString(outIndex.ToString);
+            JS_SetPropertyStr(ctx, jsArr, PAnsiChar(s), JS_DupValue(ctx, arg));
+            inc(outIndex);
+          end;
+        end;
+
+        Result := jsArr;
+      end
+    )
+  );
 end;
 
 end.
