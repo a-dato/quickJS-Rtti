@@ -1,4 +1,4 @@
-﻿{
+{
   FreePascal / Delphi bindings for QuickJS Engine.
 
   Copyright(c) 2019-2020 Coldzer0 <Coldzer0 [at] protonmail.ch>
@@ -45,6 +45,7 @@ uses
   {$IFDEF FPC}
   dynlibs,
   {$ELSE}
+  System.SysUtils,
   {$IFDEF MSWINDOWS}
   Winapi.Windows,
   {$ENDIF}
@@ -696,11 +697,18 @@ type
 {===============================================================================}
 
 const
-  {$IFDEF mswindows}
+  {$IFDEF MSWINDOWS}
   QJSDLL = {$IfDef WIN64}'quickjs64.dll'{$Else}'quickjs32.dll'{$EndIf};
+  QJSDLL_ALT = 'quickjs.dll';
   {$ELSE}
+    {$IFDEF MACOS}
+  QJSDLL = 'libqjs.dylib';
+  QJSDLL_ALT = 'libquickjs.dylib';
+    {$ELSE}
   QJSDLL = 'libquickjs.so';
-  {$endif}
+  QJSDLL_ALT = 'libqjs.so';
+    {$ENDIF}
+  {$ENDIF}
 
 var
   QuickJSHandle: {$IFDEF FPC}TLibHandle{$ELSE}HMODULE{$ENDIF} = 0;
@@ -995,6 +1003,42 @@ implementation
 {                        Dynamic Loading Implementation                          }
 {===============================================================================}
 
+function ResolveQuickJSLibraryPath(const DLLPath: string): string;
+var
+  BasePath: string;
+  Candidate: string;
+begin
+  if DLLPath <> '' then
+    Exit(DLLPath);
+
+  Result := QJSDLL;
+
+  {$IFNDEF FPC}
+  {$IFDEF MACOS}
+  BasePath := ExcludeTrailingPathDelimiter(ExtractFilePath(ParamStr(0)));
+  if BasePath = '' then
+    Exit;
+
+  Candidate := IncludeTrailingPathDelimiter(BasePath) + QJSDLL;
+  if FileExists(Candidate) then
+    Exit(Candidate);
+
+  Candidate := IncludeTrailingPathDelimiter(BasePath) + QJSDLL_ALT;
+  if FileExists(Candidate) then
+    Exit(Candidate);
+
+  // FMX apps commonly deploy native libraries in Contents/Frameworks.
+  Candidate := ExpandFileName(IncludeTrailingPathDelimiter(BasePath) + '../Frameworks/' + QJSDLL);
+  if FileExists(Candidate) then
+    Exit(Candidate);
+
+  Candidate := ExpandFileName(IncludeTrailingPathDelimiter(BasePath) + '../Frameworks/' + QJSDLL_ALT);
+  if FileExists(Candidate) then
+    Exit(Candidate);
+  {$ENDIF}
+  {$ENDIF}
+end;
+
 function GetProcAddr(Handle: {$IFDEF FPC}TLibHandle{$ELSE}HMODULE{$ENDIF}; const ProcName: AnsiString): Pointer;
 begin
   {$IFDEF FPC}
@@ -1021,12 +1065,16 @@ begin
     Exit;
   end;
 
-  if DLLPath = '' then
-    libPath := QJSDLL
-  else
-    libPath := DLLPath;
+  libPath := ResolveQuickJSLibraryPath(DLLPath);
 
+  {$IFDEF FPC}
   QuickJSHandle := LoadLibrary(PChar(libPath));
+  {$ELSE}
+  QuickJSHandle := System.SysUtils.SafeLoadLibrary(libPath, 0);
+  if (QuickJSHandle = 0) and (DLLPath = '') and (QJSDLL_ALT <> '') and
+     (CompareText(libPath, QJSDLL_ALT) <> 0) then
+    QuickJSHandle := System.SysUtils.SafeLoadLibrary(QJSDLL_ALT, 0);
+  {$ENDIF}
 
   if QuickJSHandle = 0 then
     Exit;
