@@ -52,6 +52,18 @@ ts.Add(t);
 
 project.AsType(IProjectLoader).ReloadCaptures(true);
 
+****
+
+console.log(app.Storage['Projects'][0].Luid);
+let p = app.Storage['Projects'][0];
+let t = app.Factory.CreateInstance(Task, -1, p);
+t.Description = 'Hello';
+p.Tasks.Add(t);
+console.log(t);
+
+****
+
+
 // TestObject
 class TestObject_ {
 }
