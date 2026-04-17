@@ -11,6 +11,10 @@ p.Customers.Add(Customers[0]);
 
 ****
 
+let storage = app.Storage['Projects'][257];
+console.log(storage.FIELD_0028[0]);
+
+
 // Project selection window
 let storage = app.Storage['Projects'];
 
