@@ -198,11 +198,10 @@ type
     function  get_LogString: TProc<string>;
     procedure set_LogString(const Value: TProc<string>);
 
-    function  eval_internal(Buf: PAnsiChar; buf_len: Integer; FileName: PAnsiChar; eval_flags: Integer): Integer;
-
     function  eval_with_result(const Code: string; const CodeContext: string): TValue;
 
 
+    class function InterruptCheck(rt: JSRuntime; opaque: Pointer): Integer; cdecl; static;
     class function logme(ctx : JSContext; {%H-}this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue; cdecl; static;
     // class function fetch(ctx : JSContext; {%H-}this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue; cdecl; static;
     procedure Initialize;
@@ -315,7 +314,8 @@ type
 
 implementation
 uses
-  System.Classes, QuickJS.VirtualMethod.impl, QuickJS.Register.ObjectBridge.impl,
+  System.Classes, System.DateUtils,
+  QuickJS.VirtualMethod.impl, QuickJS.Register.ObjectBridge.impl,
   QuickJS.Register.ObjectBridgeDefaultDefinitions.impl;
 
 function AtomToString(ctx: JSContext; Atom: JSAtom) : string;
@@ -2727,79 +2727,114 @@ begin
   Initialize;
 end;
 
-function TJSContext.eval_internal(Buf: PAnsiChar; buf_len: Integer; FileName: PAnsiChar; eval_flags: Integer): Integer;
-begin
-  var res := JS_Eval(_ctx, buf, buf_len, Filename, eval_flags);
-  if not TJSRuntime.Check(_ctx, res) then Exit;
-  res := TJSRuntime.WaitForJobs(_ctx, res);
-  TJSRuntime.Check(_ctx, res);
-  JS_FreeValue(_ctx, res);
-end;
-
 procedure TJSContext.eval(const Code: string; const CodeContext: string);
 begin
   var buf: UTF8String := UTF8Encode(Code);
   var filename: UTF8String := UTF8Encode(CodeContext) + #0;
-  eval_internal(PAnsiChar(buf), Length(buf), PAnsiChar(filename), JS_EVAL_TYPE_MODULE);
-end;
-
-function TJSContext.eval_with_result(const Code: string; const CodeContext: string): TValue;
-begin
-//  var buf: AnsiString := 'export function __run__() {return ' + AnsiString(Code) + ';}';
-   var buf: UTF8String := UTF8Encode(Code + #13#10 + ';export function __run__() { return typeof resultValue !== "undefined" ? resultValue : "resultValue is undefined"; }');
-   var filename: UTF8String := UTF8Encode(CodeContext) + #0;
-
-  // var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(CodeContext), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
-  var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(filename), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
-  bytecode := TJSRuntime.WaitForJobs(_ctx, bytecode);
-
-  if not TJSRuntime.Check(_ctx, bytecode)
-    then Exit;
-  JS_EvalFunction(_ctx, bytecode);
-
-  bytecode := TJSRuntime.WaitForJobs(_ctx, bytecode);
-
-  var moduledef := JS_VALUE_GET_PTR(bytecode);
-  var namespace := JS_GetModuleNamespace(_ctx, moduledef);
-
-  var func := JS_GetPropertyStr(_ctx, namespace, '__run__');
-  var res  := JS_Call(_ctx, func, JS_UNDEFINED, 0, nil);
-
+  var res := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(filename), JS_EVAL_TYPE_MODULE);
   if not TJSRuntime.Check(_ctx, res) then Exit;
   res := TJSRuntime.WaitForJobs(_ctx, res);
   TJSRuntime.Check(_ctx, res);
-
-  Result := (_runtime as TJSRuntime).JSValueToTValue(_ctx, res, nil);
-
   JS_FreeValue(_ctx, res);
 end;
 
-//function TJSContext.eval_with_result_old(const Code: string; const CodeContext: string): TValue;
-//begin
-////  var buf: AnsiString := 'export function __run__() {return ' + AnsiString(Code) + ';}';
-//   var buf: AnsiString := AnsiString(Code)  + ' ;export function __run__() { return resultValue; }';
-//   var filename: AnsiString := AnsiString(CodeContext) + #0;
-//
-//  // var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(CodeContext), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
-//  var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(filename), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
-//
-//  if not TJSRuntime.Check(_ctx, bytecode) then Exit;
-//  JS_EvalFunction(_ctx, bytecode);
-//
-//  var moduledef := JS_VALUE_GET_PTR(bytecode);
-//  var namespace := JS_GetModuleNamespace(_ctx, moduledef);
-//
-//  var func := JS_GetPropertyStr(_ctx, namespace, '__run__');
-//  var res  := JS_Call(_ctx, func, JS_UNDEFINED, 0, nil);
-//
-//  if not TJSRuntime.Check(_ctx, res) then Exit;
-//  res := TJSRuntime.WaitForJobs(_ctx, res);
-//  TJSRuntime.Check(_ctx, res);
-//
-//  Result := TJSRuntime.Instance.JSValueToTValue(_ctx, res, nil);
-//
-//  JS_FreeValue(_ctx, res);
-//end;
+class function TJSContext.InterruptCheck(rt: JSRuntime; opaque: Pointer): Integer;
+begin
+  if (opaque <> nil) and (PInteger(opaque)^ <> 0) then
+    Result := 1
+  else
+    Result := 0;
+end;
+
+function TJSContext.eval_with_result(const Code: string; const CodeContext: string): TValue;
+const
+  TimeoutMs = 3 * 60 * 1000;
+  MonitorSleepMs = 50;
+begin
+  var buf: UTF8String := UTF8Encode(Code + #13#10 + ';export function __run__() { return typeof resultValue !== "undefined" ? resultValue : "resultValue is undefined"; }');
+  var filename: UTF8String := UTF8Encode(CodeContext) + #0;
+
+  var pTimedOut: PInteger := nil;
+  var pStopMonitor: PInteger := nil;
+  var monitorThread: TThread := nil;
+  var jsrt := JS_GetRuntime(_ctx);
+
+  if Assigned(JS_SetInterruptHandler) then
+  begin
+    New(pTimedOut);
+    New(pStopMonitor);
+    pTimedOut^ := 0;
+    pStopMonitor^ := 0;
+
+    monitorThread := TThread.CreateAnonymousThread(
+      procedure
+      begin
+        var deadline := IncMilliSecond(Now, TimeoutMs);
+        while pStopMonitor^ = 0 do
+        begin
+          if Now >= deadline then
+          begin
+            pTimedOut^ := 1;
+            Exit;
+          end;
+          Sleep(MonitorSleepMs);
+        end;
+      end);
+    monitorThread.FreeOnTerminate := False;
+    JS_SetInterruptHandler(jsrt, @TJSContext.InterruptCheck, pTimedOut);
+    monitorThread.Start;
+  end;
+
+  try
+    var bytecode := JS_Eval(_ctx, PAnsiChar(buf), Length(buf), PAnsiChar(filename), JS_EVAL_TYPE_MODULE or JS_EVAL_FLAG_COMPILE_ONLY);
+    bytecode := TJSRuntime.WaitForJobs(_ctx, bytecode);
+
+    if not TJSRuntime.Check(_ctx, bytecode) then
+    begin
+      if (pTimedOut <> nil) and (pTimedOut^ <> 0) then
+        raise Exception.CreateFmt('JavaScript execution timed out after %dms', [TimeoutMs]);
+      Exit;
+    end;
+
+    JS_EvalFunction(_ctx, bytecode);
+    bytecode := TJSRuntime.WaitForJobs(_ctx, bytecode);
+
+    var moduledef := JS_VALUE_GET_PTR(bytecode);
+    var namespace := JS_GetModuleNamespace(_ctx, moduledef);
+
+    var func := JS_GetPropertyStr(_ctx, namespace, '__run__');
+    var res  := JS_Call(_ctx, func, JS_UNDEFINED, 0, nil);
+
+    if not TJSRuntime.Check(_ctx, res) then
+    begin
+      if (pTimedOut <> nil) and (pTimedOut^ <> 0) then
+        raise Exception.CreateFmt('JavaScript execution timed out after %dms', [TimeoutMs]);
+      Exit;
+    end;
+
+    res := TJSRuntime.WaitForJobs(_ctx, res);
+    TJSRuntime.Check(_ctx, res);
+
+    if (pTimedOut <> nil) and (pTimedOut^ <> 0) then
+      raise Exception.CreateFmt('JavaScript execution timed out after %dms', [TimeoutMs]);
+
+    Result := (_runtime as TJSRuntime).JSValueToTValue(_ctx, res, nil);
+    JS_FreeValue(_ctx, res);
+  finally
+    if Assigned(JS_SetInterruptHandler) then
+      JS_SetInterruptHandler(jsrt, nil, nil);
+
+    if monitorThread <> nil then
+    begin
+      pStopMonitor^ := 1;
+      monitorThread.WaitFor;
+      monitorThread.Free;
+    end;
+
+    if pTimedOut <> nil then Dispose(pTimedOut);
+    if pStopMonitor <> nil then Dispose(pStopMonitor);
+  end;
+end;
 
 class function TJSContext.logme(ctx : JSContext; {%H-}this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue;
 var
@@ -2989,7 +3024,14 @@ begin
   // SECURITY: Do not register std/os modules (they enable filesystem/process access).
   js_init_module_bjson(_ctx, 'qjs:bjson');
 
-  eval_internal(bjson_helper, Length(bjson_helper), 'initialize', JS_EVAL_TYPE_MODULE);
+  var initFileName: UTF8String := 'initialize' + #0;
+  var initRes := JS_Eval(_ctx, bjson_helper, Length(bjson_helper), PAnsiChar(initFileName), JS_EVAL_TYPE_MODULE);
+  if TJSRuntime.Check(_ctx, initRes) then
+  begin
+    initRes := TJSRuntime.WaitForJobs(_ctx, initRes);
+    TJSRuntime.Check(_ctx, initRes);
+    JS_FreeValue(_ctx, initRes);
+  end;
 
   global := JS_GetGlobalObject(_ctx);
 
@@ -2997,8 +3039,21 @@ begin
   JS_SetPropertyStr(_ctx, global, 'log', JS_NewCFunction(_ctx, @TJSContext.logme, 'log', 1));
   JS_SetPropertyStr(_ctx, global, 'alert', JS_NewCFunction(_ctx, @TJSContext.logme, 'alert', 1));
 
-  eval_internal(console_log, Length(console_log), 'initialize', JS_EVAL_TYPE_MODULE);
-  eval_internal(add_fetch, Length(add_fetch), 'initialize', JS_EVAL_TYPE_MODULE);
+  initRes := JS_Eval(_ctx, console_log, Length(console_log), PAnsiChar(initFileName), JS_EVAL_TYPE_MODULE);
+  if TJSRuntime.Check(_ctx, initRes) then
+  begin
+    initRes := TJSRuntime.WaitForJobs(_ctx, initRes);
+    TJSRuntime.Check(_ctx, initRes);
+    JS_FreeValue(_ctx, initRes);
+  end;
+
+  initRes := JS_Eval(_ctx, add_fetch, Length(add_fetch), PAnsiChar(initFileName), JS_EVAL_TYPE_MODULE);
+  if TJSRuntime.Check(_ctx, initRes) then
+  begin
+    initRes := TJSRuntime.WaitForJobs(_ctx, initRes);
+    TJSRuntime.Check(_ctx, initRes);
+    JS_FreeValue(_ctx, initRes);
+  end;
 
   JS_FreeValue(_ctx, global);
   
