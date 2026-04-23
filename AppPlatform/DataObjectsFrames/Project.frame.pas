@@ -66,7 +66,7 @@ end;
 
 procedure TProjectFrame.Button2Click(Sender: TObject);
 begin
-  for var s in IProject_Model.SelectedItems do
+  for var s in IProject_Model.SelectedItems(True) do
     ShowMessage(s.ToString);
 end;
 

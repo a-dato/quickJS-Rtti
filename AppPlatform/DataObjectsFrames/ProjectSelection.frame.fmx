@@ -11,10 +11,12 @@ object ProjectSelectionFrame: TProjectSelectionFrame
     TabOrder = 0
     Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid, TreeOption_MultiSelect]
     RowHeightDefault = 30.000000000000000000
+    DragDropOnIndividualRows = False
     HeaderHeight = 24.000000000000000000
     AutoExtraColumnSizeMax = -1.000000000000000000
     CellTopBottomPadding = 5.000000000000000000
     CellLeftRightPadding = 5.000000000000000000
+    VisualizeParentChilds = No
     Columns_ = 
       '<Columns><Item type="TDCTreeCheckboxColumn"><Caption>*</Caption>' +
       '<InfoControlClass>CheckBox</InfoControlClass><WidthSettings><Wid' +
@@ -24,39 +26,42 @@ object ProjectSelectionFrame: TProjectSelectionFrame
       'lectable>True</Selectable><AllowResize>False</AllowResize><Allow' +
       'Hide>False</AllowHide><HideWhenEmpty>False</HideWhenEmpty><HideG' +
       'rid>False</HideGrid><IgnoreHeightByRowCalculation>False</IgnoreH' +
-      'eightByRowCalculation></Visualisation><SortAndFilter><Sort>None<' +
-      '/Sort><ShowSortMenu>False</ShowSortMenu><ShowFilterMenu>False</S' +
-      'howFilterMenu></SortAndFilter><SubControlSettings><SubInfoContro' +
-      'lClass>Custom</SubInfoControlClass></SubControlSettings><Hierarc' +
-      'hy><ShowHierarchy>False</ShowHierarchy><Indent>0</Indent></Hiera' +
-      'rchy></Item><Item type="TDCTreeColumn"><Caption>ID</Caption><Pro' +
-      'pertyName>ID</PropertyName><InfoControlClass>Text</InfoControlCl' +
-      'ass><WidthSettings><WidthType>Pixel</WidthType><Width>50</Width>' +
-      '<WidthMin>50</WidthMin><WidthMax>50</WidthMax></WidthSettings><V' +
-      'isualisation><Visible>True</Visible><Frozen>False</Frozen><ReadO' +
-      'nly>True</ReadOnly><Selectable>True</Selectable><AllowResize>Fal' +
-      'se</AllowResize><AllowHide>False</AllowHide><HideWhenEmpty>False' +
-      '</HideWhenEmpty><HideGrid>False</HideGrid><IgnoreHeightByRowCalc' +
-      'ulation>False</IgnoreHeightByRowCalculation></Visualisation><Sor' +
-      'tAndFilter><Sort>None</Sort><ShowSortMenu>False</ShowSortMenu><S' +
-      'howFilterMenu>False</ShowFilterMenu></SortAndFilter><SubControlS' +
-      'ettings><SubInfoControlClass>Custom</SubInfoControlClass></SubCo' +
-      'ntrolSettings><Hierarchy><ShowHierarchy>False</ShowHierarchy><In' +
-      'dent>0</Indent></Hierarchy></Item><Item type="TDCTreeColumn"><Ca' +
-      'ption>Description</Caption><PropertyName>Description</PropertyNa' +
-      'me><InfoControlClass>Text</InfoControlClass><WidthSettings><Widt' +
-      'hType>Pixel</WidthType><Width>50</Width><WidthMin>50</WidthMin><' +
-      'WidthMax>50</WidthMax></WidthSettings><Visualisation><Visible>Tr' +
-      'ue</Visible><Frozen>False</Frozen><ReadOnly>True</ReadOnly><Sele' +
-      'ctable>True</Selectable><AllowResize>False</AllowResize><AllowHi' +
-      'de>False</AllowHide><HideWhenEmpty>False</HideWhenEmpty><HideGri' +
-      'd>False</HideGrid><IgnoreHeightByRowCalculation>False</IgnoreHei' +
-      'ghtByRowCalculation></Visualisation><SortAndFilter><Sort>None</S' +
-      'ort><ShowSortMenu>False</ShowSortMenu><ShowFilterMenu>False</Sho' +
-      'wFilterMenu></SortAndFilter><SubControlSettings><SubInfoControlC' +
-      'lass>Custom</SubInfoControlClass></SubControlSettings><Hierarchy' +
-      '><ShowHierarchy>False</ShowHierarchy><Indent>0</Indent></Hierarc' +
-      'hy></Item></Columns>'#13#10
+      'eightByRowCalculation><HorzAlign>Default</HorzAlign><VertAlign>D' +
+      'efault</VertAlign></Visualisation><SortAndFilter><Sort>None</Sor' +
+      't><ShowSortMenu>False</ShowSortMenu><ShowFilterMenu>False</ShowF' +
+      'ilterMenu></SortAndFilter><SubControlSettings><SubInfoControlCla' +
+      'ss>Custom</SubInfoControlClass></SubControlSettings><Hierarchy><' +
+      'ShowHierarchy>False</ShowHierarchy><Indent>0</Indent></Hierarchy' +
+      '></Item><Item type="TDCTreeColumn"><Caption>ID</Caption><Propert' +
+      'yName>ID</PropertyName><InfoControlClass>Text</InfoControlClass>' +
+      '<WidthSettings><WidthType>Pixel</WidthType><Width>50</Width><Wid' +
+      'thMin>50</WidthMin><WidthMax>50</WidthMax></WidthSettings><Visua' +
+      'lisation><Visible>True</Visible><Frozen>False</Frozen><ReadOnly>' +
+      'True</ReadOnly><Selectable>True</Selectable><AllowResize>False</' +
+      'AllowResize><AllowHide>False</AllowHide><HideWhenEmpty>False</Hi' +
+      'deWhenEmpty><HideGrid>False</HideGrid><IgnoreHeightByRowCalculat' +
+      'ion>False</IgnoreHeightByRowCalculation><HorzAlign>Default</Horz' +
+      'Align><VertAlign>Default</VertAlign></Visualisation><SortAndFilt' +
+      'er><Sort>None</Sort><ShowSortMenu>False</ShowSortMenu><ShowFilte' +
+      'rMenu>False</ShowFilterMenu></SortAndFilter><SubControlSettings>' +
+      '<SubInfoControlClass>Custom</SubInfoControlClass></SubControlSet' +
+      'tings><Hierarchy><ShowHierarchy>False</ShowHierarchy><Indent>0</' +
+      'Indent></Hierarchy></Item><Item type="TDCTreeColumn"><Caption>De' +
+      'scription</Caption><PropertyName>Description</PropertyName><Info' +
+      'ControlClass>Text</InfoControlClass><WidthSettings><WidthType>Pi' +
+      'xel</WidthType><Width>50</Width><WidthMin>50</WidthMin><WidthMax' +
+      '>50</WidthMax></WidthSettings><Visualisation><Visible>True</Visi' +
+      'ble><Frozen>False</Frozen><ReadOnly>True</ReadOnly><Selectable>T' +
+      'rue</Selectable><AllowResize>False</AllowResize><AllowHide>False' +
+      '</AllowHide><HideWhenEmpty>False</HideWhenEmpty><HideGrid>False<' +
+      '/HideGrid><IgnoreHeightByRowCalculation>False</IgnoreHeightByRow' +
+      'Calculation><HorzAlign>Default</HorzAlign><VertAlign>Default</Ve' +
+      'rtAlign></Visualisation><SortAndFilter><Sort>None</Sort><ShowSor' +
+      'tMenu>False</ShowSortMenu><ShowFilterMenu>False</ShowFilterMenu>' +
+      '</SortAndFilter><SubControlSettings><SubInfoControlClass>Custom<' +
+      '/SubInfoControlClass></SubControlSettings><Hierarchy><ShowHierar' +
+      'chy>False</ShowHierarchy><Indent>0</Indent></Hierarchy></Item></' +
+      'Columns>'#13#10
   end
   object Layout1: TLayout
     Align = Top
@@ -93,7 +98,6 @@ object ProjectSelectionFrame: TProjectSelectionFrame
       Position.X = 201.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 0
-      TextSettings.Trimming = None
     end
   end
   object ActionList1: TActionList

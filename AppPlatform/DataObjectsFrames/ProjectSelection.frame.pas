@@ -53,7 +53,7 @@ end;
 
 function TProjectSelectionFrame.get_Selected: List<CObject>;
 begin
-  Result := IProject_Model.SelectedItems;
+  Result := IProject_Model.SelectedItems(True);
 end;
 
 procedure TProjectSelectionFrame.set_Selected(const Items: List<CObject>);

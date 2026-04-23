@@ -12,10 +12,12 @@ object ProjectFrame: TProjectFrame
     TabOrder = 0
     Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid, TreeOption_MultiSelect]
     RowHeightDefault = 30.000000000000000000
+    DragDropOnIndividualRows = False
     HeaderHeight = 24.000000000000000000
     AutoExtraColumnSizeMax = -1.000000000000000000
     CellTopBottomPadding = 5.000000000000000000
     CellLeftRightPadding = 5.000000000000000000
+    VisualizeParentChilds = No
     Columns_ = 
       '<Columns><Item type="TDCTreeCheckboxColumn"><Caption>*</Caption>' +
       '<InfoControlClass>CheckBox</InfoControlClass><WidthSettings><Wid' +
@@ -88,7 +90,6 @@ object ProjectFrame: TProjectFrame
       Position.Y = 8.000000000000000000
       TabOrder = 2
       Text = 'Button2'
-      TextSettings.Trimming = None
       OnClick = Button2Click
     end
   end
@@ -112,17 +113,16 @@ object ProjectFrame: TProjectFrame
     TabPosition = PlatformDefault
     Sizes = (
       605s
-      468s
+      489s
       605s
-      468s)
+      489s)
     object tbGeneral: TTabItem
       CustomIcon = <
         item
         end>
-      TextSettings.Trimming = None
       IsSelected = True
-      Size.Width = 61.000000000000000000
-      Size.Height = 26.000000000000000000
+      Size.Width = 1.000000000000000000
+      Size.Height = 5.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = ''
       TabOrder = 0
@@ -245,10 +245,9 @@ object ProjectFrame: TProjectFrame
       CustomIcon = <
         item
         end>
-      TextSettings.Trimming = None
       IsSelected = False
-      Size.Width = 93.000000000000000000
-      Size.Height = 26.000000000000000000
+      Size.Width = 1.000000000000000000
+      Size.Height = 5.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = ''
       TabOrder = 0
@@ -258,28 +257,26 @@ object ProjectFrame: TProjectFrame
       inline IProject_Customers_Model: TCustomerFrame
         Align = Client
         Size.Width = 605.000000000000000000
-        Size.Height = 468.000000000000000000
+        Size.Height = 489.000000000000000000
         Size.PlatformDefault = False
         inherited Customer_Model: TDataControl
-          Size.Height = 376.000000000000000000
+          Size.Height = 397.000000000000000000
         end
         inherited Layout1: TLayout
           Size.Width = 605.000000000000000000
         end
         inherited Splitter1: TSplitter
-          Size.Height = 376.000000000000000000
+          Size.Height = 397.000000000000000000
         end
         inherited TabPages: TTabControl
           Size.Width = 399.000000000000000000
-          Size.Height = 376.000000000000000000
+          Size.Height = 397.000000000000000000
           Sizes = (
             399s
-            350s
+            392s
             399s
-            350s)
+            392s)
           inherited tbGeneral: TTabItem
-            Size.Width = 61.000000000000000000
-            Size.Height = 26.000000000000000000
             ExplicitSize.cx = 61.000000000000000000
             ExplicitSize.cy = 26.000000000000000000
             inherited lyEditors: TLayout
@@ -287,14 +284,12 @@ object ProjectFrame: TProjectFrame
             end
           end
           inherited tbCustomfields: TTabItem
-            Size.Width = 93.000000000000000000
-            Size.Height = 26.000000000000000000
             ExplicitSize.cx = 93.000000000000000000
             ExplicitSize.cy = 26.000000000000000000
           end
         end
         inherited Layout2: TLayout
-          Position.Y = 426.000000000000000000
+          Position.Y = 447.000000000000000000
           Size.Width = 605.000000000000000000
         end
       end
@@ -313,7 +308,6 @@ object ProjectFrame: TProjectFrame
       Position.X = 592.000000000000000000
       Position.Y = 12.000000000000000000
       TabOrder = 0
-      TextSettings.Trimming = None
     end
   end
   object ActionList1: TActionList
