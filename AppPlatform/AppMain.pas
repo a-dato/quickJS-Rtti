@@ -25,7 +25,7 @@ type
     ActionList1: TActionList;
     acExecute: TAction;
     Button1: TButton;
-    btnCustomer: TButton;
+    btnProjectWindow: TButton;
     Button2: TButton;
     Button3: TButton;
     NetHTTPClient1: TNetHTTPClient;
@@ -48,7 +48,7 @@ type
     tsPolarion: TTabItem;
     mmPolarion: TMemo;
     procedure acExecuteExecute(Sender: TObject);
-    procedure btnCustomerClick(Sender: TObject);
+    procedure btnProjectWindowClick(Sender: TObject);
     procedure btnExecResultClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
@@ -227,7 +227,7 @@ begin
   mmLog.Lines.Add('done: ' + st.ElapsedMilliseconds.ToString + 'ms');
 end;
 
-procedure TForm1.btnCustomerClick(Sender: TObject);
+procedure TForm1.btnProjectWindowClick(Sender: TObject);
 begin
   _app.Environment.CreateWindow(TProject.Type, _app.Environment.MainWindow)
     .CreateFrame('Projects')
@@ -387,6 +387,8 @@ begin
 
   TProject.TypeDescriptor.Binder := TFrameBinder.Create();
   TProject.TypeDescriptor.Provider := ProjectProvider.Create(TProject.TypeDescriptor);
+
+  _app.Config.RegisterType(TProject.Type, TProject.TypeDescriptor);
 
   _app.Factory.RegisterType(TProject.Type, function : CObject begin
     Result := CObject.From<IProject>(TProject.Create);

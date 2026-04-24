@@ -113,16 +113,16 @@ object ProjectFrame: TProjectFrame
     TabPosition = PlatformDefault
     Sizes = (
       605s
-      489s
+      468s
       605s
-      489s)
+      468s)
     object tbGeneral: TTabItem
       CustomIcon = <
         item
         end>
       IsSelected = True
-      Size.Width = 1.000000000000000000
-      Size.Height = 5.000000000000000000
+      Size.Width = 61.000000000000000000
+      Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = ''
       TabOrder = 0
@@ -246,8 +246,8 @@ object ProjectFrame: TProjectFrame
         item
         end>
       IsSelected = False
-      Size.Width = 1.000000000000000000
-      Size.Height = 5.000000000000000000
+      Size.Width = 93.000000000000000000
+      Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = ''
       TabOrder = 0
@@ -257,26 +257,28 @@ object ProjectFrame: TProjectFrame
       inline IProject_Customers_Model: TCustomerFrame
         Align = Client
         Size.Width = 605.000000000000000000
-        Size.Height = 489.000000000000000000
+        Size.Height = 468.000000000000000000
         Size.PlatformDefault = False
         inherited Customer_Model: TDataControl
-          Size.Height = 397.000000000000000000
+          Size.Height = 376.000000000000000000
         end
         inherited Layout1: TLayout
           Size.Width = 605.000000000000000000
         end
         inherited Splitter1: TSplitter
-          Size.Height = 397.000000000000000000
+          Size.Height = 376.000000000000000000
         end
         inherited TabPages: TTabControl
           Size.Width = 399.000000000000000000
-          Size.Height = 397.000000000000000000
+          Size.Height = 376.000000000000000000
           Sizes = (
             399s
-            392s
+            350s
             399s
-            392s)
+            350s)
           inherited tbGeneral: TTabItem
+            Size.Width = 61.000000000000000000
+            Size.Height = 26.000000000000000000
             ExplicitSize.cx = 61.000000000000000000
             ExplicitSize.cy = 26.000000000000000000
             inherited lyEditors: TLayout
@@ -284,12 +286,14 @@ object ProjectFrame: TProjectFrame
             end
           end
           inherited tbCustomfields: TTabItem
+            Size.Width = 93.000000000000000000
+            Size.Height = 26.000000000000000000
             ExplicitSize.cx = 93.000000000000000000
             ExplicitSize.cy = 26.000000000000000000
           end
         end
         inherited Layout2: TLayout
-          Position.Y = 447.000000000000000000
+          Position.Y = 426.000000000000000000
           Size.Width = 605.000000000000000000
         end
       end

@@ -21,9 +21,8 @@ object Form1: TForm1
       Position.X = 273.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 0
-      TextSettings.Trimming = None
     end
-    object btnCustomer: TButton
+    object btnProjectWindow: TButton
       Position.X = 440.000000000000000000
       Position.Y = 8.000000000000000000
       Size.Width = 90.000000000000000000
@@ -31,15 +30,13 @@ object Form1: TForm1
       Size.PlatformDefault = False
       TabOrder = 1
       Text = 'Projects view'
-      TextSettings.Trimming = None
-      OnClick = btnCustomerClick
+      OnClick = btnProjectWindowClick
     end
     object Button2: TButton
       Position.X = 719.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 2
       Text = 'Customer'
-      TextSettings.Trimming = None
       OnClick = Button2Click
     end
     object Button3: TButton
@@ -50,7 +47,6 @@ object Form1: TForm1
       Size.PlatformDefault = False
       TabOrder = 3
       Text = 'Customers'
-      TextSettings.Trimming = None
       OnClick = Button3Click
     end
     object Button4: TButton
@@ -58,7 +54,6 @@ object Form1: TForm1
       Position.Y = 8.000000000000000000
       TabOrder = 4
       Text = 'Designer'
-      TextSettings.Trimming = None
       OnClick = Button4Click
     end
     object Button5: TButton
@@ -69,7 +64,6 @@ object Form1: TForm1
       Size.PlatformDefault = False
       TabOrder = 5
       Text = 'Customer.Address'
-      TextSettings.Trimming = None
       OnClick = Button5Click
     end
     object btnExecResult: TButton
@@ -77,7 +71,6 @@ object Form1: TForm1
       Position.Y = 35.000000000000000000
       TabOrder = 6
       Text = 'Exec+result'
-      TextSettings.Trimming = None
       OnClick = btnExecResultClick
     end
     object TestFunc: TButton
@@ -88,7 +81,6 @@ object Form1: TForm1
       Size.PlatformDefault = False
       TabOrder = 7
       Text = 'TestFunc'
-      TextSettings.Trimming = None
       OnClick = TestFuncClick
     end
     object TestFunc2: TButton
@@ -96,7 +88,6 @@ object Form1: TForm1
       Position.Y = 35.000000000000000000
       TabOrder = 8
       Text = 'TestFunc2'
-      TextSettings.Trimming = None
       OnClick = TestFunc2Click
     end
     object Button6: TButton
@@ -104,7 +95,6 @@ object Form1: TForm1
       Position.Y = 35.000000000000000000
       TabOrder = 9
       Text = 'Button6'
-      TextSettings.Trimming = None
       OnClick = Button6Click
     end
     object Button7: TButton
@@ -115,7 +105,6 @@ object Form1: TForm1
       Size.PlatformDefault = False
       TabOrder = 10
       Text = 'Customer props'
-      TextSettings.Trimming = None
       OnClick = Button7Click
     end
   end
@@ -224,7 +213,6 @@ object Form1: TForm1
       CustomIcon = <
         item
         end>
-      TextSettings.Trimming = None
       IsSelected = True
       Size.Width = 77.000000000000000000
       Size.Height = 26.000000000000000000
@@ -266,7 +254,6 @@ object Form1: TForm1
       CustomIcon = <
         item
         end>
-      TextSettings.Trimming = None
       IsSelected = False
       Size.Width = 86.000000000000000000
       Size.Height = 26.000000000000000000
@@ -301,7 +288,6 @@ object Form1: TForm1
       CustomIcon = <
         item
         end>
-      TextSettings.Trimming = None
       IsSelected = False
       Size.Width = 64.000000000000000000
       Size.Height = 26.000000000000000000

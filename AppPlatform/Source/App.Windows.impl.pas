@@ -87,7 +87,10 @@ uses
 function TWindow.Bind(const Data: CObject): IWindow;
 begin
   var c := _frame.Content;
-  var binder := _app.Config.TypeDescriptor(_Type).Binder;
+  var descr := _app.Config.TypeDescriptor(_Type);
+  if descr = nil then
+    raise CException.Create(CString.Format('Type descriptor for type ''{0}'' not registered', _Type));
+  var binder := descr.Binder;
   if binder = nil then
     binder := TFrameBinder.Create;
   binder.Bind(_Type, c, Data);
