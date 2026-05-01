@@ -3,6 +3,11 @@ program AppPlatform;
 
 
 uses
+  madExcept,
+  madLinkDisAsm,
+  madListHardware,
+  madListProcesses,
+  madListModules,
   System.StartUpCopy,
   FMX.Forms,
   AppMain in 'AppMain.pas' {Form1},
@@ -19,7 +24,10 @@ uses
   App.UIStateDelegate in 'AppUI\App.UIStateDelegate.pas',
   App.KeyNavigator.impl in 'AppUI\App.KeyNavigator.impl.pas',
   ProjectSelection.frame in 'DataObjectsFrames\ProjectSelection.frame.pas' {ProjectSelectionFrame: TFrame},
-  FMX.App.MasterForm in 'AppUI\FMX.App.MasterForm.pas';
+  FMX.App.MasterForm in 'AppUI\FMX.App.MasterForm.pas',
+  Task.intf in 'DataObjects\Task.intf.pas',
+  Task.impl in 'DataObjects\Task.impl.pas',
+  Person.frame in 'DataObjectsFrames\Person.frame.pas' {PersonFrame: TFrame};
 
 {$R *.res}
 

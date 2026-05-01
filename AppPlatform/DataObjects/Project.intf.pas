@@ -3,7 +3,9 @@
 interface
 
 uses
-  System_;
+  System_,
+  Task.Intf,
+  System.Collections.Generic;
 
 type
   {$M+}
@@ -14,6 +16,7 @@ type
     function  get_Description: string;
     procedure set_Description(const Value: string);
     function  get_ChildProject: IProject;
+    function  get_Tasks: List<ITask>;
 
     function  Equals(const Other: IProject): Boolean;
 
@@ -21,6 +24,7 @@ type
     property Description: string read get_Description write set_Description;
 
     property Child: IProject read get_ChildProject;
+    property Tasks: List<ITask> read get_Tasks;
   end;
 
 implementation

@@ -1,0 +1,19 @@
+object PersonFrame: TPersonFrame
+  Size.Width = 1208.000000000000000000
+  Size.Height = 735.000000000000000000
+  Size.PlatformDefault = False
+  object Layout1: TLayout
+    Align = Client
+    Size.Width = 1208.000000000000000000
+    Size.Height = 735.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    object WebBrowser1: TWebBrowser
+      Align = Client
+      Size.Width = 1208.000000000000000000
+      Size.Height = 735.000000000000000000
+      Size.PlatformDefault = False
+      WindowsEngine = EdgeIfAvailable
+    end
+  end
+end

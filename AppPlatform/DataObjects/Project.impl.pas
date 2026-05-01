@@ -12,7 +12,8 @@ uses
   App.Content.intf,
   App.Storage.intf,
   ADato.ObjectModel.List.intf,
-  App.Content.impl;
+  App.Content.impl,
+  Task.intf;
 
 type
   TProject = class(TBaseInterfacedObject, IProject, IExtendableObject)
@@ -26,6 +27,7 @@ type
     _Description: string;
     _Child: IProject;
     _storageSupport: IStorageSupport;
+    _tasks: List<ITask>;
 
     _PropertyValue: Dictionary<_PropertyInfo, CObject>;
 
@@ -34,6 +36,7 @@ type
     function  get_Description: string;
     procedure set_Description(const Value: string);
     function  get_ChildProject: IProject;
+    function  get_Tasks: List<ITask>;
 
     // IExtendableObject
     function  get_PropertyValue(const AProperty: _PropertyInfo): CObject;
@@ -65,7 +68,7 @@ implementation
 
 uses
   ADato.ObjectModel.List.Tracking.impl,
-  System.SysUtils, System.Rtti, App.intf, App.Storage.impl;
+  System.SysUtils, System.Rtti, App.intf, App.Storage.impl, Task.impl;
 
 
 { TProject }
@@ -82,6 +85,14 @@ end;
 function TProject.Equals(const other: CObject): Boolean;
 begin
   Result := Equals(Other.AsType<IProject>);
+end;
+
+function TProject.get_Tasks: List<ITask>;
+begin
+  if _tasks = nil then
+    _tasks := CList<ITask>.Create;
+
+  Result := _tasks;
 end;
 
 class function TProject.get_Type: &Type;

@@ -9,6 +9,7 @@ uses
   FMX.ScrollBox, FMX.Memo,
   App.intf, System.Actions, FMX.ActnList, FMX.StdCtrls, System.Net.URLClient,
   System.Net.HttpClient, System.Net.HttpClientComponent, System_,
+  System.IOUtils,
   Project.intf, System.Collections, System.Collections.Generic, System.Rtti,
   App.Environment.intf, App.Windows.intf, App.QuickJSBridge.intf, FMX.TabControl;
 
@@ -47,6 +48,8 @@ type
     Memo1: TMemo;
     tsPolarion: TTabItem;
     mmPolarion: TMemo;
+    tsPersons: TTabItem;
+    Memo2: TMemo;
     procedure acExecuteExecute(Sender: TObject);
     procedure btnProjectWindowClick(Sender: TObject);
     procedure btnExecResultClick(Sender: TObject);
@@ -176,7 +179,8 @@ uses
   System.TypInfo,
   QuickJS.VirtualMethod.impl, App.Storage.intf, App.Storage.impl,
   App.Config.intf, App.Windows.impl, App.Component.intf,
-  ProjectSelection.frame;
+  ProjectSelection.frame, Task.impl, Task.intf,
+  ImportPackage.intf, ImportPackage.impl, ImportIngestor.impl, Person.frame;
 
 {$R *.fmx}
 
@@ -325,13 +329,24 @@ end;
 
 procedure TForm1.Button6Click(Sender: TObject);
 begin
-  var t := _app.Config.TypeByName('Customer');
-  var ctx := TRttiContext.Create;
-  try
-    ctx.GetType(t.GetTypeInfo).QualifiedName;
-  finally
-    ctx.Free;
-  end;
+  var frm := TAppMasterForm.Create(Self);
+
+  var fram := TPersonFrame.Create(Self);
+  //var fram := TCustomerFrame.Create(Self);
+  frm.AddObject(fram);
+
+//  fram.Align := TAlignLayout.Client;
+//  fram.Visible := True;
+
+  frm.Show;
+
+//  var t := _app.Config.TypeByName('Customer');
+//  var ctx := TRttiContext.Create;
+//  try
+//    ctx.GetType(t.GetTypeInfo).QualifiedName;
+//  finally
+//    ctx.Free;
+//  end;
 
   // var f := TForm1.Create(Self);
 end;
@@ -383,6 +398,10 @@ begin
     Result := TWindowFrame.Create(Window, TCustomerFrame.Create(Window.Control as TComponent));
   end);
 
+  _app.Config.RegisterWindow('Persons', function(const Window: IWindow) : IWindowFrame begin
+    Result := TWindowFrame.Create(Window, TPersonFrame.Create(Window.Control as TComponent));
+  end);
+
   // TProject.TypeDescriptor.Builder := TFrameBuilder.Create(TProjectFrame);
 
   TProject.TypeDescriptor.Binder := TFrameBinder.Create();
@@ -392,6 +411,10 @@ begin
 
   _app.Factory.RegisterType(TProject.Type, function : CObject begin
     Result := CObject.From<IProject>(TProject.Create);
+  end);
+
+  _app.Factory.RegisterType(TTask.Type, function : CObject begin
+    Result := CObject.From<ITask>(TTask.Create);
   end);
 
   _app.Factory.RegisterCollection(TProject.Type, function : CObject begin
