@@ -1416,7 +1416,7 @@ begin
       raise EArgumentException.Create('Class not registered');
 
     AObject.Ptr := JS_GetOpaque(Value, classID);
-    if AObject.Reg.Kind in [tkClass, tkRecord] then
+    if AObject.Reg.IsObject then
     begin
       if (TObject(AObject.Ptr) is TObjectReference) then
         AObject.Ptr := (TObject(AObject.Ptr) as TObjectReference).ObjectRef
@@ -2592,7 +2592,7 @@ begin
       raise EArgumentException.Create('Class not registered');
 
     AObject.Ptr := JS_GetOpaque(Value, classID);
-    if AObject.Reg.Kind in [tkClass, tkRecord] then
+    if AObject.Reg.IsObject then
     begin
       if (TObject(AObject.Ptr) is TObjectReference) then
         AObject.Ptr := (TObject(AObject.Ptr) as TObjectReference).ObjectRef
