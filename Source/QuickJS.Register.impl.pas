@@ -816,8 +816,9 @@ begin
 
 //    tkChar:
     tkEnumeration:
+      // Ambigious call for new DateTime(1997, 1, 1) -> Create(ticks: Int64; kind: DateTimeKind; isAmbiguousDst: Boolean)
       if Param.ParamType.Handle = System.TypeInfo(Boolean) then
-        Result := JS_IsBool(Value) or JS_IsNumber(Value) or JS_IsString(Value) else
+        Result := JS_IsBool(Value) else //or JS_IsNumber(Value) or JS_IsString(Value) else
         Result := JS_IsNumber(Value);
 
     tkFloat:
@@ -855,6 +856,7 @@ begin
 
     tkInt64:
       Result := JS_IsNumber(Value) or JS_IsBigInt(Value);
+
 
 //    tkDynArray:
 //    tkUString,
@@ -1685,14 +1687,32 @@ var
     var rttiType := TRttiContext.Create.GetType(FTypeInfo);
     var rtti_method: TRttiMethod := nil;
 
-    // Look for constructor with matching parameter count
+    // Look for constructor with matching parameter count and compatible parameter types.
     for var method in rttiType.GetMethods do
     begin
-      if method.IsConstructor and (Length(method.GetParameters) = argc) then
+      if not method.IsConstructor then
+        continue;
+
+      var params := method.GetParameters;
+      if Length(params) <> argc then
+        continue;
+
+      var compatible := True;
+      for var i := 0 to argc - 1 do
       begin
-       rtti_method := method;
-       break;
+        var paramIsGenericValue: Boolean;
+        if not FRuntime.TestParamsAreCompatible(ctx, params[i], PJSValueConstArr(argv)[i], paramIsGenericValue) then
+        begin
+          compatible := False;
+          break;
+        end;
       end;
+
+      if not compatible then
+        continue;
+
+      rtti_method := method;
+      break;
     end;
 
     if rtti_method = nil then
@@ -1936,7 +1956,8 @@ end;
 
 function TRegisteredObject.get_IsObject: Boolean;
 begin
-  Result := FTypeInfo.Kind = tkClass;
+  // 29-05    Result := FTypeInfo.Kind = tkClass  MCD
+  Result := FTypeInfo.Kind in [tkClass, tkRecord];
 end;
 
 function TRegisteredObject.get_ObjectSupportsEnumeration: Boolean;

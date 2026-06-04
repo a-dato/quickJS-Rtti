@@ -1,5 +1,6 @@
 import {TypeCode, ITypeDescriptor_} from './app.js';
 import {visible,editor,status,Object_,Type_,Provider_} from './lynx.js';
+import {Ingestor} from './Ingestor.js';
 
 export class Person extends Object_ {
 
@@ -60,7 +61,7 @@ export class PersonType extends ITypeDescriptor_ {
                 }                    
             },
             Name: {
-                Type: TypeCode.string,
+                Type: TypeCode.String,
                 EditorType: editor.Edit
             },
             Age: {
@@ -70,8 +71,8 @@ export class PersonType extends ITypeDescriptor_ {
         }
     }
 
-    CreateInstance() {
-        return new Person();
+    CreateInstance(id) {
+        return new Person(id);
     }
 
     get ClassName() {
@@ -99,27 +100,15 @@ export class PersonProvider extends Provider_ {
         this.Source = source;
     }
 
-    MapPerson(item) {
-        return new Person(
-            item.ID,
-            item.Name,
-            item.Value('Age', 0)
-        );
-    }
-
     async Data(filter) {
+        
         if(this.Source == null) {
             throw new Error('PersonProvider.Source is not configured.');
         }
 
-        let l = new List();
         const items = await this.Source.Items(filter);
-
-        for(const item of items) {
-            l.Add(this.MapPerson(item));
-        }
-
-        return l;
+        const ingestor = new Ingestor();
+        return ingestor.CreateList(items);
     }
 
 }

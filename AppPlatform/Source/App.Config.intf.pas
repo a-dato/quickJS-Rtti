@@ -19,6 +19,7 @@ type
 
     function AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
     function WrapProperty(const AProperty: _PropertyInfo) : _PropertyInfo;
+    function GetProperties(const AType: &Type) : List<_PropertyInfo>;
 
     procedure RegisterType(const AType: &Type; const ObjectType: ITypeDescriptor);
     procedure RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);

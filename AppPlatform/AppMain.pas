@@ -11,7 +11,8 @@ uses
   System.Net.HttpClient, System.Net.HttpClientComponent, System_,
   System.IOUtils,
   Project.intf, System.Collections, System.Collections.Generic, System.Rtti,
-  App.Environment.intf, App.Windows.intf, App.QuickJSBridge.intf, FMX.TabControl;
+  App.Environment.intf, App.Windows.intf, App.QuickJSBridge.intf, FMX.TabControl,
+  ADato.StatusCode;
 
 type
   {$M+}
@@ -93,10 +94,28 @@ type
     TaskID: Int64;
   end;
 
+  DependencyTypeFlag =  (
+    // Schedule successor task after the finish date of predecessor
+    Relation_FinishStart,
+    // Schedule the end date of the successor task at the start date
+    // of predecessor
+    Relation_StartFinish,
+    // Schedule the start date of the successor after the start date
+    // of predecessor
+    Relation_StartStart,
+    // Schedule the end date of the successor before the end date
+    // of predecessor
+    Relation_FinishFinish
+  );
+
   ITestObject = interface(IBaseInterface)
     ['{4A8C6FB1-5CFB-49C5-A0EB-2BEC6E554F01}']
     function  get_ID: CObject;
     procedure set_ID(const Value: CObject);
+    function  get_Time: CTimeSpan;
+    procedure set_Time(const Value: CTimeSpan);
+    function  get_Status: StatusCode;
+    procedure set_Status(const Value: StatusCode);
 
     function get_Data: IList;
     function get_Names(const Value: string): string;
@@ -114,6 +133,8 @@ type
 
     property Data: IList read get_Data;
     property ID: CObject read get_ID write set_ID;
+    property Time: CTimeSpan read get_Time write set_Time;
+    property Status: StatusCode read get_Status write set_Status;
   end;
 
   TTestObject = class(TBaseInterfacedObject, ITestObject)
@@ -122,11 +143,17 @@ type
 
     _id: CObject;
     _data: List<ITestObject>;
+    _time: CTimeSpan;
+    _statusCode: StatusCode;
 
     procedure Attach(const Data: IList);
 
     function  get_ID: CObject;
     procedure set_ID(const Value: CObject);
+    function  get_Time: CTimeSpan;
+    procedure set_Time(const Value: CTimeSpan);
+    function  get_Status: StatusCode;
+    procedure set_Status(const Value: StatusCode);
 
     function get_Data: IList;
 
@@ -145,6 +172,8 @@ type
     constructor Create;
 
     property Names[const Value: string]: string read get_Names;
+    property Time: CTimeSpan read get_Time write set_Time;
+    property Status: StatusCode read get_Status write set_Status;
   end;
 
 var
@@ -329,26 +358,78 @@ end;
 
 procedure TForm1.Button6Click(Sender: TObject);
 begin
-  var frm := TAppMasterForm.Create(Self);
-
-  var fram := TPersonFrame.Create(Self);
-  //var fram := TCustomerFrame.Create(Self);
-  frm.AddObject(fram);
-
-//  fram.Align := TAlignLayout.Client;
-//  fram.Visible := True;
-
-  frm.Show;
+//  var frm := TAppMasterForm.Create(Self);
+//
+//  var fram := TPersonFrame.Create(Self);
+//  //var fram := TCustomerFrame.Create(Self);
+//  frm.AddObject(fram);
+//
+////  fram.Align := TAlignLayout.Client;
+////  fram.Visible := True;
+//
+//  frm.Show;
 
 //  var t := _app.Config.TypeByName('Customer');
 //  var ctx := TRttiContext.Create;
 //  try
-//    ctx.GetType(t.GetTypeInfo).QualifiedName;
+//    var rttiType := ctx.GetType(TypeInfo(DependencyTypeFlag));
+//
+//    if rttiType.TypeKind = tkEnumeration then
+//    begin
+//      var typeData := GetTypeData(rttiType.Handle);
+//      for var i := typeData.MinValue to typeData.MaxValue do
+//      begin
+//        var enumName := GetEnumName(rttiType.Handle, i);
+//        // enumName = 'Relation_FinishStart', etc.
+//        // i = integer value
+//      end;
+//    end;
 //  finally
 //    ctx.Free;
 //  end;
 
   // var f := TForm1.Create(Self);
+
+  mmLog.Lines.Clear;
+  var ctx := TRttiContext.Create;
+  try
+    var rttiType := ctx.GetType(TypeInfo(CDateTime));
+    mmLog.Lines.Add('Name: ' + rttiType.Name);
+    mmLog.Lines.Add('QualifiedName: ' + rttiType.QualifiedName);
+    mmLog.Lines.Add('TypeKind: ' + GetEnumName(TypeInfo(TTypeKind), Ord(rttiType.TypeKind)));
+    mmLog.Lines.Add('');
+    mmLog.Lines.Add('Fields:');
+    for var field in rttiType.GetFields do
+      mmLog.Lines.Add('  ' + field.Name + ': ' + field.FieldType.Name);
+    mmLog.Lines.Add('');
+    mmLog.Lines.Add('Properties:');
+    for var prop in rttiType.GetProperties do
+      mmLog.Lines.Add('  ' + prop.Name + ': ' + prop.PropertyType.Name);
+    mmLog.Lines.Add('');
+    mmLog.Lines.Add('Methods / constructors:');
+    for var method in rttiType.GetMethods do
+    begin
+      var line := '  ' + GetEnumName(TypeInfo(TMethodKind), Ord(method.MethodKind)) + ' ' + method.Name + '(';
+      var first := True;
+      for var param in method.GetParameters do
+      begin
+        if not first then
+          line := line + ', ';
+        first := False;
+        if param.ParamType <> nil then
+          line := line + param.Name + ': ' + param.ParamType.Name
+        else
+          line := line + param.Name + ': <nil>';
+      end;
+      line := line + ')';
+      if method.ReturnType <> nil then
+        line := line + ': ' + method.ReturnType.Name;
+      mmLog.Lines.Add(line);
+    end;
+  finally
+    ctx.Free;
+  end;
+
 end;
 
 procedure TForm1.Button7Click(Sender: TObject);
@@ -413,9 +494,9 @@ begin
     Result := CObject.From<IProject>(TProject.Create);
   end);
 
-  _app.Factory.RegisterType(TTask.Type, function : CObject begin
-    Result := CObject.From<ITask>(TTask.Create);
-  end);
+//  _app.Factory.RegisterType(TTask.Type, function : CObject begin
+//    Result := CObject.From<ITask>(TTask.Create);
+//  end);
 
   _app.Factory.RegisterCollection(TProject.Type, function : CObject begin
     Result := CObject.From<List<IProject>>(CList<IProject>.Create);
@@ -494,6 +575,10 @@ begin
 
     // Run initialization code from mmInitialize
     _context.eval(mmInitialize.Lines.Text, '<initialize>');
+
+    _runtime.RegisterObjectType('DependencyTypeFlag', TypeInfo(DependencyTypeFlag));
+    _runtime.RegisterObjectType('DateTime', TypeInfo(CDateTime));
+    _runtime.RegisterObjectType('StatusCode', TypeInfo(StatusCode));
   end;
 end;
 
@@ -587,6 +672,16 @@ begin
   Result := _id;
 end;
 
+function TTestObject.get_Time: CTimeSpan;
+begin
+  Result := _time;
+end;
+
+function TTestObject.get_Status: StatusCode;
+begin
+  Result := _statusCode;
+end;
+
 function TTestObject.get_Names(const Value: string): string;
 begin
   Result := Value;
@@ -610,6 +705,18 @@ procedure TTestObject.set_ID(const Value: CObject);
 begin
   _id := Value;
   Form1.mmLog.Lines.Add('ID set to: ' + Value.ToString);
+end;
+
+procedure TTestObject.set_Time(const Value: CTimeSpan);
+begin
+  _time := Value;
+  Form1.mmLog.Lines.Add('Time set to: ' + Value.ToString);
+end;
+
+procedure TTestObject.set_Status(const Value: StatusCode);
+begin
+  _statusCode := Value;
+  Form1.mmLog.Lines.Add('StatusCode set to: ' + Value.ToString);
 end;
 
 function TTestObject.Test(const Value: CObject): CObject;

@@ -1,4 +1,4 @@
-import {SourceItem} from './SourceItem.js';
+import {SourceItem, SourceDataPerson, SourceDataTask} from './SourceItem.js';
 import {CreateMockPolarionWorkItemsResponse} from './PolarionMockData.js';
 
 const DEFAULT_BASE_URL = 'https://mms.mithuntraining.com/polarion/rest/v1';
@@ -49,35 +49,24 @@ export class PolarionFetcher {
 }
 
 export class PolarionWorkItemSource {
-	constructor(fetcher = null) {
+	constructor(fetcher = null, typeName = 'Person') {
 		this.Fetcher = fetcher ?? new PolarionFetcher();
+		this.TypeName = typeName;
 	}
 
 	MapItem(item) {
 		const attributes = item.attributes ?? item;
-		const relationships = item.relationships ?? {};
-		const assignees = relationships.assignee?.data ?? [];
-		const author = relationships.author?.data ?? null;
-		const project = relationships.project?.data ?? null;
 		const id = attributes.id ?? item.id ?? item.key ?? item.uri;
-		const name = attributes.title
+		const description = attributes.title
 			?? item.title
 			?? attributes.name
 			?? item.name
 			?? id;
+		const sourceData = this.TypeName === 'Person'
+			? new SourceDataPerson(description, attributes.age ?? 0)
+			: new SourceDataTask(id, description);
 
-		return new SourceItem(id, name, {
-			Age: attributes.age ?? 0,
-			Description: attributes.description?.value ?? attributes.description ?? '',
-			Status: attributes.status ?? null,
-			Type: attributes.type ?? null,
-			Project: project?.id ?? null,
-			Author: author?.id ?? null,
-			Assignees: assignees.map((assignee) => assignee.id),
-			Revision: item.revision ?? null,
-			PortalUrl: item.links?.portal ?? null,
-			Raw: item
-		});
+		return new SourceItem(this.TypeName, sourceData);
 	}
 
 	async Items(filter) {

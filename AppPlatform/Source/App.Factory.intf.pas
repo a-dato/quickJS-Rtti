@@ -21,6 +21,7 @@ type
   TCreatorFunc_2 = reference to function(const Param0: CObject; const Param1: CObject) : CObject;
   TCreatorFunc_3 = reference to function(const Param0: CObject; const Param1: CObject; const Param2: CObject) : CObject;
   TCreatorFunc_4 = reference to function(const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject) : CObject;
+  TCreatorFunc_5 = reference to function(const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject; const Param4: CObject) : CObject;
 
   IAppFactory = interface(IBaseInterface)
     ['{ED9DEEB4-F0FD-4996-8CF4-B8B817D2EFCB}']
@@ -34,12 +35,14 @@ type
     procedure RegisterType_2(const AType: &Type; const Func: TCreatorFunc_2);
     procedure RegisterType_3(const AType: &Type; const Func: TCreatorFunc_3);
     procedure RegisterType_4(const AType: &Type; const Func: TCreatorFunc_4);
+    procedure RegisterType_5(const AType: &Type; const Func: TCreatorFunc_5);
 
     function  CreateInstance(const AType: &Type) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject) : CObject; overload;
+    function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject; const Param4: CObject) : CObject; overload;
 
     function  TryCreateInstance(const AType: &Type; out AObject: CObject) : Boolean; overload;
     function  TryCreateInstance(const AType: &Type; const Param0: CObject; out AObject: CObject) : Boolean; overload;

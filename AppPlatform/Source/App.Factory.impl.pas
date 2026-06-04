@@ -26,12 +26,14 @@ type
     procedure RegisterType_2(const AType: &Type; const Func: TCreatorFunc_2);
     procedure RegisterType_3(const AType: &Type; const Func: TCreatorFunc_3);
     procedure RegisterType_4(const AType: &Type; const Func: TCreatorFunc_4);
+    procedure RegisterType_5(const AType: &Type; const Func: TCreatorFunc_5);
 
     function  CreateInstance(const AType: &Type) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject) : CObject; overload;
+    function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject; const Param4: CObject) : CObject; overload;
 
     function  TryCreateInstance(const AType: &Type; out AObject: CObject) : Boolean; overload;
     function  TryCreateInstance(const AType: &Type; const Param0: CObject; out AObject: CObject) : Boolean; overload;
@@ -125,6 +127,11 @@ begin
   _dict[AType] := TValue.From<TCreatorFunc_4>(Func);
 end;
 
+procedure TAppFactory.RegisterType_5(const AType: &Type; const Func: TCreatorFunc_5);
+begin
+  _dict[AType] := TValue.From<TCreatorFunc_5>(Func);
+end;
+
 function TAppFactory.CreateInstance(const AType: &Type): CObject;
 begin
   Result := GetConstructorFunc<TCreatorFunc_0>(AType, GetConstructor(AType))();
@@ -148,6 +155,11 @@ end;
 function TAppFactory.CreateInstance(const AType: &Type; const Param0, Param1, Param2, Param3: CObject): CObject;
 begin
   Result := GetConstructorFunc<TCreatorFunc_4>(AType, GetConstructor(AType))(Param0, Param1, Param2, Param3);
+end;
+
+function TAppFactory.CreateInstance(const AType: &Type; const Param0, Param1, Param2, Param3, Param4: CObject): CObject;
+begin
+  Result := GetConstructorFunc<TCreatorFunc_5>(AType, GetConstructor(AType))(Param0, Param1, Param2, Param3, Param4);
 end;
 
 function TAppFactory.NextID: Int64;

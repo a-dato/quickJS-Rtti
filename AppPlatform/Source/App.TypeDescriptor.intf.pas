@@ -30,6 +30,7 @@ type
     function  get_Provider: IContentProvider;
     procedure set_Provider(const Value: IContentProvider);
     function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor;
+    function  GetType: &Type;
 
     function  AddPropertyDescriptor(const Name: string; const Value: IPropertyDescriptor) : Boolean;
 

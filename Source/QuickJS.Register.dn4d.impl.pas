@@ -763,6 +763,17 @@ begin
         Exit;
       end;
 
+      if JS_IsObject(Value) then
+      begin
+        var ptr := TJSRuntime.GetObjectFromJSValue(Value, True);
+        if ptr <> nil then
+        begin
+          var ts := CTimeSpan(ptr^);
+          Result := TValue.From<CTimeSpan>(ts);
+          Exit;
+        end;
+      end;
+
       var v: Int64;
       JS_ToBigInt64(ctx, @v, Value);
       Result := TValue.From<CTimeSpan>(CTimeSpan.Create(v));
