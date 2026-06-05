@@ -138,9 +138,9 @@ begin
   FTestObject := FTestObject3 as ITestObject;
 
   // Register live objects with the new context
-  FRuntime.RegisterLiveInterfaceInstance(FContext, 'testObj', TypeInfo(ITestObject), FTestObject);
-  FRuntime.RegisterLiveInterfaceInstance(FContext, 'testObj2', TypeInfo(ITestObject2), FTestObject2);
-  FRuntime.RegisterLiveInterfaceInstance(FContext, 'testObj3', TypeInfo(ITestObject3), FTestObject3);
+  FContext.RegisterLiveInterfaceInstance('testObj', TypeInfo(ITestObject), FTestObject);
+  FContext.RegisterLiveInterfaceInstance('testObj2', TypeInfo(ITestObject2), FTestObject2);
+  FContext.RegisterLiveInterfaceInstance('testObj3', TypeInfo(ITestObject3), FTestObject3);
   {$ENDIF}
 end;
 
