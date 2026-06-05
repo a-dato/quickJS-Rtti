@@ -34,7 +34,7 @@ type
     function CreateRegisteredObject(ATypeInfo: PTypeInfo; AConstructor: TObjectConstuctor): IRegisteredObject; override;
     procedure InternalRegisterType(const ctx: IJSContext; const Reg: IRegisteredObject; ClassName: string); override;
     
-    procedure RegisterEnumConstants(const ctx: IJSContext; const Reg: IRegisteredObject; const EnumInfo: EnumInformation);
+    procedure RegisterEnumConstants(const ctx: IJSContext; const Reg: IRegisteredObject; const ClassName: string; const EnumInfo: EnumInformation);
 
   public
     constructor Create;
@@ -253,18 +253,18 @@ begin
     begin
       var enumInfo := &Assembly.GetRegisteredEnum(tp);
       if Assigned(enumInfo) then
-        RegisterEnumConstants(ctx, Reg, enumInfo);
+        RegisterEnumConstants(ctx, Reg, ClassName, enumInfo);
     end;
   end;
 end;
 
-procedure TJSRuntimeDN4D.RegisterEnumConstants(const ctx: IJSContext; const Reg: IRegisteredObject; const EnumInfo: EnumInformation);
+procedure TJSRuntimeDN4D.RegisterEnumConstants(const ctx: IJSContext; const Reg: IRegisteredObject; const ClassName: string; const EnumInfo: EnumInformation);
 begin
   // Get the constructor function from global object
   var jsctx := ctx.ctx;
   var global := JS_GetGlobalObject(jsctx);
-  var className := AnsiString(string(Reg.GetTypeInfo.Name));
-  var constructorFunc := JS_GetPropertyStr(jsctx, global, PAnsiChar(className));
+  var jsClassName := AnsiString(ClassName);
+  var constructorFunc := JS_GetPropertyStr(jsctx, global, PAnsiChar(jsClassName));
   
   if not JS_IsUndefined(constructorFunc) then
   begin
