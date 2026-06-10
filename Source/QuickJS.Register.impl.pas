@@ -815,11 +815,18 @@ begin
       Result := JS_IsNumber(Value) or JS_IsBigInt(Value);
 
 //    tkChar:
+    {$IFDEF APP_PLATFORM_MD}
     tkEnumeration:
       // Ambigious call for new DateTime(1997, 1, 1) -> Create(ticks: Int64; kind: DateTimeKind; isAmbiguousDst: Boolean)
       if Param.ParamType.Handle = System.TypeInfo(Boolean) then
         Result := JS_IsBool(Value) else //or JS_IsNumber(Value) or JS_IsString(Value) else
         Result := JS_IsNumber(Value);
+    {$ELSE}
+    tkEnumeration:
+      if Param.ParamType.Handle = System.TypeInfo(Boolean) then
+        Result := JS_IsBool(Value) or JS_IsNumber(Value) or JS_IsString(Value) else
+        Result := JS_IsNumber(Value);
+    {$ENDIF}
 
     tkFloat:
       Result := JS_IsNumber(Value);
@@ -1956,8 +1963,12 @@ end;
 
 function TRegisteredObject.get_IsObject: Boolean;
 begin
+  {$IFDEF APP_PLATFORM_MD}
   // 29-05    Result := FTypeInfo.Kind = tkClass  MCD
   Result := FTypeInfo.Kind in [tkClass, tkRecord];
+  {$ELSE}
+  Result := FTypeInfo.Kind = tkClass;
+  {$ENDIF}
 end;
 
 function TRegisteredObject.get_ObjectSupportsEnumeration: Boolean;

@@ -30,7 +30,10 @@ type
     function  get_Provider: IContentProvider;
     procedure set_Provider(const Value: IContentProvider);
     function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor;
+
+    {$IFDEF APP_PLATFORM_MD}
     function  GetType: &Type;
+    {$ENDIF}
 
     function  AddPropertyDescriptor(const Name: string; const Value: IPropertyDescriptor) : Boolean;
 

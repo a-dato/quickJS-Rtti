@@ -763,6 +763,7 @@ begin
         Exit;
       end;
 
+      {$IFDEF APP_PLATFORM_MD}
       if JS_IsObject(Value) then
       begin
         var ptr := TJSRuntime.GetObjectFromJSValue(Value, True);
@@ -773,6 +774,7 @@ begin
           Exit;
         end;
       end;
+      {$ENDIF}
 
       var v: Int64;
       JS_ToBigInt64(ctx, @v, Value);

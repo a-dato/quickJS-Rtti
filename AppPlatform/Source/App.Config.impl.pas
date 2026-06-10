@@ -25,7 +25,9 @@ type
 
     function  AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
     function  WrapProperty(const AProperty: _PropertyInfo) : _PropertyInfo;
+    {$IFDEF APP_PLATFORM_MD}
     function  GetProperties(const AType: &Type) : List<_PropertyInfo>;
+    {$ENDIF}
 
     procedure RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
     procedure RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);
@@ -111,6 +113,7 @@ begin
   Result := CList<&Type>.Create(_Types.Keys);
 end;
 
+{$IFDEF APP_PLATFORM_MD}
 function TAppConfig.GetProperties(const AType: &Type): List<_PropertyInfo>;
 begin
   Result := CList<_PropertyInfo>.Create;
@@ -118,6 +121,7 @@ begin
   for var prop in AType.GetProperties do
     Result.Add(WrapProperty(prop));
 end;
+{$ENDIF}
 
 function TAppConfig.AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
 begin
@@ -169,12 +173,18 @@ begin
   begin
     var prop_descriptor := descriptor.PropertyDescriptor[propType.Name];
 
+    {$IFDEF APP_PLATFORM_MD}
     if prop_descriptor <> nil then
     begin
       if propType.IsOfType<IList> then
         Result := TCollectionPropertyWithDescriptor.Create(Result, prop_descriptor) else
         Result := TPropertyWithDescriptor.Create(Result, prop_descriptor);
     end;
+    {$ELSE}
+    if propType.IsOfType<IList> then
+      Result := TCollectionPropertyWithDescriptor.Create(Result, prop_descriptor) else
+      Result := TPropertyWithDescriptor.Create(Result, prop_descriptor);
+    {$ENDIF}
   end;
 
   // Path property, like: Customer.Address

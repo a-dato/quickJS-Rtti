@@ -1,15 +1,6 @@
-export class ImportContext {
-    constructor(options = null) {
-        this.ParentStorageName = options?.ParentStorageName ?? null;
-        this.ParentId = options?.ParentId ?? null;
-        this.ParentCollectionName = options?.ParentCollectionName ?? null;
-        this.ParentLoaderTypeName = options?.ParentLoaderTypeName ?? null;
-    }
-}
-
 export class Ingestor {
-    constructor(context = null) {
-        this.Context = context ?? new ImportContext();
+    constructor() {
+        this.initializedProjects = new Set();
     }
 
     CreateObjectOfType(typeName, ...args) {
@@ -18,36 +9,9 @@ export class Ingestor {
         if(descriptor == null)
             throw new Error(`No type descriptor registered with name ${typeName}`);
 
-        return this.CreateInstance(descriptor, null, args);
+        return this.CreateInstance(descriptor, args);
     }
     
-    CreateItem(sourceItem) {
-        const descriptor = app.Config.TypeDescriptorByName(sourceItem.TypeName);
-
-        if(descriptor == null)
-            throw new Error(`No type descriptor registered with name ${sourceItem.TypeName}`);
-
-        const item = this.CreateInstance(descriptor, sourceItem);
-
-        for(const propertyName of Object.keys(sourceItem.Data ?? {})) {
-            item[propertyName] = sourceItem.Value(propertyName);
-        }
-
-        this.AttachItem(item, sourceItem);
-
-        return item;
-    }
-
-    CreateList(sourceItems) {
-        const result = new List();
-
-        for(const sourceItem of sourceItems) {
-            result.Add(this.CreateItem(sourceItem));
-        }
-
-        return result;
-    }
-
     Types() {
         return this.GetAvailableTypes();
     }
@@ -92,8 +56,8 @@ export class Ingestor {
         return properties;
     }
 
-    CreateInstance(descriptor, sourceItem = null, args = null) {
-        const createArgs = this.CreateArgs(sourceItem, args);
+    CreateInstance(descriptor, args = null) {
+        const createArgs = args ?? [];
         const instanceArgs = [this.NewID(), ...createArgs];
 
         let instance;
@@ -111,64 +75,102 @@ export class Ingestor {
         return app.Factory.NextID();
     }
 
-    CreateArgs(sourceItem = null, args = null) {
-        const createArgs = args ?? [];
-        if(createArgs.length > 0)
-            return createArgs;
-        const parent = this.ParentItem(sourceItem);
-        if(parent != null)
-            return [parent];
-        return [];
+    AddTaskToProject(project, task) {
+        this.RememberProject(project);
+        this.PrepareProjectParent(project);
+        let tasks = project.Tasks;
+        tasks.Add(task);
+        return task;
     }
 
-    ParentItem(sourceItem) {
-        if(sourceItem == null)
+    AddDependencyToProject(project, dependency) {
+        this.RememberProject(project);
+        this.PrepareProjectParent(project);
+        let dependencies = project.Dependencies;
+        dependencies.Add(dependency);
+        return dependency;
+    }
+
+    AddResourceRequirementToTask(task, requirement) {
+        if(task == null)
+            throw new Error('Task is required.');
+
+        let resourceRequirements = task.ResourceRequirements;
+        resourceRequirements.Add(requirement);
+        return requirement;
+    }
+
+    AttachItem(parent, collectionName, item) {
+        return this.AddToParent(parent, collectionName, item);
+    }
+
+    PrepareProjectParent(parent) {
+        const project = this.TryAsTypeName(parent, 'IProject');
+        if(project == null)
             return null;
 
-        const parentStorageName = this.OptionValue(sourceItem, 'ParentStorageName');
-        const parentId = this.OptionValue(sourceItem, 'ParentId');
+        const key = String(project.ID ?? project.LUID ?? '');
+        if(this.initializedProjects.has(key))
+            return project;
 
-        if(parentStorageName == null || parentId == null)
-            return null;
+        this.initializedProjects.add(key);
 
-        const storage = app.Storage[parentStorageName];
+        const loader = this.TryAsType(parent, globalThis.IProjectLoader)
+            ?? this.TryAsTypeName(project, 'IProjectLoader');
+        if(loader != null)
+            loader.ForceOpen();
 
-        for(const item of storage) {
-            if(item.ID == parentId)
-                return item;
+        // Only a new (never saved) project may be filled with the event
+        // mechanism shut down (BeginUpdate). Saving such a project goes
+        // through Project.SaveAll. Existing projects must keep their events
+        // running, otherwise the normal save mechanism misses the changes.
+        if(this.IsNewProject(project)) {
+            const updateable = this.TryAsTypeName(project, 'IUpdateableObjectWithUpdateFlag');
+            if(updateable != null)
+                updateable.BeginUpdate(globalThis.UpdateFlag?.IgnoreUpdate ?? 1);
         }
 
-        throw new Error(`Parent not found: ${parentStorageName}[${parentId}]`);
+        return project;
     }
 
-    AttachItem(item, sourceItem) {
-        const parentCollectionName = this.OptionValue(sourceItem, 'ParentCollectionName');
-
-        if(parentCollectionName == null)
-            return;
-
-        const parent = this.ParentItem(sourceItem);
-        this.ForceOpenParent(parent, sourceItem);
-        const collection = parent[parentCollectionName];
-
-        if(collection == null || typeof collection.Add !== 'function')
-            throw new Error(`Parent ${parent.ID} does not expose a ${parentCollectionName} collection.`);
-
-        collection.Add(item);
+    IsNewProject(project) {
+        // New (unsaved) objects carry a negative ID, the server assigns a positive ID when the object is saved.
+        const id = Number(project.ID);
+        return Number.isFinite(id) && id < 0;
     }
 
-    ForceOpenParent(parent, sourceItem) {
-        const parentLoaderTypeName = this.OptionValue(sourceItem, 'ParentLoaderTypeName');
+    TryAsTypeName(item, typeName) {
+        try {
+            const descriptor = app.Config.TypeDescriptorByName(typeName);
+            if(descriptor == null)
+                return null;
 
-        if(parentLoaderTypeName == null || parent.AsType == null)
-            return;
-
-        const loaderType = globalThis[parentLoaderTypeName];
-        if(loaderType != null)
-            parent.AsType(loaderType).ForceOpen();
+            return this.TryAsType(item, descriptor.GetType());
+        } catch {
+            return null;
+        }
     }
 
-    OptionValue(sourceItem, name) {
-        return sourceItem?.[name] ?? this.Context[name];
+    TryAsType(item, type) {
+        try {
+            return item.AsType(type);
+        } catch {
+            return null;
+        }
+    }
+
+    SaveNewProject(project) {
+        if(project == null)
+            throw new Error('Project is required.');
+        if(typeof project.SaveAll !== 'function')
+            throw new Error('Project does not expose SaveAll.');
+
+        project.SaveAll();
+        return project;
+    }
+
+    RememberProject(project) {
+        if(project != null)
+            globalThis.IntegrationManagerLastProject = project;
     }
 }
