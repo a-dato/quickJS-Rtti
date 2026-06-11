@@ -14,6 +14,9 @@ type
     function get_Data: IList;
 
     function  Attach(const Value: IList) : Boolean;
+    {$IFDEF APP_PLATFORM_MD}
+    function  FindByProperty(const PropertyName: CString; const Value: CObject) : CObject;
+    {$ENDIF}
 //
 //    function  Add(const Item: CObject) : Integer;
 //    function  Remove(const Item: CObject) : Boolean;

@@ -17,6 +17,10 @@ type
     _name: string;
 
     function Attach(const Value: IList) : Boolean; virtual;
+    {$IFDEF APP_PLATFORM_MD}
+    function FindByProperty(const PropertyName: CString; const Value: CObject) : CObject; virtual;
+    function ValueEquals(const PropValue: CObject; const Value: CObject) : Boolean; virtual;
+    {$ENDIF}
 
     function get_Data: IList; virtual;
     function get_DataType: &Type; virtual;
@@ -95,6 +99,37 @@ begin
   Result := True;
   _data := Value;
 end;
+
+{$IFDEF APP_PLATFORM_MD}
+function TStorage.FindByProperty(const PropertyName: CString; const Value: CObject): CObject;
+begin
+  Result := nil;
+  if _data = nil then
+    Exit;
+
+  var prop: _PropertyInfo := _dataType.PropertyByName(PropertyName);
+  if prop = nil then
+    raise ArgumentException.Create(CString.Format('Type ''{0}'' has no property named ''{1}''', _dataType.Name, PropertyName));
+
+  for var i := 0 to _data.Count - 1 do
+  begin
+    var item := _data[i];
+    if item = nil then
+      continue;
+
+    if ValueEquals(prop.GetValue(item, []), Value) then
+      Exit(item);
+  end;
+end;
+
+function TStorage.ValueEquals(const PropValue: CObject; const Value: CObject) : Boolean;
+begin
+  if (PropValue = nil) or (Value = nil) then
+    Exit((PropValue = nil) and (Value = nil));
+
+  Result := PropValue.Equals(Value) or PropValue.ToString.Equals(Value.ToString);
+end;
+{$ENDIF}
 
 function TStorage.get_DataType: &Type;
 begin
