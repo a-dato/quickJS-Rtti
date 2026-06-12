@@ -21,6 +21,7 @@ type
     function WrapProperty(const AProperty: _PropertyInfo) : _PropertyInfo;
     {$IFDEF APP_PLATFORM_MD}
     function GetProperties(const AType: &Type) : List<_PropertyInfo>;
+    function PropertyDisplayName(const AType: &Type; const PropertyName: CString) : CString;
     {$ENDIF}
 
     procedure RegisterType(const AType: &Type; const ObjectType: ITypeDescriptor);

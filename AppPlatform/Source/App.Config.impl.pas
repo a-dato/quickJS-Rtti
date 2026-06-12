@@ -27,6 +27,7 @@ type
     function  WrapProperty(const AProperty: _PropertyInfo) : _PropertyInfo;
     {$IFDEF APP_PLATFORM_MD}
     function  GetProperties(const AType: &Type) : List<_PropertyInfo>;
+    function  PropertyDisplayName(const AType: &Type; const PropertyName: CString) : CString;
     {$ENDIF}
 
     procedure RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
@@ -120,6 +121,18 @@ begin
 
   for var prop in AType.GetProperties do
     Result.Add(WrapProperty(prop));
+end;
+
+function TAppConfig.PropertyDisplayName(const AType: &Type; const PropertyName: CString) : CString;
+begin
+  var prop := AType.PropertyByName(PropertyName);
+  if prop = nil then
+    Exit(nil);
+
+  if prop is CustomProperty then
+    Exit((prop as CustomProperty).DisplayName);
+
+  Result := prop.Name;
 end;
 {$ENDIF}
 

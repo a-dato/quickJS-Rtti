@@ -467,6 +467,12 @@ end;
 
 function TTypedStandardPropertyDescriptor.get_PropertyType: PTypeInfo;
 begin
+  {$IFDEF APP_PLATFORM_MD}
+  var ti := FProp.GetType.GetTypeInfo;
+  if ti <> nil then
+    Exit(ti);
+  {$ENDIF}
+
   Result := FProp.PropInfo.PropType;
 end;
 
