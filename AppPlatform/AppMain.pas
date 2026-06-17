@@ -209,7 +209,7 @@ uses
   QuickJS.VirtualMethod.impl, App.Storage.intf, App.Storage.impl,
   App.Config.intf, App.Windows.impl, App.Component.intf,
   ProjectSelection.frame, Task.impl, Task.intf,
-  ImportPackage.intf, ImportPackage.impl, ImportIngestor.impl, Person.frame;
+  Person.frame;
 
 {$R *.fmx}
 
