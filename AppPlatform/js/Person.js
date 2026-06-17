@@ -1,6 +1,6 @@
 import {TypeCode, ITypeDescriptor_} from './app.js';
 import {visible,editor,status,Object_,Type_,Provider_} from './lynx.js';
-import {Ingestor} from './Ingestor.js';
+import {Ingestor} from 'D:/adato_webservice/MicroServices/IntegrationProject/ForContextNotPartOfProject/Ingestor.js';
 
 export class Person extends Object_ {
 
