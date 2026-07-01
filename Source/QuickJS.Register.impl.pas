@@ -316,6 +316,7 @@ implementation
 uses
   System.Classes, System.DateUtils,
   QuickJS.VirtualMethod.impl, QuickJS.Register.ObjectBridge.impl,
+  QuickJS.Register.ObjectBridgeTypes.intf,
   QuickJS.Register.ObjectBridgeDefaultDefinitions.impl;
 
 function AtomToString(ctx: JSContext; Atom: JSAtom) : string;
@@ -1260,13 +1261,14 @@ begin
   var r: IRegisteredObject;
   if runtime.FRegisteredObjectsByClassID.TryGetValue(GetClassID(obj), r) then
     obj_type := string(r.GetTypeInfo.Name);
-  var ptr := TJSRuntime.GetObjectFromJSValue( obj, r.GetTypeInfo.Kind <> tkInterface);
   {$ENDIF}
 
   var reg: IRegisteredObject;
 
   if runtime.FRegisteredObjectsByClassID.TryGetValue(GetClassID(obj), reg) then
   begin
+    var ptr := TJSRuntime.GetObjectFromJSValue(obj, reg.GetTypeInfo.Kind <> tkInterface);
+
     if reg.IsIndexedPropertyAccessor then
     begin
       SetIndexedPropertyCallBack(member_name);
@@ -1285,7 +1287,7 @@ begin
       // First try ObjectBridge resolver
       var handled := False;
       if Assigned(runtime.FObjectBridgeResolver) then
-        rtti_descriptor := runtime.FObjectBridgeResolver.OnGetMemberByName(reg, member_name, [TMemberType.Methods, TMemberType.Property], handled);
+        rtti_descriptor := runtime.FObjectBridgeResolver.OnGetMemberByName(reg, ptr, member_name, [TMemberType.Methods, TMemberType.Property], handled);
 
       // If ObjectBridge resolver didn't handle it, use standard resolution
       if not handled then
@@ -1298,7 +1300,11 @@ begin
           Exit;
       end;
 
-      reg.AddRttiDescriptor(member_name, rtti_descriptor);
+      var bridgePropertyDescriptor: IObjectBridgePropertyDescriptor;
+      var bridgeMethodDescriptor: IObjectBridgeMethodDescriptor;
+      if not Supports(rtti_descriptor, IObjectBridgePropertyDescriptor, bridgePropertyDescriptor) and
+         not Supports(rtti_descriptor, IObjectBridgeMethodDescriptor, bridgeMethodDescriptor) then
+        reg.AddRttiDescriptor(member_name, rtti_descriptor);
     end;
 
     // The first call on a indexed property should return the property itself.

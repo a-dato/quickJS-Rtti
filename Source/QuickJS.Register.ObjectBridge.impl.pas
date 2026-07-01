@@ -20,14 +20,14 @@ type
     FIsResolving: Boolean; // Recursion guard
     
     procedure InitializeResolvers;
-    function TryGetPropertyDescriptor(const AObject: IRegisteredObject; const PropertyName: string): IPropertyDescriptor;
-    function TryGetMethodDescriptor(const AObject: IRegisteredObject; const MethodName: string): IPropertyDescriptor;
+    function TryGetPropertyDescriptor(const AObject: IRegisteredObject; const Ptr: Pointer; const PropertyName: string): IPropertyDescriptor;
+    function TryGetMethodDescriptor(const AObject: IRegisteredObject; const Ptr: Pointer; const MethodName: string): IPropertyDescriptor;
   public
     constructor Create;
     destructor Destroy; override;
     
     // IObjectBridgeResolver implementation
-    function OnGetMemberByName(const AObject: IRegisteredObject; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean): IPropertyDescriptor;
+    function OnGetMemberByName(const AObject: IRegisteredObject; const Ptr: Pointer; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean): IPropertyDescriptor;
     procedure AddPropertyDescriptor(const Descriptor: IObjectBridgePropertyDescriptor);
     procedure AddMethodDescriptor(const Descriptor: IObjectBridgeMethodDescriptor);
     procedure AddInterfaceMapping(const SourceInterface: PTypeInfo; const TargetInterface: PTypeInfo);
@@ -87,7 +87,7 @@ begin
   FInterfaceMappings := TDictionary<PTypeInfo, TList<PTypeInfo>>.Create;
 end;
 
-function TObjectBridgeResolver.TryGetPropertyDescriptor(const AObject: IRegisteredObject; const PropertyName: string): IPropertyDescriptor;
+function TObjectBridgeResolver.TryGetPropertyDescriptor(const AObject: IRegisteredObject; const Ptr: Pointer; const PropertyName: string): IPropertyDescriptor;
 begin
   Result := nil;
   var lowerPropertyName: string := LowerCase(PropertyName);
@@ -100,7 +100,7 @@ begin
   // Only check CanHandle on descriptors with matching name
   for var descriptor in descriptorList do
   begin
-    if descriptor.CanHandle(AObject) then
+    if descriptor.CanHandle(AObject, Ptr) then
     begin
       Result := descriptor as IPropertyDescriptor;
       Exit;
@@ -108,7 +108,7 @@ begin
   end;
 end;
 
-function TObjectBridgeResolver.TryGetMethodDescriptor(const AObject: IRegisteredObject; const MethodName: string): IPropertyDescriptor;
+function TObjectBridgeResolver.TryGetMethodDescriptor(const AObject: IRegisteredObject; const Ptr: Pointer; const MethodName: string): IPropertyDescriptor;
 begin
   Result := nil;
   var lowerMethodName: string := LowerCase(MethodName);
@@ -121,7 +121,7 @@ begin
   // Only check CanHandle on descriptors with matching name
   for var descriptor in descriptorList do
   begin
-    if descriptor.CanHandle(AObject) then
+    if descriptor.CanHandle(AObject, Ptr) then
     begin
       Result := descriptor as IPropertyDescriptor;
       Exit;
@@ -161,7 +161,7 @@ begin
   descriptorList.Insert(0, Descriptor);
 end;
 
-function TObjectBridgeResolver.OnGetMemberByName(const AObject: IRegisteredObject; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean): IPropertyDescriptor;
+function TObjectBridgeResolver.OnGetMemberByName(const AObject: IRegisteredObject; const Ptr: Pointer; const AName: string; MemberTypes: TMemberTypes; var Handled: Boolean): IPropertyDescriptor;
 begin
   Result := nil;
   Handled := False;
@@ -175,7 +175,7 @@ begin
     // Try properties if requested
     if TMemberType.Property in MemberTypes then
     begin
-      Result := TryGetPropertyDescriptor(AObject, AName);
+      Result := TryGetPropertyDescriptor(AObject, Ptr, AName);
       if Result <> nil then
       begin
         Handled := True;
@@ -186,7 +186,7 @@ begin
     // Try methods if requested
     if TMemberType.Methods in MemberTypes then
     begin
-      Result := TryGetMethodDescriptor(AObject, AName);
+      Result := TryGetMethodDescriptor(AObject, Ptr, AName);
       if Result <> nil then
       begin
         Handled := True;

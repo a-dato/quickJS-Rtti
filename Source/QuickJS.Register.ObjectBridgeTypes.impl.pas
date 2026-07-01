@@ -44,7 +44,7 @@ type
       const Getter: TTypedPropertyGetter<T>; const Setter: TTypedPropertySetter<T> = nil;
       const PropertyTypeInfo: PTypeInfo = nil): IObjectBridgePropertyDescriptor; overload; static;
 
-    function CanHandle(const AObject: IRegisteredObject): Boolean;
+    function CanHandle(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean;
     property PropertyName: string read get_PropertyName;
   end;
 
@@ -76,7 +76,7 @@ type
     class function CreateTypedMethod<T: IInterface>(const MethodName: string;
       const Caller: TTypedMethodCaller<T>): IObjectBridgeMethodDescriptor; overload; static;
 
-    function CanHandle(const AObject: IRegisteredObject): Boolean;
+    function CanHandle(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean;
     property MethodName: string read get_MethodName;
   end;
 
@@ -131,9 +131,9 @@ begin
   // If no setter, property is read-only
 end;
 
-function TObjectBridgePropertyDescriptor.CanHandle(const AObject: IRegisteredObject): Boolean;
+function TObjectBridgePropertyDescriptor.CanHandle(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean;
 begin
-  Result := Assigned(FObjectChecker) and FObjectChecker(AObject);
+  Result := Assigned(FObjectChecker) and FObjectChecker(AObject, Ptr);
 end;
 
 class function TObjectBridgePropertyDescriptor.CreateInterfaceProperty(const PropertyName: string; const TargetInterface: PTypeInfo; const DelphiPropertyName: string): IObjectBridgePropertyDescriptor;
@@ -141,7 +141,7 @@ begin
   Result := TObjectBridgePropertyDescriptor.Create(
     PropertyName,
     // Object checker - check if object type matches target interface
-    function(const AObject: IRegisteredObject): Boolean
+    function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
     begin
       Result := AObject.GetTypeInfo = TargetInterface;
     end,
@@ -160,7 +160,7 @@ begin
   Result := TObjectBridgePropertyDescriptor.Create(
     PropertyName,
     // Object checker - check if object is source interface type
-    function(const AObject: IRegisteredObject): Boolean
+    function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
     begin
       var objectTypeName := LowerCase(string(AObject.GetTypeInfo.Name));
       var sourceInterfaceName := LowerCase(string(SourceInterface.Name));
@@ -181,7 +181,7 @@ begin
   Result := TObjectBridgePropertyDescriptor.Create(
     PropertyName,
     // Object checker - check if object type matches target interface
-    function(const AObject: IRegisteredObject): Boolean
+    function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
     begin
       Result := AObject.GetTypeInfo = TargetInterface;
     end,
@@ -202,8 +202,8 @@ class function TObjectBridgePropertyDescriptor.CreatePatternProperty(const Prope
 begin
   Result := TObjectBridgePropertyDescriptor.Create(
     PropertyName,
-    // Object checker - convert pattern matcher to object checker
-    TObjectChecker(PatternMatcher),
+    // Object checker - use the supplied pattern matcher
+    PatternMatcher,
     // Property getter - simplified version
     function(const Ptr: Pointer): TValue
     begin
@@ -216,7 +216,8 @@ end;
 
 { TObjectBridgeMethodDescriptor }
 
-constructor TObjectBridgeMethodDescriptor.Create(const MethodName: string; const ObjectChecker: TObjectChecker; const MethodCaller: TMethodCaller);
+constructor TObjectBridgeMethodDescriptor.Create(const MethodName: string; const ObjectChecker: TObjectChecker;
+  const MethodCaller: TMethodCaller);
 begin
   // Host type info must be non-nil so callers can inspect Kind. Default to interface.
   inherited Create(TypeInfo(IInterface));
@@ -264,9 +265,9 @@ begin
     Result := JS_UNDEFINED;
 end;
 
-function TObjectBridgeMethodDescriptor.CanHandle(const AObject: IRegisteredObject): Boolean;
+function TObjectBridgeMethodDescriptor.CanHandle(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean;
 begin
-  Result := Assigned(FObjectChecker) and FObjectChecker(AObject);
+  Result := Assigned(FObjectChecker) and FObjectChecker(AObject, Ptr);
 end;
 
 class function TObjectBridgeMethodDescriptor.CreateInterfaceMethod(const MethodName: string; const TargetInterface: PTypeInfo; const DelphiMethodName: string): IObjectBridgeMethodDescriptor;
@@ -274,7 +275,7 @@ begin
   Result := TObjectBridgeMethodDescriptor.Create(
     MethodName,
     // Object checker - check if object type matches target interface
-    function(const AObject: IRegisteredObject): Boolean
+    function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
     begin
       Result := AObject.GetTypeInfo = TargetInterface;
     end,
@@ -293,7 +294,7 @@ begin
   Result := TObjectBridgeMethodDescriptor.Create(
     MethodName,
     // Object checker - check if object is source interface type
-    function(const AObject: IRegisteredObject): Boolean
+    function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
     begin
       var objectTypeName := LowerCase(string(AObject.GetTypeInfo.Name));
       var sourceInterfaceName := LowerCase(string(SourceInterface.Name));
@@ -319,9 +320,10 @@ begin
   Result := TObjectBridgePropertyDescriptor.Create(
     PropertyName,
     // Object checker - automatically check if object matches the interface type
-    function(const AObject: IRegisteredObject): Boolean
+    function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
     begin
-      Result := AObject.GetTypeInfo = InterfaceType;
+      Result := (AObject.GetTypeInfo = InterfaceType) and
+                (Ptr <> nil) and Supports(IInterface(Ptr), InterfaceType.TypeData.Guid);
     end,
     // Property getter - automatically handle nil check and casting
     function(const Ptr: Pointer): TValue
@@ -357,9 +359,10 @@ begin
   Result := TObjectBridgeMethodDescriptor.Create(
     MethodName,
     // Object checker - automatically check if object matches the interface type
-    function(const AObject: IRegisteredObject): Boolean
+    function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
     begin
-      Result := AObject.GetTypeInfo = InterfaceType;
+      Result := (AObject.GetTypeInfo = InterfaceType) and
+                (Ptr <> nil) and Supports(IInterface(Ptr), InterfaceType.TypeData.Guid);
     end,
     // Method caller - automatically handle nil check and casting
     function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue
@@ -395,9 +398,10 @@ begin
   Result := TObjectBridgePropertyDescriptor.Create(
     PropertyName,
     // Object checker - automatically check if object matches the interface type T
-    function(const AObject: IRegisteredObject): Boolean
+    function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
     begin
-      Result := AObject.GetTypeInfo = interfaceType;
+      Result := (AObject.GetTypeInfo = interfaceType) and
+                (Ptr <> nil) and Supports(IInterface(Ptr), interfaceType.TypeData.Guid);
     end,
     // Property getter - automatically handle nil check and casting to T
     function(const Ptr: Pointer): TValue
@@ -444,9 +448,10 @@ begin
   Result := TObjectBridgeMethodDescriptor.Create(
     MethodName,
     // Object checker - automatically check if object matches the interface type T
-    function(const AObject: IRegisteredObject): Boolean
+    function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
     begin
-      Result := AObject.GetTypeInfo = interfaceType;
+      Result := (AObject.GetTypeInfo = interfaceType) and
+                (Ptr <> nil) and Supports(IInterface(Ptr), interfaceType.TypeData.Guid);
     end,
     // Method caller - automatically handle nil check and casting to T
     function(ctx: JSContext; Ptr: Pointer; argc: Integer; argv: PJSValueConst): JSValue

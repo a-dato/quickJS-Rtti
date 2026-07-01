@@ -179,7 +179,7 @@ begin
     TObjectBridgePropertyDescriptor.Create(
       'IsDelphiObject',
       // Object checker: handles any registered object
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := AObject <> nil;
       end,
@@ -202,7 +202,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'GetObjectInfo',
       // Object checker: handles any registered object
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := AObject <> nil;
       end,
@@ -371,7 +371,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'forEach',
       // Object checker: supports enumeration?
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := (AObject <> nil) and AObject.ObjectSupportsEnumeration;
       end,
@@ -422,7 +422,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'slice',
       // Object checker: supports indexing (lists)
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := (AObject <> nil) and AObject.ObjectSupportsIndexing;
       end,
@@ -487,7 +487,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'map',
       // Object checker: supports enumeration?
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := (AObject <> nil) and AObject.ObjectSupportsEnumeration;
       end,
@@ -548,7 +548,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'sort',
       // Object checker: supports indexing (lists)
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := (AObject <> nil) and AObject.ObjectSupportsIndexing;
       end,
@@ -632,7 +632,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'some',
       // Object checker: supports enumeration?
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := (AObject <> nil) and AObject.ObjectSupportsEnumeration;
       end,
@@ -691,7 +691,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'every',
       // Object checker: supports enumeration?
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := (AObject <> nil) and AObject.ObjectSupportsEnumeration;
       end,
@@ -750,7 +750,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'find',
       // Object checker: supports enumeration?
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := (AObject <> nil) and AObject.ObjectSupportsEnumeration;
       end,
@@ -809,7 +809,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'findIndex',
       // Object checker: supports enumeration?
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := (AObject <> nil) and AObject.ObjectSupportsEnumeration;
       end,
@@ -868,7 +868,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'filter',
       // Object checker: supports enumeration?
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := (AObject <> nil) and AObject.ObjectSupportsEnumeration;
       end,
@@ -935,7 +935,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'includes',
       // Object checker: supports enumeration?
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := (AObject <> nil) and AObject.ObjectSupportsEnumeration;
       end,
@@ -989,7 +989,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'indexOf',
       // Object checker: supports enumeration?
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := (AObject <> nil) and AObject.ObjectSupportsEnumeration;
       end,
@@ -1047,7 +1047,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'reduce',
       // Object checker: supports enumeration?
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := (AObject <> nil) and AObject.ObjectSupportsEnumeration;
       end,
@@ -1129,7 +1129,7 @@ begin
     TObjectBridgeMethodDescriptor.Create(
       'concat',
       // Object checker: supports enumeration?
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := (AObject <> nil) and AObject.ObjectSupportsEnumeration;
       end,
