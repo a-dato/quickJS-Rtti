@@ -52,7 +52,7 @@ begin
   ObjectBridgeResolver.AddPropertyDescriptor(
     TObjectBridgePropertyDescriptor.Create('length',
       // Object checker - check if object is an IList<T>
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         var interfaceName := LowerCase(string(AObject.GetTypeInfo.Name));
         Result := interfaceName.StartsWith('ilist<');
@@ -82,7 +82,7 @@ begin
   ObjectBridgeResolver.AddPropertyDescriptor(
     TObjectBridgePropertyDescriptor.Create('customProperty',
       // Object checker - check if object is ITestObject
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := AObject.GetTypeInfo = TypeInfo(ITestObject);
       end,
@@ -96,7 +96,7 @@ begin
   ObjectBridgeResolver.AddPropertyDescriptor(
     TObjectBridgePropertyDescriptor.Create('dynamicCount',
       // Object checker - check if object is ITestObject
-      function(const AObject: IRegisteredObject): Boolean
+      function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
       begin
         Result := AObject.GetTypeInfo = TypeInfo(ITestObject);
       end,
@@ -141,7 +141,7 @@ var
     ObjectBridgeResolver.AddPropertyDescriptor(
       TObjectBridgePropertyDescriptor.Create(localJsName,
         // Object checker - apply to registered objects of the source interface type (by GUID)
-        function(const AObject: IRegisteredObject): Boolean
+        function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
         begin
           Result := (AObject <> nil) and IsEqualGUID(AObject.GetTypeInfo.TypeData.GUID, SourceInterface.TypeData.GUID);
         end,
@@ -173,7 +173,7 @@ var
     ObjectBridgeResolver.AddMethodDescriptor(
       TObjectBridgeMethodDescriptor.Create(localJsName,
         // Object checker - apply to registered objects of the source interface type (by GUID)
-        function(const AObject: IRegisteredObject): Boolean
+        function(const AObject: IRegisteredObject; const Ptr: Pointer): Boolean
         begin
           Result := (AObject <> nil) and IsEqualGUID(AObject.GetTypeInfo.TypeData.GUID, SourceInterface.TypeData.GUID);
         end,
