@@ -235,6 +235,7 @@ export class CustomerType extends ITypeDescriptor_ {
 				},
 				Marshaller: {
 					Marshal: (ctx, item) => {
+						console.log("Marshalling: " + item);
 						if(item.ID != undefined) {
 							let json = {
 								ID: `${item.ID}`,
@@ -245,7 +246,7 @@ export class CustomerType extends ITypeDescriptor_ {
 						}
 					},
 					Unmarshal: (ctx, item) => {
-						console.log(item);
+						console.log("Unmarshalling: " + item);
 						if(typeof item === 'string') {
 							var js = JSON.parse(item);
 							if(js.ID != undefined)

@@ -22,6 +22,9 @@ type
     _TypeRegisteredHandlers: IList<TTypeRegisteredEvent>;
 
     function get_Types: List<&Type>;
+    {$IFDEF APP_PLATFORM_MD}
+    function get_TypeDescriptors: List<ITypeDescriptor>;
+    {$ENDIF}
 
     function  AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
     function  WrapProperty(const AProperty: _PropertyInfo) : _PropertyInfo;
@@ -108,6 +111,13 @@ begin
   _Types.TryGetValue(AType, Result);
   {$ENDIF}
 end;
+
+{$IFDEF APP_PLATFORM_MD}
+function TAppConfig.get_TypeDescriptors: List<ITypeDescriptor>;
+begin
+  Result := CList<ITypeDescriptor>.Create(_Types.Values);
+end;
+{$ENDIF}
 
 function TAppConfig.get_Types: List<&Type>;
 begin

@@ -16,6 +16,9 @@ type
   IAppConfig = interface(IBaseInterface)
     ['{A3009BCA-0053-40AD-9C50-45EDB0793C48}']
     function get_Types: List<&Type>;
+    {$IFDEF APP_PLATFORM_MD}
+    function get_TypeDescriptors: List<ITypeDescriptor>;
+    {$ENDIF}
 
     function AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
     function WrapProperty(const AProperty: _PropertyInfo) : _PropertyInfo;
@@ -40,6 +43,9 @@ type
     procedure RemoveOnTypeRegistered(const Handler: TTypeRegisteredEvent);
 
     property  Types: List<&Type> read get_Types;
+    {$IFDEF APP_PLATFORM_MD}
+    property  TypeDescriptors: List<ITypeDescriptor> read get_TypeDescriptors;
+    {$ENDIF}
   end;
 
 implementation

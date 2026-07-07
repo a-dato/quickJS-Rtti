@@ -13,10 +13,15 @@ uses
   App.Storage.intf,
   ADato.ObjectModel.List.intf,
   App.Content.impl,
-  Task.intf;
+  Task.intf,
+  BulkUpdate.intf;
 
 type
-  TProject = class(TBaseInterfacedObject, IProject, IExtendableObject)
+  TProject = class(TBaseInterfacedObject,
+    IProject,
+    IExtendableObject,
+    IBulkUpdate)
+//    , IJSExtendableObject)
   protected
     class var _typeDescriptor: ITypeDescriptor;
     class function get_Type: &Type; static;
@@ -48,6 +53,10 @@ type
     function  GetHashCode: Integer; override;
     function  Equals(const Other: IProject): Boolean; overload; virtual;
     function  Equals(const other: CObject): Boolean; overload; override;
+
+    // IBulkUpdate
+    procedure BeginBulkUpdate;
+    procedure EndBulkUpdate;
 
     class property &Type: &Type read get_Type;
     class property TypeDescriptor: ITypeDescriptor read get_TypeDescriptor;
@@ -82,6 +91,11 @@ begin
   Result := CObject.Equals(_ID, Other.ID)
 end;
 
+procedure TProject.EndBulkUpdate;
+begin
+
+end;
+
 function TProject.Equals(const other: CObject): Boolean;
 begin
   Result := Equals(Other.AsType<IProject>);
@@ -104,7 +118,11 @@ end;
 class function TProject.get_TypeDescriptor: ITypeDescriptor;
 begin
   if _typeDescriptor = nil then
+  begin
     _typeDescriptor := ProjectType.Create(&Type.From<IProject>, 'Project', 'Projects');
+    _typeDescriptor.AddSupportedInterface(&Type.From<IBulkUpdate>);
+    _typeDescriptor.AddSupportedInterface(&Type.From<IExtendableObject>);
+  end;
 
   Result := _typeDescriptor;
 end;
@@ -118,6 +136,11 @@ begin
     Result := CObject.From<IList>(CList<CObject>.Create);
     _PropertyValue[AProperty] := Result;
   end;
+end;
+
+procedure TProject.BeginBulkUpdate;
+begin
+
 end;
 
 constructor TProject.Create;

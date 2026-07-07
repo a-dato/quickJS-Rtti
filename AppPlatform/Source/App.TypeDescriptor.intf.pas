@@ -7,7 +7,8 @@ uses
   System.SysUtils,
   System.Collections.Generic,
   App.PropertyDescriptor.intf,
-  App.Content.intf;
+  App.Content.intf,
+  App.TypeMetadata;
 
 type
 //  {$M+}
@@ -30,9 +31,13 @@ type
     function  get_Provider: IContentProvider;
     procedure set_Provider(const Value: IContentProvider);
     function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor;
+    {$IFDEF APP_PLATFORM_MD}
+    function  get_SupportedInterfaces: List<ISupportedInterfaceMetadata>;
+    {$ENDIF}
 
     {$IFDEF APP_PLATFORM_MD}
     function  GetType: &Type;
+    procedure AddSupportedInterface(const AType: &Type);
     {$ENDIF}
 
     function  AddPropertyDescriptor(const Name: string; const Value: IPropertyDescriptor) : Boolean;
@@ -43,6 +48,9 @@ type
     property Binder: IContentBinder read get_Binder write set_Binder;
     property Provider: IContentProvider read get_Provider write set_Provider;
     property PropertyDescriptor[const Name: string]: IPropertyDescriptor read get_PropertyDescriptor;
+    {$IFDEF APP_PLATFORM_MD}
+    property SupportedInterfaces: List<ISupportedInterfaceMetadata> read get_SupportedInterfaces;
+    {$ENDIF}
   end;
 
 implementation
