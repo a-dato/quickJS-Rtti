@@ -14,13 +14,15 @@ uses
   ADato.ObjectModel.List.intf,
   App.Content.impl,
   Task.intf,
-  BulkUpdate.intf;
+  BulkUpdate.intf,
+  ProjectLoader.intf;
 
 type
   TProject = class(TBaseInterfacedObject,
     IProject,
     IExtendableObject,
-    IBulkUpdate)
+    IBulkUpdate,
+    IProjectLoader)
 //    , IJSExtendableObject)
   protected
     class var _typeDescriptor: ITypeDescriptor;
@@ -57,6 +59,11 @@ type
     // IBulkUpdate
     procedure BeginBulkUpdate;
     procedure EndBulkUpdate;
+
+    // IProjectLoader
+    function  IsLoaded: Boolean;
+    procedure ForceOpen;
+    procedure ForceClose;
 
     class property &Type: &Type read get_Type;
     class property TypeDescriptor: ITypeDescriptor read get_TypeDescriptor;
@@ -101,6 +108,16 @@ begin
   Result := Equals(Other.AsType<IProject>);
 end;
 
+procedure TProject.ForceClose;
+begin
+  ;
+end;
+
+procedure TProject.ForceOpen;
+begin
+  ;
+end;
+
 function TProject.get_Tasks: List<ITask>;
 begin
   if _tasks = nil then
@@ -121,10 +138,15 @@ begin
   begin
     _typeDescriptor := ProjectType.Create(&Type.From<IProject>, 'Project', 'Projects');
     _typeDescriptor.AddSupportedInterface(&Type.From<IBulkUpdate>);
-    _typeDescriptor.AddSupportedInterface(&Type.From<IExtendableObject>);
+    _typeDescriptor.AddSupportedInterface(&Type.From<IProjectLoader>);
   end;
 
   Result := _typeDescriptor;
+end;
+
+function TProject.IsLoaded: Boolean;
+begin
+
 end;
 
 function TProject.get_PropertyValue(const AProperty: _PropertyInfo): CObject;

@@ -208,7 +208,7 @@ object Form1: TForm1
     Size.Width = 1167.000000000000000000
     Size.Height = 388.000000000000000000
     Size.PlatformDefault = False
-    TabIndex = 4
+    TabIndex = 3
     TabOrder = 14
     TabPosition = PlatformDefault
     Sizes = (
@@ -341,7 +341,7 @@ object Form1: TForm1
       CustomIcon = <
         item
         end>
-      IsSelected = False
+      IsSelected = True
       Size.Width = 61.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
@@ -354,12 +354,14 @@ object Form1: TForm1
         Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
         DataDetectorTypes = []
         Lines.Strings = (
-          'import { Ingestor } from '#39'../../js/IngestorDevelopment.js'#39';'
-          'const ingestor = new Ingestor();'
+          
+            'const { TypeMetadataProvider } = await import('#39'D:/adato_quickjs/' +
+            'AppPlatform/js/TypeMetadataProvider.js'#39');'
+          'const typeMetadataProvider = new TypeMetadataProvider();'
           'console.log('#39'Types:'#39');'
-          'console.log(ingestor.GetAvailableTypesAsJSON());'
+          'console.log(typeMetadataProvider.GetAvailableTypesAsJSON());'
           'console.log('#39'Type descriptors:'#39');'
-          'console.log(ingestor.TypeDescriptorsAsJSON());')
+          'console.log(typeMetadataProvider.TypeDescriptorsAsJSON());')
         StyledSettings = [Size, Style, FontColor]
         TextSettings.Font.Family = 'Fira Code'
         Align = Client
@@ -375,7 +377,7 @@ object Form1: TForm1
       CustomIcon = <
         item
         end>
-      IsSelected = True
+      IsSelected = False
       Size.Width = 122.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False

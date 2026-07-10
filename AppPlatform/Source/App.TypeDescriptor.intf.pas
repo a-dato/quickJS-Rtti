@@ -32,6 +32,7 @@ type
     procedure set_Provider(const Value: IContentProvider);
     function  get_PropertyDescriptor(const Name: string) : IPropertyDescriptor;
     {$IFDEF APP_PLATFORM_MD}
+    function  get_TypeInterface: ISupportedInterfaceMetadata;
     function  get_SupportedInterfaces: List<ISupportedInterfaceMetadata>;
     {$ENDIF}
 
@@ -49,6 +50,7 @@ type
     property Provider: IContentProvider read get_Provider write set_Provider;
     property PropertyDescriptor[const Name: string]: IPropertyDescriptor read get_PropertyDescriptor;
     {$IFDEF APP_PLATFORM_MD}
+    property TypeInterface: ISupportedInterfaceMetadata read get_TypeInterface;
     property SupportedInterfaces: List<ISupportedInterfaceMetadata> read get_SupportedInterfaces;
     {$ENDIF}
   end;

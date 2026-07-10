@@ -31,6 +31,7 @@ type
     _provider: IContentProvider;
     _PropertyDescriptor: Dictionary<string, IPropertyDescriptor>;
     {$IFDEF APP_PLATFORM_MD}
+    _TypeInterface: ISupportedInterfaceMetadata;
     _SupportedInterfaces: List<ISupportedInterfaceMetadata>;
     {$ENDIF}
 
@@ -51,6 +52,7 @@ type
     function  get_Provider: IContentProvider; virtual;
     procedure set_Provider(const Value: IContentProvider); virtual;
     {$IFDEF APP_PLATFORM_MD}
+    function  get_TypeInterface: ISupportedInterfaceMetadata;
     function  get_SupportedInterfaces: List<ISupportedInterfaceMetadata>;
     {$ENDIF}
 
@@ -110,6 +112,14 @@ begin
 end;
 
 {$IFDEF APP_PLATFORM_MD}
+function TTypeDescriptor.get_TypeInterface: ISupportedInterfaceMetadata;
+begin
+  if _TypeInterface = nil then
+    _TypeInterface := TTypeMetadata.SupportedInterface(_type);
+
+  Result := _TypeInterface;
+end;
+
 function TTypeDescriptor.get_SupportedInterfaces: List<ISupportedInterfaceMetadata>;
 begin
   if _SupportedInterfaces = nil then
