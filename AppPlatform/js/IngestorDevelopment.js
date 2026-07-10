@@ -46,7 +46,7 @@ export class Ingestor {
             const descriptor = app.Config.TypeDescriptor(type);
 
             result.push({
-                Name: type.name ?? type.Name,
+                Name: type.Name ?? type.name,
                 Type: type,
                 Descriptor: descriptor,
                 DescriptorName: descriptor?.Name ?? descriptor?.TypeName ?? descriptor?.ClassName,

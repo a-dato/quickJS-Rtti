@@ -22,35 +22,34 @@ export default {
         CCPMPriority: 'Critical Chain Project Management priority of the project.',
         ProjectResourceAvailability: 'Per-resource-class availability overrides for this project. Missing entries use the default availability rules.',
         ScheduleStatistics: 'Calculated schedule statistics. Available only for released projects.',
-        Cards: 'Cards associated with this project, used to represent and organize project-related work items.',
-        ResourceRequirements: "Resource requirements across the project's tasks. Each requirement describes the resource, skill, quantity, duration, or scheduling behavior needed to perform a task.",
-        Dependencies: "Relationships between the project's tasks that constrain their scheduling. Each dependency identifies a predecessor, a successor, a relation type such as finish-to-start, and an optional lag."
+        Cards: 'All the cards that belong to this project.',
+        ResourceRequirements: 'All the resource requirements that belong to this project.',
+        Dependencies: 'All the dependencies that belong to this project.'
+    },
+    ProjectResourceAvailability: {
+        ResourceClass: 'Skill, team, virtual skill, or global skill to which this project availability override applies.',
+        Availability: 'Explicit project availability limit. A value of -1 means that default availability should be used.',
+        Calendar: "Calendar override for this resource class. A null value uses the resource class's default calendar.",
+        SelectedResources: 'Explicit resources allowed for this project and resource class. A null or empty list lets the scheduler choose from all capable resources.',
+        PropertyClassProperties: 'Property constraints and default property values used when selecting capable resources. An empty list applies no additional property filter.'
+    },
+    PropertyValueWithOperator: {
+        PropertyClass: 'Property class being constrained when selecting capable resources.',
+        Value: 'Required or default value for the property class.',
+        PropertyOperator: 'Comparison operator used with the property value when filtering capable resources.'
+    },
+    ScheduleStatistics: {
+        CalculatedFinish: 'Calculated project completion date based on the current schedule.',
+        CurrentLongestChainDuration: 'Current duration of the longest chain of dependent tasks.',
+        DueDatePerformance: 'Time difference between scheduled completion and the project due date.',
+        LongestChainComplete: 'Completed proportion of the critical chain, expressed from 0.0 to 1.0.',
+        LongestChainDuration: 'Total duration of the longest chain of dependent tasks.',
+        ProjectDuration: 'Total scheduled duration of the project.',
+        ScheduleDirection: 'Direction in which the project is scheduled: forward or backward.',
+        TotalWork: 'Total work duration across all project tasks.',
+        LateFinish: 'Latest allowable project finish date.',
+        UnassignedWorkTotal: 'Total work duration that is not assigned to a resource.',
+        UnassignedWorkRemaining: 'Remaining work duration that is not assigned to a resource.',
+        WorkRemaining: 'Total remaining work duration for the project.'
     }
-    // ,
-    // ProjectResourceAvailability: {
-    //     ResourceClass: 'Skill, team, virtual skill, or global skill to which this project availability override applies.',
-    //     Availability: 'Explicit project availability limit. A value of -1 means that default availability should be used.',
-    //     Calendar: "Calendar override for this resource class. A null value uses the resource class's default calendar.",
-    //     SelectedResources: 'Explicit resources allowed for this project and resource class. A null or empty list lets the scheduler choose from all capable resources.',
-    //     PropertyClassProperties: 'Property constraints and default property values used when selecting capable resources. An empty list applies no additional property filter.'
-    // },
-    // PropertyValueWithOperator: {
-    //     PropertyClass: 'Property class being constrained when selecting capable resources.',
-    //     Value: 'Required or default value for the property class.',
-    //     PropertyOperator: 'Comparison operator used with the property value when filtering capable resources.'
-    // },
-    // ScheduleStatistics: {
-    //     CalculatedFinish: 'Calculated project completion date based on the current schedule.',
-    //     CurrentLongestChainDuration: 'Current duration of the longest chain of dependent tasks.',
-    //     DueDatePerformance: 'Time difference between scheduled completion and the project due date.',
-    //     LongestChainComplete: 'Completed proportion of the critical chain, expressed from 0.0 to 1.0.',
-    //     LongestChainDuration: 'Total duration of the longest chain of dependent tasks.',
-    //     ProjectDuration: 'Total scheduled duration of the project.',
-    //     ScheduleDirection: 'Direction in which the project is scheduled: forward or backward.',
-    //     TotalWork: 'Total work duration across all project tasks.',
-    //     LateFinish: 'Latest allowable project finish date.',
-    //     UnassignedWorkTotal: 'Total work duration that is not assigned to a resource.',
-    //     UnassignedWorkRemaining: 'Remaining work duration that is not assigned to a resource.',
-    //     WorkRemaining: 'Total remaining work duration for the project.'
-    // }
 };
