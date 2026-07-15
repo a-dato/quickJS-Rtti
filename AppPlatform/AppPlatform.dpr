@@ -3,6 +3,11 @@ program AppPlatform;
 
 
 uses
+  madExcept,
+  madLinkDisAsm,
+  madListHardware,
+  madListProcesses,
+  madListModules,
   System.StartUpCopy,
   FMX.Forms,
   AppMain in 'AppMain.pas' {Form1},
