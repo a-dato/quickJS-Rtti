@@ -1,8 +1,26 @@
 import PROJECT_INFO from '../ProjectInfo.js';
+import CARD_INFO from '../CardInfo.js';
+import RESOURCE_CLASS_INFO from '../ResourceClassInfo.js';
+import RESOURCE_INFO from '../ResourceInfo.js';
+import TIME_TRACK_DETAIL_INFO from '../TimeTrackDetailInfo.js';
+import TASK_INFO from '../TaskInfo.js';
+
+const TYPE_INFO = {
+    ...PROJECT_INFO,
+    ...CARD_INFO,
+    ...RESOURCE_CLASS_INFO,
+    ...RESOURCE_INFO,
+    ...TIME_TRACK_DETAIL_INFO,
+    ...TASK_INFO
+};
 
 export class TypeMetadataProvider {
+    TypeInfo() {
+        return TYPE_INFO;
+    }
+
     ProjectInfo() {
-        return PROJECT_INFO;
+        return this.TypeInfo();
     }
 
     Types() {
@@ -74,6 +92,7 @@ export class TypeMetadataProvider {
                 StorageName: descriptor.StorageName,
                 Type: type,
                 Descriptor: descriptor,
+                Constructor: this.GetConstructor(type),
                 Interface: this.GetInterface(descriptor.TypeInterface),
                 SupportedInterfaces: this.GetSupportedInterfaces(descriptor),
                 Properties: properties
@@ -150,8 +169,34 @@ export class TypeMetadataProvider {
         }
     }
 
+    GetConstructor(type) {
+        if(type == null || type === 0)
+            return null;
+
+        const factory = app.Factory;
+        if(factory == null || typeof factory.GetConstructorParameterCount !== 'function')
+            return null;
+
+        try {
+            const parameterCount = factory.GetConstructorParameterCount(type);
+            if(parameterCount < 0)
+                return null;
+
+            const parameters = [];
+            for(let i = 0; i < parameterCount; i++)
+                parameters.push({ Name: `Param${i}`, Type: 'CObject' });
+
+            return {
+                ParameterCount: parameterCount,
+                Parameters: parameters
+            };
+        } catch {
+            return null;
+        }
+    }
+
     GetPropertyDescription(type, propertyName) {
-        const projectInfo = this.ProjectInfo();
+        const typeInfo = this.TypeInfo();
         const names = [
             this.GetTypeName(type),
             type?.ClassName,
@@ -167,7 +212,7 @@ export class TypeMetadataProvider {
             const normalizedName = String(name).startsWith('I') && String(name).length > 1
                 ? String(name).substring(1)
                 : String(name);
-            const descriptions = projectInfo[String(name)] ?? projectInfo[normalizedName];
+            const descriptions = typeInfo[String(name)] ?? typeInfo[normalizedName];
             const description = descriptions?.[propertyName];
             if(description != null)
                 return description;
@@ -276,6 +321,7 @@ export class TypeMetadataProvider {
                 FullName: descriptor.FullName ?? null,
                 StorageName: descriptor.StorageName ?? null,
                 TypeName: descriptor.Type?.Name ?? descriptor.Type?.name ?? null,
+                Constructor: descriptor.Constructor ?? undefined,
                 Interface: descriptor.Interface == null
                     ? null
                     : {

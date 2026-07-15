@@ -37,6 +37,10 @@ type
     procedure RegisterType_4(const AType: &Type; const Func: TCreatorFunc_4);
     procedure RegisterType_5(const AType: &Type; const Func: TCreatorFunc_5);
 
+    {$IFDEF APP_PLATFORM_MD}
+    function GetConstructorParameterCount(const AType: &Type): Integer;
+    {$ENDIF}
+
     function  CreateInstance(const AType: &Type) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject) : CObject; overload;

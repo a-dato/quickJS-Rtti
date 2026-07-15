@@ -28,6 +28,10 @@ type
     procedure RegisterType_4(const AType: &Type; const Func: TCreatorFunc_4);
     procedure RegisterType_5(const AType: &Type; const Func: TCreatorFunc_5);
 
+    {$IFDEF APP_PLATFORM_MD}
+    function GetConstructorParameterCount(const AType: &Type): Integer;
+    {$ENDIF}
+
     function  CreateInstance(const AType: &Type) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject) : CObject; overload;
     function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject) : CObject; overload;
@@ -131,6 +135,30 @@ procedure TAppFactory.RegisterType_5(const AType: &Type; const Func: TCreatorFun
 begin
   _dict[AType] := TValue.From<TCreatorFunc_5>(Func);
 end;
+
+{$IFDEF APP_PLATFORM_MD}
+function TAppFactory.GetConstructorParameterCount(const AType: &Type): Integer;
+begin
+  var constructorValue: TValue;
+  if not TryGetConstructor(AType, constructorValue) then
+    Exit(-1);
+
+  if constructorValue.IsType<TCreatorFunc_0> then
+    Exit(0);
+  if constructorValue.IsType<TCreatorFunc_1> then
+    Exit(1);
+  if constructorValue.IsType<TCreatorFunc_2> then
+    Exit(2);
+  if constructorValue.IsType<TCreatorFunc_3> then
+    Exit(3);
+  if constructorValue.IsType<TCreatorFunc_4> then
+    Exit(4);
+  if constructorValue.IsType<TCreatorFunc_5> then
+    Exit(5);
+
+  Result := -1;
+end;
+{$ENDIF}
 
 function TAppFactory.CreateInstance(const AType: &Type): CObject;
 begin
