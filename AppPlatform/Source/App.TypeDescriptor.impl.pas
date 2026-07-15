@@ -7,7 +7,8 @@ uses
   System.Collections.Generic,
   App.Content.intf,
   App.TypeDescriptor.intf,
-  App.PropertyDescriptor.intf;
+  App.PropertyDescriptor.intf,
+  App.TypeMetadata;
 
 type
 //  TPropertyDescriptors = class(TBaseInterfacedObject, IPropertyDescriptors)
@@ -29,8 +30,17 @@ type
     _binder: IContentBinder;
     _provider: IContentProvider;
     _PropertyDescriptor: Dictionary<string, IPropertyDescriptor>;
+    {$IFDEF APP_PLATFORM_MD}
+    _TypeInterface: ISupportedInterfaceMetadata;
+    _SupportedInterfaces: List<ISupportedInterfaceMetadata>;
+    {$ENDIF}
 
+    {$IFDEF APP_PLATFORM_MD}
     function  GetType: &Type; override;
+
+    procedure AddSupportedInterface(const AType: &Type);
+    {$ENDIF}
+
     function  AddPropertyDescriptor(const Name: string; const Value: IPropertyDescriptor) : Boolean; virtual;
 
     function  get_ClassName: CString;
@@ -41,6 +51,10 @@ type
     procedure set_Binder(const Value: IContentBinder); virtual;
     function  get_Provider: IContentProvider; virtual;
     procedure set_Provider(const Value: IContentProvider); virtual;
+    {$IFDEF APP_PLATFORM_MD}
+    function  get_TypeInterface: ISupportedInterfaceMetadata;
+    function  get_SupportedInterfaces: List<ISupportedInterfaceMetadata>;
+    {$ENDIF}
 
   public
     constructor Create(const AType: &Type; const ClassName: CString; const StorageName: CString);
@@ -60,10 +74,21 @@ begin
   _PropertyDescriptor := CDictionary<string, IPropertyDescriptor>.Create;
 end;
 
+{$IFDEF APP_PLATFORM_MD}
 function TTypeDescriptor.GetType: &Type;
 begin
   Result := _type;
 end;
+
+procedure TTypeDescriptor.AddSupportedInterface(const AType: &Type);
+begin
+  for var supportedInterface in get_SupportedInterfaces do
+    if CObject.Equals(supportedInterface.InterfaceType, AType) then
+      Exit;
+
+  get_SupportedInterfaces.Add(TTypeMetadata.SupportedInterface(AType));
+end;
+{$ENDIF}
 
 function TTypeDescriptor.AddPropertyDescriptor(const Name: string; const Value: IPropertyDescriptor): Boolean;
 begin
@@ -85,6 +110,24 @@ function TTypeDescriptor.get_FullName: CString;
 begin
   Result := get_ClassName;
 end;
+
+{$IFDEF APP_PLATFORM_MD}
+function TTypeDescriptor.get_TypeInterface: ISupportedInterfaceMetadata;
+begin
+  if _TypeInterface = nil then
+    _TypeInterface := TTypeMetadata.SupportedInterface(_type);
+
+  Result := _TypeInterface;
+end;
+
+function TTypeDescriptor.get_SupportedInterfaces: List<ISupportedInterfaceMetadata>;
+begin
+  if _SupportedInterfaces = nil then
+    _SupportedInterfaces := CList<ISupportedInterfaceMetadata>.Create;
+
+  Result := _SupportedInterfaces;
+end;
+{$ENDIF}
 
 function TTypeDescriptor.get_PropertyDescriptor(const Name: string): IPropertyDescriptor;
 begin

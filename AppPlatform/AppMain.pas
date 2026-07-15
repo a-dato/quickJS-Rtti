@@ -52,6 +52,9 @@ type
     mmPolarion: TMemo;
     tsPersons: TTabItem;
     Memo2: TMemo;
+    Integrations: TButton;
+    tsCustomerEdit: TTabItem;
+    mmCustomersWeb: TMemo;
     procedure acExecuteExecute(Sender: TObject);
     procedure btnProjectWindowClick(Sender: TObject);
     procedure btnExecResultClick(Sender: TObject);
@@ -62,6 +65,7 @@ type
     procedure Button6Click(Sender: TObject);
     procedure Button7Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure IntegrationsClick(Sender: TObject);
     procedure TestFunc2Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
     procedure TestFuncClick(Sender: TObject);
@@ -210,7 +214,8 @@ uses
   QuickJS.VirtualMethod.impl, App.Storage.intf, App.Storage.impl,
   App.Config.intf, App.Windows.impl, App.Component.intf,
   ProjectSelection.frame, Task.impl, Task.intf,
-  Person.frame;
+  Person.frame,
+  Integrations.frame;
 
 {$R *.fmx}
 
@@ -481,8 +486,33 @@ begin
   end);
 
   _app.Config.RegisterWindow('Persons', function(const Window: IWindow) : IWindowFrame begin
+    var Frame := TPersonFrame.Create(Window.Control as TComponent);
+    Frame.JavaScriptEvaluator := procedure(const JavaScriptCode: string)
+    begin
+      _context.eval(AnsiString(JavaScriptCode), '<person-frame>');
+    end;
+
+    Result := TWindowFrame.Create(Window, Frame);
+  end);
+
+  _app.Config.RegisterWindow('Integrations', function(const Window: IWindow) : IWindowFrame begin
     Result := TWindowFrame.Create(Window, TPersonFrame.Create(Window.Control as TComponent));
   end);
+
+//  _app.Config.RegisterWindow('Integrations', function(const Window: IWindow) : IWindowFrame begin
+//    var Frame := TIntegrationsframe.Create(Window.Control as TComponent);
+//    Frame.JavaScriptEvaluator := function(const JavaScriptCode: string): string
+//    begin
+//      Initialize;
+//
+//      var ResultObject := _context.eval_with_result(AnsiString(JavaScriptCode), '<integrations>');
+//      if ResultObject <> nil then
+//        Result := ResultObject.ToString else
+//        Result := '';
+//    end;
+//
+//    Result := TWindowFrame.Create(Window, Frame);
+//  end);
 
   // TProject.TypeDescriptor.Builder := TFrameBuilder.Create(TProjectFrame);
 
@@ -587,6 +617,13 @@ procedure TForm1.FormCreate(Sender: TObject);
 begin
   InitializeAppEnvironment;
   Initialize;
+end;
+
+procedure TForm1.IntegrationsClick(Sender: TObject);
+begin
+  _app.Environment.CreateWindow(&Type.From<IWindow>, _app.Environment.MainWindow)
+    .CreateFrame('Integrations')
+      .Show(nil);
 end;
 
 procedure TForm1.LogCallBack(S: string);

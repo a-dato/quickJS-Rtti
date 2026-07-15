@@ -3,73 +3,95 @@ unit Person.frame;
 interface
 
 uses
-  System.SysUtils, System.Types, System.UITypes, System.Classes, System.Variants, 
-  System.JSON,
-  FMX.Types, FMX.Graphics, FMX.Controls, FMX.Forms, FMX.Dialogs, FMX.StdCtrls,
-  FMX.Controls.Presentation, FMX.Objects, FMX.Layouts, FMX.ScrollControl.Impl,
-  FMX.ScrollControl.WithRows.Impl, FMX.ScrollControl.WithCells.Impl,
-  FMX.ScrollControl.WithEditableCells.Impl, FMX.ScrollControl.DataControl.Impl,
+  System.SysUtils,
+  System.Types,
+  System.UITypes,
+  System.Classes,
+  System.Variants,
+  FMX.Types,
+  FMX.Graphics,
+  FMX.Controls,
+  FMX.Forms,
+  FMX.Dialogs,
+  FMX.StdCtrls,
+  FMX.Controls.Presentation,
+  FMX.Layouts,
   FMX.WebBrowser,
-  QuickJS.Register.intf,
-  QuickJS.Register.dn4d.impl,
-  SG.ScriptGate,
-  App.Storage.intf,
-  System_;
+  SG.ScriptGate, System.JSON,
+  System.Generics.Collections;
 
 type
+  TPersonJavaScriptEvaluator = reference to procedure(const JavaScriptCode: string);
+
   TPersonFrame = class(TFrame)
     Layout1: TLayout;
     WebBrowser1: TWebBrowser;
-    procedure Button1Click(Sender: TObject);
   private
-    FRuntime: IJSRuntime;
-    FContext: IJSContext;
     FScriptGate: TScriptGate;
+    FPendingJson: string;
+    FPageLoaded: Boolean;
+    FJavaScriptEvaluator: TPersonJavaScriptEvaluator;
+    FActions: TDictionary<string, string>;
 
     class function JavaScriptString(const Value: string): string; static;
-    class function ObjectPropertyText(const Value: CObject; const PropertyName: string): string; static;
-    procedure SendPersonsToBrowser(const Persons: IStorage);
+    procedure WebBrowserDidFinishLoad(ASender: TObject);
+    procedure TrySetData;
 
     const LocalServerUrl = 'http://localhost:3000/';
   public
     constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+
+    property JavaScriptEvaluator: TPersonJavaScriptEvaluator read FJavaScriptEvaluator write FJavaScriptEvaluator;
 
   published
-    function GetPersons: IStorage;
-
+    procedure ExecuteAction(const Name, Arg0, Arg1: string);
+    procedure RegisterAction(const Name, JavaScriptFunctionSource: string);
+    procedure SetData(const Json: string);
   end;
 
 implementation
 
-uses
-  App.intf;
-
 {$R *.fmx}
-
-{ TPersonFrame }
 
 constructor TPersonFrame.Create(AOwner: TComponent);
 begin
   inherited;
 
-  FRuntime := TJSRuntimeDN4D.Create;
-  FContext := FRuntime.CreateContext;
-  FScriptGate := TScriptGate.Create(Self, WebBrowser1, 'lynx-local');
+  FActions := TDictionary<string, string>.Create;
 
+  FScriptGate := TScriptGate.Create(Self, WebBrowser1, 'lynx-local');
+  WebBrowser1.OnDidFinishLoad := WebBrowserDidFinishLoad;
   WebBrowser1.Navigate(LocalServerUrl);
 end;
 
-function TPersonFrame.GetPersons: IStorage;
+destructor TPersonFrame.Destroy;
 begin
-  Result := _app.Storage['Persons'];
-  SendPersonsToBrowser(Result);
+  FActions.Free;
+  inherited;
+end;
+
+procedure TPersonFrame.ExecuteAction(const Name, Arg0, Arg1: string);
+begin
+  if not Assigned(FJavaScriptEvaluator) then
+    Exit;
+
+  var JavaScriptFunctionSource: string;
+  if not FActions.TryGetValue(Name, JavaScriptFunctionSource) then
+    Exit;
+
+  FJavaScriptEvaluator(
+    '(' + JavaScriptFunctionSource + ')(' + Arg0 + ', ' + Arg1 + ');');
+end;
+
+procedure TPersonFrame.RegisterAction(const Name, JavaScriptFunctionSource: string);
+begin
+  FActions.AddOrSetValue(Name, JavaScriptFunctionSource);
 end;
 
 class function TPersonFrame.JavaScriptString(const Value: string): string;
-var
-  JsonString: TJSONString;
 begin
-  JsonString := TJSONString.Create(Value);
+  var JsonString := TJSONString.Create(Value);
   try
     Result := JsonString.ToJSON;
   finally
@@ -77,60 +99,26 @@ begin
   end;
 end;
 
-class function TPersonFrame.ObjectPropertyText(const Value: CObject; const PropertyName: string): string;
+procedure TPersonFrame.SetData(const Json: string);
 begin
-  Result := '';
+  FPendingJson := Json;
+  TrySetData;
+end;
 
-  if Value = nil then
+procedure TPersonFrame.TrySetData;
+begin
+  if not FPageLoaded or (FPendingJson = '') then
     Exit;
 
-  try
-    var Prop := Value.GetType.PropertyByName(PropertyName);
-    if Prop <> nil then
-      Result := Prop.GetValue(Value, []).ToString;
-  except
-    Result := '';
-  end;
+  FScriptGate.CallScript(
+    'if (window.setData) window.setData(' + JavaScriptString(FPendingJson) + ');',
+    nil);
 end;
 
-procedure TPersonFrame.Button1Click(Sender: TObject);
+procedure TPersonFrame.WebBrowserDidFinishLoad(ASender: TObject);
 begin
-  FScriptGate.CallScript('changeText(' + JavaScriptString('Hello from Delphi') + ');', nil);
-end;
-
-procedure TPersonFrame.SendPersonsToBrowser(const Persons: IStorage);
-var
-  Payload: TJSONObject;
-  Items: TJSONArray;
-begin
-  Payload := TJSONObject.Create;
-  try
-    Payload.AddPair('name', Persons.Name);
-    Payload.AddPair('count', TJSONNumber.Create(Persons.Count));
-
-    Items := TJSONArray.Create;
-    Payload.AddPair('items', Items);
-
-    for var I := 0 to Persons.Count - 1 do
-    begin
-      var Person := Persons[I];
-      var Item := TJSONObject.Create;
-
-      Item.AddPair('index', TJSONNumber.Create(I + 1));
-      Item.AddPair('id', ObjectPropertyText(Person, 'ID'));
-      Item.AddPair('name', ObjectPropertyText(Person, 'Name'));
-      Item.AddPair('age', ObjectPropertyText(Person, 'Age'));
-      Item.AddPair('text', Person.ToString);
-
-      Items.AddElement(Item);
-    end;
-
-    FScriptGate.CallScript(
-      'if (window.onPersons) window.onPersons(' + Payload.ToJSON + ');',
-      nil);
-  finally
-    Payload.Free;
-  end;
+  FPageLoaded := True;
+  TrySetData;
 end;
 
 end.

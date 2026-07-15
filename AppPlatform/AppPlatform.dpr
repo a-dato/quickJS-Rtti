@@ -22,7 +22,10 @@ uses
   FMX.App.MasterForm in 'AppUI\FMX.App.MasterForm.pas',
   Task.intf in 'DataObjects\Task.intf.pas',
   Task.impl in 'DataObjects\Task.impl.pas',
-  Person.frame in 'DataObjectsFrames\Person.frame.pas' {PersonFrame: TFrame};
+  Person.frame in 'DataObjectsFrames\Person.frame.pas' {PersonFrame: TFrame},
+  Integrations.frame in 'DataObjectsFrames\Integrations.frame.pas' {Integrationsframe: TFrame},
+  App.TypeMetadata in 'DataObjects\App.TypeMetadata.pas',
+  BulkUpdate.intf in 'DataObjects\BulkUpdate.intf.pas';
 
 {$R *.res}
 
