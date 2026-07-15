@@ -94,7 +94,7 @@ uses
   {$ELSE}
   , FMX.ScrollControl.DataControl.Impl
   {$ENDIF}
-  ;
+  , FMX.ScrollControl.DataControl.Binders;
 
 { Environment }
 
@@ -188,9 +188,23 @@ procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TChildre
     end;
   end;
 
+  function GetParentModel(const Names: TArray<string>) : IObjectListModel;
+  begin
+    var s: IStorage;
+
+    if CString.Equals(AModel.ObjectType.Name, Names[0]) then
+      Result := AModel
+
+    else if _app.TryGetStorage(Names[0], s) then
+    begin
+      Result := TObjectListModelWithChangeTracking<IBaseInterface>.Create(s.DataType);
+      Result.Context := s.Data;
+    end;
+  end;
+
   function GetModel(const Names: TArray<string>) : IObjectListModel;
   begin
-    var parentModel := AModel;
+    var parentModel := GetParentModel(Names);
 
     // Loop will be skipped for IProject_Model
     // Go deep for nested properties: IProject_Customers_Model
@@ -235,18 +249,29 @@ begin
     //  ObjectType_Property_Index               -> IProject_Name_1
     //  ObjectType_Property_SubProperty_Index   -> IProject_Customer_Address_1
     var names := string(c.Name).Split(['_']);
-    if (Length(names) >= 2) and (names[0] = AType.Name) then
+    if Length(names) >= 2 then
     begin
       var propertyName := ConcatNames(names); // 'Customer.Address.Zip'
 
-      if names[High(names)] = 'Model' then  // IProject_Model, IProject_Customers_Model
+      if names[High(names)] = 'Model' then  // IProject_Model, Customers_Model
       begin
         var mdl := GetModel(names);
 
         if mdl <> nil then
         begin
           if (c is TDataControl) then
-            (c as TDataControl).Model := AModel else
+          begin
+            (c as TDataControl).Model := mdl;
+
+//            var bind: IPropertyBinding := TDataControlBinding.Create(c as tDataControl);
+//
+//            // KV: 14/07/2026 -> This code should not be necesary
+//            // FMX.ScrollControl.DataControl.Binders
+//            if bind is TDataControlBinding then
+//              (bind as TDataControlBinding).PropType := TTreePropertyType.DataList;
+//
+//            mdl.ObjectModelContext.Bind(propertyName, bind);
+          end else
             BindChildren(mdl.ObjectType, CreateChildrenList(c), mdl);
         end;
 
@@ -260,6 +285,11 @@ begin
         AModel.ObjectModelContext.Bind(propertyName, bind);
       end;
     end;
+
+    {$IFDEF DEBUG}
+    var control_name: string;
+    control_name := c.Name;
+    {$ENDIF}
 
     if c.ChildrenCount > 0 then
       BindChildren(AType, CreateChildrenList(c), AModel);

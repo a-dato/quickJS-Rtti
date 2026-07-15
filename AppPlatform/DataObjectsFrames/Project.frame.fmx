@@ -108,10 +108,14 @@ object ProjectFrame: TProjectFrame
     Size.Width = 605.000000000000000000
     Size.Height = 494.000000000000000000
     Size.PlatformDefault = False
-    TabIndex = 0
+    TabIndex = 1
     TabOrder = 2
     TabPosition = PlatformDefault
     Sizes = (
+      605s
+      468s
+      605s
+      468s
       605s
       468s
       605s
@@ -120,7 +124,7 @@ object ProjectFrame: TProjectFrame
       CustomIcon = <
         item
         end>
-      IsSelected = True
+      IsSelected = False
       Size.Width = 61.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
@@ -241,61 +245,143 @@ object ProjectFrame: TProjectFrame
         TabOrder = 6
       end
     end
+    object ProjectCustomers: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = True
+      Size.Width = 118.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'Project_Customers'
+      ExplicitSize.cx = 93.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object IProject_Customers_Model: TDataControl
+        Align = Left
+        HitTest = True
+        Size.Width = 273.000000000000000000
+        Size.Height = 468.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid]
+        RowHeightDefault = 30.000000000000000000
+        DragDropOnIndividualRows = False
+        HeaderHeight = 24.000000000000000000
+        AutoExtraColumnSizeMax = -1.000000000000000000
+        CellTopBottomPadding = 10.000000000000000000
+        CellLeftRightPadding = 5.000000000000000000
+        VisualizeParentChilds = No
+      end
+    end
+    object Holidays: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = False
+      Size.Width = 66.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'Holidays'
+      ExplicitSize.cx = 66.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object Layout3: TLayout
+        Align = Client
+        Size.Width = 336.000000000000000000
+        Size.Height = 468.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        object IProject_Holidays: TDataControl
+          Align = Client
+          HitTest = True
+          Size.Width = 336.000000000000000000
+          Size.Height = 451.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid]
+          RowHeightDefault = 30.000000000000000000
+          DragDropOnIndividualRows = False
+          HeaderHeight = 24.000000000000000000
+          AutoExtraColumnSizeMax = -1.000000000000000000
+          CellTopBottomPadding = 10.000000000000000000
+          CellLeftRightPadding = 5.000000000000000000
+          VisualizeParentChilds = No
+        end
+        object Label10: TLabel
+          Align = Top
+          Size.Width = 336.000000000000000000
+          Size.Height = 17.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.HorzAlign = Center
+          Text = 'Holidays'
+          TabOrder = 1
+        end
+      end
+      object Layout4: TLayout
+        Align = Right
+        Position.X = 336.000000000000000000
+        Size.Width = 269.000000000000000000
+        Size.Height = 468.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        object IProject_Holidays_IceCreams: TDataControl
+          Align = Client
+          HitTest = True
+          Size.Width = 269.000000000000000000
+          Size.Height = 451.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid]
+          RowHeightDefault = 30.000000000000000000
+          DragDropOnIndividualRows = False
+          HeaderHeight = 24.000000000000000000
+          AutoExtraColumnSizeMax = -1.000000000000000000
+          CellTopBottomPadding = 10.000000000000000000
+          CellLeftRightPadding = 5.000000000000000000
+          VisualizeParentChilds = No
+        end
+        object Label9: TLabel
+          Align = Top
+          Size.Width = 269.000000000000000000
+          Size.Height = 17.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.HorzAlign = Center
+          Text = 'Ice creams'
+          TabOrder = 1
+        end
+      end
+    end
     object Customers: TTabItem
       CustomIcon = <
         item
         end>
       IsSelected = False
-      Size.Width = 93.000000000000000000
+      Size.Width = 92.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
       StyleLookup = ''
       TabOrder = 0
-      Text = 'Custom fields'
+      Text = 'All customers'
       ExplicitSize.cx = 93.000000000000000000
       ExplicitSize.cy = 26.000000000000000000
-      inline IProject_Customers_Model: TCustomerFrame
-        Align = Client
-        Size.Width = 605.000000000000000000
+      object Customers_Model: TDataControl
+        Align = Left
+        HitTest = True
+        Size.Width = 273.000000000000000000
         Size.Height = 468.000000000000000000
         Size.PlatformDefault = False
-        inherited Customer_Model: TDataControl
-          Size.Height = 376.000000000000000000
-        end
-        inherited Layout1: TLayout
-          Size.Width = 605.000000000000000000
-        end
-        inherited Splitter1: TSplitter
-          Size.Height = 376.000000000000000000
-        end
-        inherited TabPages: TTabControl
-          Size.Width = 399.000000000000000000
-          Size.Height = 376.000000000000000000
-          Sizes = (
-            399s
-            350s
-            399s
-            350s)
-          inherited tbGeneral: TTabItem
-            Size.Width = 61.000000000000000000
-            Size.Height = 26.000000000000000000
-            ExplicitSize.cx = 61.000000000000000000
-            ExplicitSize.cy = 26.000000000000000000
-            inherited lyEditors: TLayout
-              Size.Width = 399.000000000000000000
-            end
-          end
-          inherited tbCustomfields: TTabItem
-            Size.Width = 93.000000000000000000
-            Size.Height = 26.000000000000000000
-            ExplicitSize.cx = 93.000000000000000000
-            ExplicitSize.cy = 26.000000000000000000
-          end
-        end
-        inherited Layout2: TLayout
-          Position.Y = 426.000000000000000000
-          Size.Width = 605.000000000000000000
-        end
+        TabOrder = 0
+        Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid]
+        RowHeightDefault = 30.000000000000000000
+        DragDropOnIndividualRows = False
+        HeaderHeight = 24.000000000000000000
+        AutoExtraColumnSizeMax = -1.000000000000000000
+        CellTopBottomPadding = 10.000000000000000000
+        CellLeftRightPadding = 5.000000000000000000
+        VisualizeParentChilds = No
       end
     end
   end

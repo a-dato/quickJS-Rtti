@@ -12,7 +12,8 @@ uses
   System.IOUtils,
   Project.intf, System.Collections, System.Collections.Generic, System.Rtti,
   App.Environment.intf, App.Windows.intf, App.QuickJSBridge.intf, FMX.TabControl,
-  ADato.StatusCode;
+  ADato.StatusCode,
+  FMX.ScrollControl.DataControl.Binders;
 
 type
   {$M+}

@@ -38,7 +38,16 @@ type
     Label8: TLabel;
     IProject_SFAccount_0: TComboBox;
     Button2: TButton;
-    IProject_Customers_Model: TCustomerFrame;
+    Holidays: TTabItem;
+    IProject_Holidays: TDataControl;
+    IProject_Holidays_IceCreams: TDataControl;
+    Layout3: TLayout;
+    Layout4: TLayout;
+    Label9: TLabel;
+    Label10: TLabel;
+    ProjectCustomers: TTabItem;
+    IProject_Customers_Model: TDataControl;
+    Customers_Model: TDataControl;
     procedure acOkExecute(Sender: TObject);
     procedure Button2Click(Sender: TObject);
   private
@@ -62,6 +71,7 @@ end;
 constructor TProjectFrame.Create(AOwner: TComponent);
 begin
   inherited;
+  TabPages.TabIndex := 0;
 end;
 
 procedure TProjectFrame.Button2Click(Sender: TObject);
