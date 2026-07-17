@@ -1,6 +1,6 @@
 import {TypeCode, ITypeDescriptor_} from './app.js';
 import {visible,editor,status,Object_,Type_,Provider_} from './lynx.js';
-import {Ingestor} from 'D:/adato_webservice/MicroServices/IntegrationProject/ForContextNotPartOfProject/Ingestor.js';
+//import {Ingestor} from 'D:/adato_webservice/MicroServices/IntegrationProject/ForContextNotPartOfProject/Ingestor.js';
 
 export class Person extends Object_ {
 
@@ -107,8 +107,8 @@ export class PersonProvider extends Provider_ {
         }
 
         const items = await this.Source.Items(filter);
-        const ingestor = new Ingestor();
-        return ingestor.CreateList(items);
+        //const ingestor = new Ingestor();
+        // return ingestor.CreateList(items);
     }
 
 }

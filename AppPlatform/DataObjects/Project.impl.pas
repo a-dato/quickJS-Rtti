@@ -14,15 +14,13 @@ uses
   ADato.ObjectModel.List.intf,
   App.Content.impl,
   Task.intf,
-  BulkUpdate.intf,
-  ProjectLoader.intf;
+  BulkUpdate.intf;
 
 type
   TProject = class(TBaseInterfacedObject,
     IProject,
     IExtendableObject,
-    IBulkUpdate,
-    IProjectLoader)
+    IBulkUpdate)
 //    , IJSExtendableObject)
   protected
     class var _typeDescriptor: ITypeDescriptor;
@@ -33,7 +31,7 @@ type
     _ID: CObject;
     _Description: string;
     _Child: IProject;
-    _storageSupport: IStorageSupport;
+    _Holidays: List<THoliday>;
     _tasks: List<ITask>;
 
     _PropertyValue: Dictionary<_PropertyInfo, CObject>;
@@ -43,6 +41,7 @@ type
     function  get_Description: string;
     procedure set_Description(const Value: string);
     function  get_ChildProject: IProject;
+    function  get_Holidays: List<THoliday>;
     function  get_Tasks: List<ITask>;
 
     // IExtendableObject
@@ -138,7 +137,6 @@ begin
   begin
     _typeDescriptor := ProjectType.Create(&Type.From<IProject>, 'Project', 'Projects');
     _typeDescriptor.AddSupportedInterface(&Type.From<IBulkUpdate>);
-    _typeDescriptor.AddSupportedInterface(&Type.From<IProjectLoader>);
   end;
 
   Result := _typeDescriptor;
@@ -192,6 +190,13 @@ begin
   Result := _Child;
 end;
 
+function TProject.get_Holidays: List<THoliday>;
+begin
+  if _Holidays = nil then
+    _Holidays := CList<THoliday>.Create;
+  Result := _Holidays;
+end;
+
 procedure TProject.set_ID(const Value: CObject);
 begin
   _ID := Value;
@@ -221,6 +226,17 @@ begin
     var p: IProject := TProject.Create;
     p.ID := i;
     p.Description := 'Project ' + i.ToString;
+
+    var h: THoliday;
+    h.Start := CDateTime.Now.AddDays(i).Date;
+    h.Stop := CDateTime.Now.AddDays(i + 2).Date;
+    h.IceCreams := CList<TIceCream>.Create;
+    var ic: TIceCream;
+    ic.ID := i;
+    ic.Name := 'Raket ' + i.ToString;
+    h.IceCreams.Add(ic);
+
+    p.Holidays.Add(h);
 
     l.Add(p);
   end;

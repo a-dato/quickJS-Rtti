@@ -14,6 +14,7 @@ type
     _marshaller: IMarshaller;
     _source: IList;
 
+    function  Add(const Value: CObject): Integer; override;
     function  get_Item_object(Index: Integer): CObject; override;
     procedure set_Item_object(Index: Integer; const Value: CObject); override;
 
@@ -25,6 +26,7 @@ type
 
   TObjectModelWithDescriptor<T> = class(TObjectListModelWithChangeTracking<T>, IObjectModelWithDescriptor)
   protected
+    // Holds the 'parent' property to which this (child) model is connected. Like Project.Customers
     _PropertyDescriptor: IPropertyDescriptor;
 
     procedure set_Context(const Value: IList); override;
@@ -73,6 +75,11 @@ begin
   inherited Create;
   _source := ASource;
   _marshaller := AMarshaller;
+end;
+
+function TMarshalledList.Add(const Value: CObject): Integer;
+begin
+  _source.Add(_marshaller.Marshal(_source, Value));
 end;
 
 function TMarshalledList.get_Count: Integer;
