@@ -364,77 +364,21 @@ end;
 
 procedure TForm1.Button6Click(Sender: TObject);
 begin
-//  var frm := TAppMasterForm.Create(Self);
-//
-//  var fram := TPersonFrame.Create(Self);
-//  //var fram := TCustomerFrame.Create(Self);
-//  frm.AddObject(fram);
-//
-////  fram.Align := TAlignLayout.Client;
-////  fram.Visible := True;
-//
-//  frm.Show;
+  var ownerType := &Type.From<IProject>;
 
-//  var t := _app.Config.TypeByName('Customer');
-//  var ctx := TRttiContext.Create;
-//  try
-//    var rttiType := ctx.GetType(TypeInfo(DependencyTypeFlag));
-//
-//    if rttiType.TypeKind = tkEnumeration then
-//    begin
-//      var typeData := GetTypeData(rttiType.Handle);
-//      for var i := typeData.MinValue to typeData.MaxValue do
-//      begin
-//        var enumName := GetEnumName(rttiType.Handle, i);
-//        // enumName = 'Relation_FinishStart', etc.
-//        // i = integer value
-//      end;
-//    end;
-//  finally
-//    ctx.Free;
-//  end;
+  var path: TArray<_PropertyInfo>;
+  SetLength(path, 2);
+  var property_type := ownerType;
 
-  // var f := TForm1.Create(Self);
+  path[0] := ownerType.PropertyByName('Holidays');
+  path[1] := &Type.From<THoliday>.PropertyByName('IceCreams');
 
-  mmLog.Lines.Clear;
-  var ctx := TRttiContext.Create;
-  try
-    var rttiType := ctx.GetType(TypeInfo(CDateTime));
-    mmLog.Lines.Add('Name: ' + rttiType.Name);
-    mmLog.Lines.Add('QualifiedName: ' + rttiType.QualifiedName);
-    mmLog.Lines.Add('TypeKind: ' + GetEnumName(TypeInfo(TTypeKind), Ord(rttiType.TypeKind)));
-    mmLog.Lines.Add('');
-    mmLog.Lines.Add('Fields:');
-    for var field in rttiType.GetFields do
-      mmLog.Lines.Add('  ' + field.Name + ': ' + field.FieldType.Name);
-    mmLog.Lines.Add('');
-    mmLog.Lines.Add('Properties:');
-    for var prop in rttiType.GetProperties do
-      mmLog.Lines.Add('  ' + prop.Name + ': ' + prop.PropertyType.Name);
-    mmLog.Lines.Add('');
-    mmLog.Lines.Add('Methods / constructors:');
-    for var method in rttiType.GetMethods do
-    begin
-      var line := '  ' + GetEnumName(TypeInfo(TMethodKind), Ord(method.MethodKind)) + ' ' + method.Name + '(';
-      var first := True;
-      for var param in method.GetParameters do
-      begin
-        if not first then
-          line := line + ', ';
-        first := False;
-        if param.ParamType <> nil then
-          line := line + param.Name + ': ' + param.ParamType.Name
-        else
-          line := line + param.Name + ': <nil>';
-      end;
-      line := line + ')';
-      if method.ReturnType <> nil then
-        line := line + ': ' + method.ReturnType.Name;
-      mmLog.Lines.Add(line);
-    end;
-  finally
-    ctx.Free;
-  end;
+  var pathprop: _PropertyInfo := TPathProperty.Create(path[0], path);
+  var project := _app.Storage['Projects'][0];
+
+  var o := pathprop.GetValue(project, []);
+  if o = nil then;
+
 
 end;
 

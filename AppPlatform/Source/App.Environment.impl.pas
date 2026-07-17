@@ -202,8 +202,10 @@ procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TChildre
     end;
   end;
 
-  function GetModel(const Names: TArray<string>) : IObjectListModel;
+  function GetModel(const Names: TArray<string>; out PropertyToBind: _PropertyInfo) : IObjectListModel;
   begin
+    PropertyToBind := nil;
+
     var parentModel := GetParentModel(Names);
 
     // Loop will be skipped for IProject_Model
@@ -214,6 +216,8 @@ procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TChildre
 
       if parentProperty = nil then // Property does not exists
         Exit(nil);
+
+      PropertyToBind := parentProperty;
 
       var handlerExists := False;
       for var handler in _handlers do
@@ -230,7 +234,8 @@ procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TChildre
       var dscr: IPropertyDescriptor;
       if not handlerExists and Interfaces.Supports<IPropertyDescriptor>(parentProperty, dscr) then
       begin
-        var childModel: IObjectListModel := TObjectModelWithDescriptor<IBaseInterface>.Create(dscr.GetType, dscr);
+        var t: &Type := dscr.GetType;
+        var childModel: IObjectListModel := TObjectModelWithDescriptor<IBaseInterface>.Create(t, dscr);
         _handlers.Add(TContextChangedHandler.Create(parentModel, childModel, parentProperty));
         parentModel := childModel;
       end else
@@ -238,6 +243,24 @@ procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TChildre
     end;
 
     Exit(parentModel);
+  end;
+
+  function GetPathProperty(const OwnerType: &Type; const Names: TArray<string>) : _PropertyInfo;
+  begin
+    var path: TArray<_PropertyInfo>;
+    SetLength(path, Length(Names) - 1);
+    var property_type := OwnerType;
+
+    for var i := 1 to High(Names) do
+    begin
+      var sub_property := property_type.PropertyByName(Names[i]);
+      if sub_property = nil then
+        Exit(nil);
+      path[i] := sub_property;
+      property_type := sub_property.GetType;
+    end;
+
+    Result := TPathProperty.Create(path[0], path);
   end;
 
 begin
@@ -255,22 +278,29 @@ begin
 
       if names[High(names)] = 'Model' then  // IProject_Model, Customers_Model
       begin
-        var mdl := GetModel(names);
+        var propertyToBind: _PropertyInfo;
+        var mdl := GetModel(names, {out}propertyToBind);
 
         if mdl <> nil then
         begin
           if (c is TDataControl) then
           begin
-            (c as TDataControl).Model := mdl;
+            if propertyToBind <> nil then
+            begin
+//              var bind: IPropertyBinding := TDataControlBinding.Create(c as tDataControl);
+//
+//              // KV: 14/07/2026 -> This code should not be necesary
+//              // FMX.ScrollControl.DataControl.Binders
+//              if bind is TDataControlBinding then
+//                (bind as TDataControlBinding).PropType := TTreePropertyType.DataList;
+//
+//              var prop_to_bind := names[High(names) - 1];
+//              AModel.ObjectModelContext.Bind(prop_to_bind, bind);
+              (c as TDataControl).Model := mdl;
 
-//            var bind: IPropertyBinding := TDataControlBinding.Create(c as tDataControl);
-//
-//            // KV: 14/07/2026 -> This code should not be necesary
-//            // FMX.ScrollControl.DataControl.Binders
-//            if bind is TDataControlBinding then
-//              (bind as TDataControlBinding).PropType := TTreePropertyType.DataList;
-//
-//            mdl.ObjectModelContext.Bind(propertyName, bind);
+              // mdl.ObjectModelContext.Bind(propertyToBind, bind);
+            end else
+              (c as TDataControl).Model := mdl;
           end else
             BindChildren(mdl.ObjectType, CreateChildrenList(c), mdl);
         end;
@@ -278,10 +308,23 @@ begin
         continue;
       end;
 
+      // propertyName -> 'Description'
+      // propertyName -> 'Customer.Address'
+      // propertyName -> 'Holidays.IceCreeam'
       var objectProperty := AType.PropertyByName(propertyName);
+
+      if (objectProperty = nil) and (Length(names) > 2) then
+        objectProperty := GetPathProperty(AType, names);
+
       if objectProperty <> nil then
       begin
         var bind := TPropertyBinding.CreateBindingByControl(c);
+
+        // IProject_Holidays -> Binder is a TDataControlBinding
+        // KV: 14/07/2026 -> This code should not be necesary
+        if bind is TDataControlBinding then
+          (bind as TDataControlBinding).PropType := TTreePropertyType.DataList;
+
         AModel.ObjectModelContext.Bind(propertyName, bind);
       end;
     end;

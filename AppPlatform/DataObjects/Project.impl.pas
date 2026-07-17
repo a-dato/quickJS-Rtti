@@ -14,15 +14,13 @@ uses
   ADato.ObjectModel.List.intf,
   App.Content.impl,
   Task.intf,
-  BulkUpdate.intf,
-  ProjectLoader.intf;
+  BulkUpdate.intf;
 
 type
   TProject = class(TBaseInterfacedObject,
     IProject,
     IExtendableObject,
-    IBulkUpdate,
-    IProjectLoader)
+    IBulkUpdate)
 //    , IJSExtendableObject)
   protected
     class var _typeDescriptor: ITypeDescriptor;
@@ -139,7 +137,6 @@ begin
   begin
     _typeDescriptor := ProjectType.Create(&Type.From<IProject>, 'Project', 'Projects');
     _typeDescriptor.AddSupportedInterface(&Type.From<IBulkUpdate>);
-    _typeDescriptor.AddSupportedInterface(&Type.From<IProjectLoader>);
   end;
 
   Result := _typeDescriptor;
