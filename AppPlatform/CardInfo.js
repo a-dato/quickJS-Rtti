@@ -3,7 +3,7 @@ export default {
         ID: 'Unique card identifier.',
         LUID: 'Card locally unique identifier, commonly combined with the project LUID.',
         Caption: 'Primary display name or title of the card.',
-        CardType: 'Card type defining the card workflow, behavior, and custom fields.',
+        CardType: "Configured card type defining the card workflow, behavior, and custom fields. Assign an existing card type from app.Storage['CardTypes']; use FindByProperty('Name', value) or select by ID. Do not create a new CardType merely to assign a type to a card.",
         Project: 'Project to which the card belongs.',
         Task: 'Work-package task to which the card belongs.',
         ParentCard: 'Parent card when this card is part of a card hierarchy.',

@@ -4,6 +4,7 @@ import RESOURCE_CLASS_INFO from '../ResourceClassInfo.js';
 import RESOURCE_INFO from '../ResourceInfo.js';
 import TIME_TRACK_DETAIL_INFO from '../TimeTrackDetailInfo.js';
 import TASK_INFO from '../TaskInfo.js';
+import { TYPE_METADATA_EXTENSIONS } from './TypeMetadataExtensions.js';
 
 const TYPE_INFO = {
     ...PROJECT_INFO,
@@ -86,7 +87,7 @@ export class TypeMetadataProvider {
                 }
             }
 
-            result.push({
+            const entry = {
                 ClassName: descriptor.ClassName,
                 FullName: descriptor.FullName,
                 StorageName: descriptor.StorageName,
@@ -96,10 +97,28 @@ export class TypeMetadataProvider {
                 Interface: this.GetInterface(descriptor.TypeInterface),
                 SupportedInterfaces: this.GetSupportedInterfaces(descriptor),
                 Properties: properties
-            });
+            };
+
+            this.ApplyExtensions(descriptor, entry);
+
+            result.push(entry);
         }
 
         return result;
+    }
+
+    // Runs the registered type metadata extensions (see TypeMetadataExtensions.js)
+    // against a descriptor entry. Extra keys returned by an extension are collected
+    // in entry.Extensions and merged verbatim into the serialized JSON.
+    ApplyExtensions(descriptor, entry) {
+        for(const extension of TYPE_METADATA_EXTENSIONS) {
+            if(!extension.AppliesTo(descriptor))
+                continue;
+
+            const extra = extension.Extend(entry, this);
+            if(extra != null)
+                entry.Extensions = { ...(entry.Extensions ?? {}), ...extra };
+        }
     }
 
     GetSupportedInterfaces(descriptor) {
@@ -321,6 +340,7 @@ export class TypeMetadataProvider {
                 FullName: descriptor.FullName ?? null,
                 StorageName: descriptor.StorageName ?? null,
                 TypeName: descriptor.Type?.Name ?? descriptor.Type?.name ?? null,
+                ...(descriptor.Extensions ?? {}),
                 Constructor: descriptor.Constructor ?? undefined,
                 Interface: descriptor.Interface == null
                     ? null
