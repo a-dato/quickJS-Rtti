@@ -1,5 +1,16 @@
 export default {
     ResourceClass: {
+        Constructor: {
+            Description: 'Creates a new resource class representing a skill, team, virtual skill, or global skill.',
+            UsagePattern: "ingestor.CreateObjectOfType('IS95ResourceClass', app.Factory.NextID())",
+            Parameters: [
+                {
+                    Name: 'ID',
+                    Type: 'CObject',
+                    Description: 'Unique identifier for the new resource class; pass app.Factory.NextID().'
+                }
+            ]
+        },
         Description: 'Name or description of the skill, team, virtual skill, or global skill.',
         Resources: 'Resources that possess this skill or belong to this team.',
         Tasks: 'Tasks whose resource requirements reference this skill.',

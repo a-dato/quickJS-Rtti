@@ -1,5 +1,16 @@
 export default {
     Resource: {
+        Constructor: {
+            Description: 'Creates a new resource instance.',
+            UsagePattern: "ingestor.CreateObjectOfType('IResource', app.Factory.NextID())",
+            Parameters: [
+                {
+                    Name: 'ID',
+                    Type: 'CObject',
+                    Description: 'Unique identifier for the new resource; pass app.Factory.NextID().'
+                }
+            ]
+        },
         Description: 'Name or description of the resource, for example "Bob Smith".',
         Skills: 'Skills possessed by this resource.',
         Comments: 'Additional comments about the resource.',

@@ -12,6 +12,17 @@ export default {
         CardID: 'Identifier of the related card, including when the card no longer exists.'
     },
     TimeTrackDetail: {
+        Constructor: {
+            Description: 'Creates a new time-tracking detail record.',
+            UsagePattern: "ingestor.CreateObjectOfType('ITimeTrackDetail', app.Factory.NextID())",
+            Parameters: [
+                {
+                    Name: 'ID',
+                    Type: 'CObject',
+                    Description: 'Unique identifier for the new time-tracking detail; pass app.Factory.NextID().'
+                }
+            ]
+        },
         When: 'Date and time for which the booking was recorded.',
         HoursBooked: 'Booked working time.',
         Comment: 'Comment entered with the booking.',

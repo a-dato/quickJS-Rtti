@@ -1,5 +1,17 @@
 export default {
     Card: {
+        Constructor: {
+            Description: 'Creates a new card instance. After construction, assign its project, work-package task, and an existing card type before adding it to the project card collection.',
+            UsagePattern: "ingestor.CreateObjectOfType('ICard', app.Factory.NextID())",
+            ParameterCount: 1,
+            Parameters: [
+                {
+                    Name: 'ID',
+                    Type: 'CObject',
+                    Description: 'Unique identifier for the new card; pass app.Factory.NextID().'
+                }
+            ]
+        },
         ID: 'Unique card identifier.',
         LUID: 'Card locally unique identifier, commonly combined with the project LUID.',
         Caption: 'Primary display name or title of the card.',

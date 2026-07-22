@@ -2,6 +2,7 @@ import PROJECT_INFO from '../ProjectInfo.js';
 import CARD_INFO from '../CardInfo.js';
 import RESOURCE_CLASS_INFO from '../ResourceClassInfo.js';
 import RESOURCE_INFO from '../ResourceInfo.js';
+import RESOURCE_REQUIREMENT_INFO from '../ResourceRequirementInfo.js';
 import TIME_TRACK_DETAIL_INFO from '../TimeTrackDetailInfo.js';
 import TASK_INFO from '../TaskInfo.js';
 import { TYPE_METADATA_EXTENSIONS } from './TypeMetadataExtensions.js';
@@ -11,6 +12,7 @@ const TYPE_INFO = {
     ...CARD_INFO,
     ...RESOURCE_CLASS_INFO,
     ...RESOURCE_INFO,
+    ...RESOURCE_REQUIREMENT_INFO,
     ...TIME_TRACK_DETAIL_INFO,
     ...TASK_INFO
 };
@@ -93,7 +95,7 @@ export class TypeMetadataProvider {
                 StorageName: descriptor.StorageName,
                 Type: type,
                 Descriptor: descriptor,
-                Constructor: this.GetConstructor(type),
+                Constructor: this.GetConstructor(type, descriptor),
                 Interface: this.GetInterface(descriptor.TypeInterface),
                 SupportedInterfaces: this.GetSupportedInterfaces(descriptor),
                 Properties: properties
@@ -188,7 +190,7 @@ export class TypeMetadataProvider {
         }
     }
 
-    GetConstructor(type) {
+    GetConstructor(type, descriptor = null) {
         if(type == null || type === 0)
             return null;
 
@@ -201,17 +203,58 @@ export class TypeMetadataProvider {
             if(parameterCount < 0)
                 return null;
 
+            const documentation = this.GetTypeDocumentation(type, descriptor)?.Constructor;
+            const publicParameterCount = Number.isInteger(documentation?.ParameterCount)
+                ? documentation.ParameterCount
+                : parameterCount;
+            const documentedParameters = Array.isArray(documentation?.Parameters)
+                ? documentation.Parameters
+                : [];
             const parameters = [];
-            for(let i = 0; i < parameterCount; i++)
-                parameters.push({ Name: `Param${i}`, Type: 'CObject' });
+            for(let i = 0; i < publicParameterCount; i++) {
+                const documented = documentedParameters[i];
+                parameters.push({
+                    Name: documented?.Name ?? `Param${i}`,
+                    Type: documented?.Type ?? 'CObject',
+                    ...(documented?.Description ? { Description: documented.Description } : {})
+                });
+            }
 
             return {
-                ParameterCount: parameterCount,
-                Parameters: parameters
+                ParameterCount: publicParameterCount,
+                Parameters: parameters,
+                ...(documentation?.Description ? { Description: documentation.Description } : {}),
+                ...(documentation?.UsagePattern ? { UsagePattern: documentation.UsagePattern } : {})
             };
         } catch {
             return null;
         }
+    }
+
+    GetTypeDocumentation(type, descriptor = null) {
+        const typeInfo = this.TypeInfo();
+        const names = [
+            this.GetTypeName(type),
+            descriptor?.ClassName,
+            descriptor?.TypeName,
+            descriptor?.FullName,
+            String(type ?? '')
+        ];
+
+        for(const name of names) {
+            if(name == null || name === '')
+                continue;
+
+            const text = String(name);
+            const normalizedName = text.startsWith('I') && text.length > 1
+                ? text.substring(1)
+                : text;
+            const documentation = typeInfo[text] ?? typeInfo[normalizedName];
+            if(documentation != null)
+                return documentation;
+        }
+
+        return null;
     }
 
     GetPropertyDescription(type, propertyName) {

@@ -1,5 +1,21 @@
 export default {
     Task: {
+        Constructor: {
+            Description: 'Creates a new task for an owning project.',
+            UsagePattern: "ingestor.CreateObjectOfType('ITask', app.Factory.NextID(), project)",
+            Parameters: [
+                {
+                    Name: 'ID',
+                    Type: 'CObject',
+                    Description: 'Unique identifier for the new task; pass app.Factory.NextID().'
+                },
+                {
+                    Name: 'Project',
+                    Type: 'CObject',
+                    Description: 'Owning IProject instance.'
+                }
+            ]
+        },
         Description: 'Name of the task, for example "Buy steel".',
         Priority: 'Task priority as an integer value.',
         IsCritical: 'Whether the task is on the critical chain.',

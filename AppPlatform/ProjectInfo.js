@@ -1,5 +1,21 @@
 export default {
     Project: {
+        Constructor: {
+            Description: 'Creates a new project instance. Use this constructor only for a project that does not already exist.',
+            UsagePattern: "ingestor.CreateObjectOfType('IProject', app.Factory.NextID(), app)",
+            Parameters: [
+                {
+                    Name: 'ID',
+                    Type: 'CObject',
+                    Description: 'Unique identifier assigned to the new project; pass app.Factory.NextID().'
+                },
+                {
+                    Name: 'Application',
+                    Type: 'CObject',
+                    Description: 'Schedule application that will own the project; pass the current global app object.'
+                }
+            ]
+        },
         Description: 'Name of the project, for example "Build a bridge".',
         ReleaseDate: 'Date on which the project was released.',
         StartDate: 'Date on which the project actually started.',
