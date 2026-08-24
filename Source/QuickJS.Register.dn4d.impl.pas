@@ -146,6 +146,7 @@ type
 implementation
 
 uses
+  {$IFDEF MSWINDOWS}Winapi.Windows,{$ENDIF}
   System.SysUtils, System.Math;
 
 // Helper: Check if a JSValue is a JavaScript Array by checking constructor.name
@@ -751,8 +752,10 @@ begin
           JS_ToFloat64(ctx, @u_milis, time_val);
           if not IsNan(u_milis) then
           begin
+            // getTime() returns a UTC epoch; convert to local wall-clock time to mirror
+            // the local -> UTC conversion done when exporting CDateTime to a JS Date
             var ticks := DateTimeOffset.FromUnixTimeMiliSeconds(Trunc(u_milis));
-            cd := CDateTime.Create(ticks);
+            cd := CDateTime.Create(ticks, DateTimeKind.Utc).ToLocalTime;
           end;
           JS_FreeValue(ctx, time_val);
           JS_FreeValue(ctx, getTime);
@@ -783,8 +786,29 @@ begin
       {$ENDIF}
 
       var v: Int64;
-      JS_ToBigInt64(ctx, @v, Value);
-      Result := TValue.From<CTimeSpan>(CTimeSpan.Create(v));
+      if JS_IsBigInt(Value) then
+        JS_ToBigInt64(ctx, @v, Value)
+      else
+      begin
+        // Plain JS numbers may carry float noise (e.g. 1.1*60); JS_ToBigInt64
+        // throws 'cannot convert to bigint' for non-integer numbers, so round instead
+        var d: Double;
+        JS_ToFloat64(ctx, @d, Value);
+        v := System.Round(d);
+      end;
+
+      var ts := CTimeSpan.Create(v);
+
+      {$IF defined(DEBUG) and defined(MSWINDOWS)}
+      // Debug hook: breakpoint here to inspect the raw JS number (v) and the
+      // resulting timespan. Also visible in the debugger's Event Log.
+      // NOTE: CTimeSpan.Create(v) treats v as ticks (100ns units). A script
+      // assigning seconds (e.g. 1800) yields a near-zero timespan here.
+      OutputDebugString(PChar('CTimeSpan from JS: raw=' + IntToStr(v) +
+        ' totalSeconds=' + FloatToStr(ts.TotalSeconds)));
+      {$IFEND}
+
+      Result := TValue.From<CTimeSpan>(ts);
     end
     else if Target = TypeInfo(&Type) then
       Result := TValue.From<&Type>(GetTypeFromJSObject(ctx, Value))
@@ -829,7 +853,10 @@ begin
       if dt = CDateTime.MinValue then
         Exit(JS_NULL);
 
-      var u_milis := DateTimeOffset.ToUnixTimeMiliSeconds(dt.Ticks);
+      // Delphi dates hold local wall-clock time while a JS Date holds a UTC epoch and is
+      // (by default) displayed in local time. Convert local -> UTC here, otherwise a 09:00
+      // local value is exported as 09:00Z and JS displays it as 11:00 (in UTC+2).
+      var u_milis := DateTimeOffset.ToUnixTimeMiliSeconds(dt.ToUniversalTime.Ticks);
       Exit(TJSRuntime.JS_NewDate(ctx, u_milis));
     end;
 
