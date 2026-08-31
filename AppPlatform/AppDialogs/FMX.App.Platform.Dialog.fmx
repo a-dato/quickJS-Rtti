@@ -1,0 +1,109 @@
+object AppPlatformDialog: TAppPlatformDialog
+  Left = 0
+  Top = 0
+  Caption = 'Form1'
+  ClientHeight = 480
+  ClientWidth = 640
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  DesignerMasterStyle = 0
+  object Layout1: TLayout
+    Align = Top
+    Size.Width = 640.000000000000000000
+    Size.Height = 33.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    object Button1: TButton
+      Action = acExecute
+      Align = Right
+      ImageIndex = -1
+      Margins.Left = 3.000000000000000000
+      Margins.Top = 3.000000000000000000
+      Margins.Right = 3.000000000000000000
+      Margins.Bottom = 3.000000000000000000
+      Position.X = 557.000000000000000000
+      Position.Y = 3.000000000000000000
+      Size.Width = 80.000000000000000000
+      Size.Height = 27.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      TextSettings.Trimming = None
+    end
+  end
+  object mmLogging: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Align = Bottom
+    Position.Y = 344.000000000000000000
+    Size.Width = 640.000000000000000000
+    Size.Height = 136.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 2
+    Viewport.Width = 636.000000000000000000
+    Viewport.Height = 132.000000000000000000
+  end
+  object Layout2: TLayout
+    Align = Left
+    Position.Y = 33.000000000000000000
+    Size.Width = 129.000000000000000000
+    Size.Height = 311.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 3
+    object DataControl1: TDataControl
+      Align = Client
+      HitTest = True
+      Size.Width = 129.000000000000000000
+      Size.Height = 311.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 0
+      Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid]
+      RowHeightDefault = 30.000000000000000000
+      HeaderHeight = 24.000000000000000000
+      AutoExtraColumnSizeMax = -1.000000000000000000
+      CellTopBottomPadding = 5.000000000000000000
+      CellLeftRightPadding = 5.000000000000000000
+    end
+  end
+  object Splitter1: TSplitter
+    Align = Left
+    Cursor = crHSplit
+    MinSize = 20.000000000000000000
+    Position.X = 129.000000000000000000
+    Position.Y = 33.000000000000000000
+    Size.Width = 8.000000000000000000
+    Size.Height = 311.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object mmCode: TMemo
+    Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+    DataDetectorTypes = []
+    Lines.Strings = (
+      
+        'const w = app.Environment.CreateWindow(Iproject, app.Environment' +
+        '.MainWindow);'
+      'w.CreateFrame('#39'ProjectSelection'#39');'
+      'w.Bind(app.Storage['#39'Projects'#39']);'
+      'w.Show((window, isCloseQuery) => {'
+      '  console.log('#39'close'#39');'
+      '  return true;'
+      '});')
+    Align = Client
+    Size.Width = 503.000000000000000000
+    Size.Height = 311.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 5
+    Viewport.Width = 499.000000000000000000
+    Viewport.Height = 307.000000000000000000
+  end
+  object ActionList1: TActionList
+    Left = 280
+    Top = 64
+    object acExecute: TAction
+      Text = 'Execute'
+      ShortCut = 120
+      OnExecute = acExecuteExecute
+    end
+  end
+end

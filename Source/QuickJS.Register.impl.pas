@@ -658,7 +658,16 @@ begin
     tkInt64:
     begin
       var v: Int64;
-      TJSRuntime.Check(JS_ToBigInt64(ctx, @v, Value));
+      if JS_IsBigInt(Value) then
+        TJSRuntime.Check(JS_ToBigInt64(ctx, @v, Value))
+      else
+      begin
+        // Plain JS numbers may carry float noise (e.g. 1.1*60 = 66.00000000000001);
+        // JS_ToBigInt64 would throw 'cannot convert to bigint' for those, so round instead
+        var d: Double;
+        TJSRuntime.Check(JS_ToFloat64(ctx, @d, Value));
+        v := System.Round(d);
+      end;
       Result := TValue.From<Int64>(v);
     end;
 
