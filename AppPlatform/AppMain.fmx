@@ -355,8 +355,8 @@ object Form1: TForm1
         DataDetectorTypes = []
         Lines.Strings = (
           
-            'const { TypeMetadataProvider } = await import('#39'D:/adato_quickjs/' +
-            'AppPlatform/js/TypeMetadataProvider.js'#39');'
+            'const { TypeMetadataProvider } = await import('#39'D:/adato_webservice/' +
+            'MicroServices/IntegrationProject/wwwroot/TypeMetadataProvider.js'#39');'
           'const typeMetadataProvider = new TypeMetadataProvider();'
           'console.log('#39'Types:'#39');'
           'console.log(typeMetadataProvider.GetAvailableTypesAsJSON());'
