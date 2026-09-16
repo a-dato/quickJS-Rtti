@@ -12,6 +12,9 @@ uses
   QuickJS.Register.PropertyDescriptors.impl,
   QuickJS.Register.PropertyDescriptors.intf, quickjs_ng;
 
+const
+  MaxNativeStackSize = 64 * 1024 * 1024;
+
 type
   TProc_0 = TProc;
   TProc_1 = TProc<Pointer>;
@@ -70,6 +73,9 @@ type
     var FRegisteredEnums: TDictionary<PTypeInfo, string>;
     var FCustomObjectFactory: TCustomObjectFactory;
     var FFirst_ClassID: JSClassID;
+    var FMarshalHostCalls: Boolean;
+
+    class function HostCall<T>(ctx: JSContext; const Func: TFunc<T>): T; static;
 
     function  get_rt: JSRuntime;
     function  get_LogString: TProc<string>;
@@ -120,6 +126,32 @@ type
     class procedure CFinalize(rt : JSRuntime; this_val : JSValue); cdecl; static;
 
     class function get_own_property(ctx: JSContext; desc: PJSPropertyDescriptor; obj: JSValueConst; prop: JSAtom) : Integer; cdecl; static;
+
+    // Actual implementations of the callbacks above. The public callbacks route
+    // through HostCall<T> so the work can be marshalled to the main thread when needed.
+    class function GenericGetItemImpl(ctx: JSContext; this_val: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; static;
+    class function GenericSetItemImpl(ctx: JSContext; this_val: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; static;
+    class function GenericClassIteratorImpl(ctx: JSContext; this_val: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue): JSValue; static;
+    class function GenericIteratorNextImpl(ctx : JSContext; this_val : JSValueConst;
+      argc : Integer; argv : PJSValueConstArr): JSValue; static;
+    class function GenericMethodCallDataImpl(ctx: JSContext; this_val: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; static;
+    class function GenericPropertyGetterImpl(ctx: JSContext; this_val: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; static;
+    class function GenericPropertySetterImpl(ctx: JSContext; this_val: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; static;
+    class function GenericIndexedPropertyGetterImpl(ctx: JSContext; this_val: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; static;
+    class function ExtendablePropertyGetterImpl(ctx: JSContext; obj: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; static;
+    class function ExtendablePropertySetterImpl(ctx: JSContext; obj: JSValueConst;
+      argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue ): JSValue; static;
+    class function  CConstructorImpl(ctx: JSContext; new_target: JSValueConst; argc: Integer; argv: PJSValueConstArr; magic : Integer): JSValue; static;
+    class function get_own_property_impl(ctx: JSContext; desc: PJSPropertyDescriptor; obj: JSValueConst; prop: JSAtom) : Integer; static;
+
     class function get_own_property_names (ctx: JSContext; ptab: PPJSPropertyEnum; plen: pUInt32; obj: JSValueConst) : Integer; cdecl; static;
     class function delete_property(ctx: JSContext; obj: JSValueConst; prop: JSAtom) : Integer; cdecl; static;
     class function define_own_property(ctx: JSContext; obj: JSValueConst; prop: JSAtom;
@@ -183,6 +215,7 @@ type
     
     property AutoRegister: Boolean read get_AutoRegister write set_AutoRegister;
     property LogString: TProc<string> read get_LogString write set_LogString;
+    property MarshalHostCalls: Boolean read FMarshalHostCalls write FMarshalHostCalls;
     property ObjectBridgeResolver: IObjectBridgeResolver read FObjectBridgeResolver;
     property ObjectBridgeResolverIntf: IObjectBridgeResolver read FObjectBridgeResolver;
   end;
@@ -198,7 +231,8 @@ type
     function  get_LogString: TProc<string>;
     procedure set_LogString(const Value: TProc<string>);
 
-    function  eval_with_result(const Code: string; const CodeContext: string): TValue;
+    function  eval_with_result(const Code: string; const CodeContext: string): TValue; overload;
+    function  eval_with_result(const Code: string; const CodeContext: string; CancelFlag: PInteger): TValue; overload;
 
 
     class function InterruptCheck(rt: JSRuntime; opaque: Pointer): Integer; cdecl; static;
@@ -315,6 +349,7 @@ type
 implementation
 uses
   System.Classes, System.DateUtils,
+  ADato.TraceEvents.intf,
   QuickJS.VirtualMethod.impl, QuickJS.Register.ObjectBridge.impl,
   QuickJS.Register.ObjectBridgeTypes.intf,
   QuickJS.Register.ObjectBridgeDefaultDefinitions.impl;
@@ -924,10 +959,47 @@ begin
   Result := JS_NewBigInt64(ctx, 500);
 end;
 
+class function TJSRuntime.HostCall<T>(ctx: JSContext; const Func: TFunc<T>): T;
+begin
+  {$IFDEF APP_PLATFORM_MD}
+  var runtime := GetRuntimeFromContext(ctx);
+  if (runtime <> nil) and runtime.FMarshalHostCalls and (TThread.CurrentThread.ThreadID <> MainThreadID) then
+  begin
+    var res: T;
+
+    // QuickJS compares the native stack against the script thread's stack top; that check is meaningless on the main thread
+    JS_SetMaxStackSize(runtime._rt, 0);
+    try
+      TThread.Synchronize(nil, procedure
+        begin
+          {$IFDEF DEBUG}
+          if TThread.CurrentThread.ThreadID <> MainThreadID then
+            EventTracer.TraceMessage(LYNXAPP_SCRIPT, 'HostCall did NOT run on the main thread (thread ' + TThread.CurrentThread.ThreadID.ToString + ')');
+          {$ENDIF}
+          res := Func();
+        end);
+    finally
+      JS_SetMaxStackSize(runtime._rt, MaxNativeStackSize);
+    end;
+
+    Result := res;
+  end else
+    Result := Func();
+  {$ELSE}
+  Result := Func();
+  {$ENDIF}
+end;
+
 class function TJSRuntime.GenericMethodCallData(ctx : JSContext; this_val : JSValueConst;
   argc : Integer; argv : PJSValueConst; magic : Integer;
   func_data : PJSValue ): JSValue;
+begin
+  Result := HostCall<JSValue>(ctx, function: JSValue begin Result := GenericMethodCallDataImpl(ctx, this_val, argc, argv, magic, func_data); end);
+end;
 
+class function TJSRuntime.GenericMethodCallDataImpl(ctx : JSContext; this_val : JSValueConst;
+  argc : Integer; argv : PJSValueConst; magic : Integer;
+  func_data : PJSValue ): JSValue;
 begin
   var prtti: Int64;
   TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, PJSValueConstArr(func_data)[1]));
@@ -952,7 +1024,13 @@ end;
 class function TJSRuntime.GenericGetItem(ctx : JSContext; this_val : JSValueConst;
   argc : Integer; argv : PJSValueConst; magic : Integer;
   func_data : PJSValue ): JSValue;
+begin
+  Result := HostCall<JSValue>(ctx, function: JSValue begin Result := GenericGetItemImpl(ctx, this_val, argc, argv, magic, func_data); end);
+end;
 
+class function TJSRuntime.GenericGetItemImpl(ctx : JSContext; this_val : JSValueConst;
+  argc : Integer; argv : PJSValueConst; magic : Integer;
+  func_data : PJSValue ): JSValue;
 begin
   var prtti: Int64;
   TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
@@ -967,7 +1045,13 @@ end;
 class function TJSRuntime.GenericSetItem(ctx : JSContext; this_val : JSValueConst;
   argc : Integer; argv : PJSValueConst; magic : Integer;
   func_data : PJSValue ): JSValue;
+begin
+  Result := HostCall<JSValue>(ctx, function: JSValue begin Result := GenericSetItemImpl(ctx, this_val, argc, argv, magic, func_data); end);
+end;
 
+class function TJSRuntime.GenericSetItemImpl(ctx : JSContext; this_val : JSValueConst;
+  argc : Integer; argv : PJSValueConst; magic : Integer;
+  func_data : PJSValue ): JSValue;
 begin
   var prtti: Int64;
   TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
@@ -988,7 +1072,13 @@ end;
 class function TJSRuntime.GenericPropertyGetter(ctx : JSContext; this_val : JSValueConst;
   argc : Integer; argv : PJSValueConst; magic : Integer;
   func_data : PJSValue ): JSValue;
+begin
+  Result := HostCall<JSValue>(ctx, function: JSValue begin Result := GenericPropertyGetterImpl(ctx, this_val, argc, argv, magic, func_data); end);
+end;
 
+class function TJSRuntime.GenericPropertyGetterImpl(ctx : JSContext; this_val : JSValueConst;
+  argc : Integer; argv : PJSValueConst; magic : Integer;
+  func_data : PJSValue ): JSValue;
 begin
   var prtti: Int64;
   TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
@@ -1015,7 +1105,13 @@ end;
 class function TJSRuntime.GenericPropertySetter(ctx : JSContext; this_val : JSValueConst;
   argc : Integer; argv : PJSValueConst; magic : Integer;
   func_data : PJSValue ): JSValue;
+begin
+  Result := HostCall<JSValue>(ctx, function: JSValue begin Result := GenericPropertySetterImpl(ctx, this_val, argc, argv, magic, func_data); end);
+end;
 
+class function TJSRuntime.GenericPropertySetterImpl(ctx : JSContext; this_val : JSValueConst;
+  argc : Integer; argv : PJSValueConst; magic : Integer;
+  func_data : PJSValue ): JSValue;
 begin
   var prtti: Int64;
   TJSRuntime.Check(JS_ToBigInt64(ctx, @prtti, func_data^));
@@ -1046,7 +1142,13 @@ end;
 class function TJSRuntime.GenericIndexedPropertyGetter(ctx : JSContext; this_val : JSValueConst;
   argc : Integer; argv : PJSValueConst; magic : Integer;
   func_data : PJSValue ): JSValue;
+begin
+  Result := HostCall<JSValue>(ctx, function: JSValue begin Result := GenericIndexedPropertyGetterImpl(ctx, this_val, argc, argv, magic, func_data); end);
+end;
 
+class function TJSRuntime.GenericIndexedPropertyGetterImpl(ctx : JSContext; this_val : JSValueConst;
+  argc : Integer; argv : PJSValueConst; magic : Integer;
+  func_data : PJSValue ): JSValue;
 begin
   var runtime := TJSRuntime.GetRuntimeFromContext(ctx);
   var propertyIndex := JS_ToCString(ctx, func_data^);
@@ -1082,7 +1184,13 @@ end;
 class function TJSRuntime.ExtendablePropertyGetter(ctx : JSContext; obj: JSValueConst;
   argc : Integer; argv : PJSValueConst; magic : Integer;
   func_data: PJSValue ): JSValue;
+begin
+  Result := HostCall<JSValue>(ctx, function: JSValue begin Result := ExtendablePropertyGetterImpl(ctx, obj, argc, argv, magic, func_data); end);
+end;
 
+class function TJSRuntime.ExtendablePropertyGetterImpl(ctx : JSContext; obj: JSValueConst;
+  argc : Integer; argv : PJSValueConst; magic : Integer;
+  func_data: PJSValue ): JSValue;
 begin
   Result := JS_UNDEFINED;
 
@@ -1109,7 +1217,13 @@ end;
 class function TJSRuntime.ExtendablePropertySetter(ctx : JSContext; obj: JSValueConst;
   argc : Integer; argv : PJSValueConst; magic : Integer;
   func_data : PJSValue ): JSValue;
+begin
+  Result := HostCall<JSValue>(ctx, function: JSValue begin Result := ExtendablePropertySetterImpl(ctx, obj, argc, argv, magic, func_data); end);
+end;
 
+class function TJSRuntime.ExtendablePropertySetterImpl(ctx : JSContext; obj: JSValueConst;
+  argc : Integer; argv : PJSValueConst; magic : Integer;
+  func_data : PJSValue ): JSValue;
 begin
   Result := JS_UNDEFINED;
 
@@ -1137,6 +1251,11 @@ begin
 end;
 
 class function TJSRuntime.get_own_property(ctx: JSContext; desc: PJSPropertyDescriptor; obj: JSValueConst; prop: JSAtom) : Integer;
+begin
+  Result := HostCall<Integer>(ctx, function: Integer begin Result := get_own_property_impl(ctx, desc, obj, prop); end);
+end;
+
+class function TJSRuntime.get_own_property_impl(ctx: JSContext; desc: PJSPropertyDescriptor; obj: JSValueConst; prop: JSAtom) : Integer;
 var
   rtti_descriptor: IPropertyDescriptor;
   runtime: TJSRuntime;
@@ -1463,6 +1582,11 @@ begin
 end;
 
 class function TJSRuntime.CConstructor(ctx: JSContext; new_target: JSValueConst; argc: Integer; argv: PJSValueConstArr; magic : Integer): JSValue;
+begin
+  Result := HostCall<JSValue>(ctx, function: JSValue begin Result := CConstructorImpl(ctx, new_target, argc, argv, magic); end);
+end;
+
+class function TJSRuntime.CConstructorImpl(ctx: JSContext; new_target: JSValueConst; argc: Integer; argv: PJSValueConstArr; magic : Integer): JSValue;
 var
   reg: IRegisteredObject;
 
@@ -1492,13 +1616,47 @@ begin
     begin
       var reg: IRegisteredObject;
       if runtime.FRegisteredObjectsByClassID.TryGetValue(cid, reg) then
+      begin
+        {$IFDEF APP_PLATFORM_MD}
+        {$IFDEF DEBUG}
+        if runtime.FMarshalHostCalls and (TThread.CurrentThread.ThreadID <> MainThreadID) then
+        begin
+          if reg.Kind = tkInterface then
+          begin
+            var refCount := IInterface(ptr)._AddRef - 1;
+            IInterface(ptr)._Release;
+            if refCount = 1 then
+              EventTracer.TraceMessage(LYNXAPP_SCRIPT, 'Destructor on worker: ' + string(reg.GetTypeInfo.Name));
+          end
+          else if (reg.Kind = tkClass) and (reg.GetTypeInfo <> System.TypeInfo(TJSIndexedPropertyAccessor)) and (reg.GetTypeInfo <> System.TypeInfo(TJSIterator)) then
+          begin
+            var obj := TObject(ptr);
+            if obj is TAutoReference then
+              obj := TAutoReference(obj).ObjectRef
+            else if obj is TObjectReference then
+              obj := nil;
+
+            if obj <> nil then
+              EventTracer.TraceMessage(LYNXAPP_SCRIPT, 'Free on worker: ' + obj.ClassName);
+          end;
+        end;
+        {$ENDIF}
+        {$ENDIF}
+
         reg.Finalize(ptr);
+      end;
     end;
   end;
 end;
 
 class function TJSRuntime.GenericClassIterator(ctx: JSContext; this_val: JSValueConst;
   argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue): JSValue; cdecl;
+begin
+  Result := HostCall<JSValue>(ctx, function: JSValue begin Result := GenericClassIteratorImpl(ctx, this_val, argc, argv, magic, func_data); end);
+end;
+
+class function TJSRuntime.GenericClassIteratorImpl(ctx: JSContext; this_val: JSValueConst;
+  argc: Integer; argv: PJSValueConst; magic: Integer; func_data : PJSValue): JSValue;
 begin
   var runtime := TJSRuntime.GetRuntimeFromContext(ctx);
   var prtti: Int64;
@@ -1518,6 +1676,11 @@ begin
 end;
 
 class function TJSRuntime.GenericIteratorNext(ctx : JSContext; this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue; cdecl;
+begin
+  Result := HostCall<JSValue>(ctx, function: JSValue begin Result := GenericIteratorNextImpl(ctx, this_val, argc, argv); end);
+end;
+
+class function TJSRuntime.GenericIteratorNextImpl(ctx : JSContext; this_val : JSValueConst; argc : Integer; argv : PJSValueConstArr): JSValue;
 begin
   var runtime := TJSRuntime.GetRuntimeFromContext(ctx);
   var cid := TJSRuntime.GetClassID(this_val);
@@ -2235,7 +2398,7 @@ begin
   // much deeper in the Delphi call stack, causing false "Maximum call stack size exceeded" errors.
   // Setting to 64MB accommodates deep call stacks while still protecting against infinite JS recursion.
   // Note: Setting to 0 would disable the check entirely.
-  JS_SetMaxStackSize(_rt, 64 * 1024 * 1024);
+  JS_SetMaxStackSize(_rt, MaxNativeStackSize);
   
   // Store Self in runtime opaque data for static callback access
   JS_SetRuntimeOpaque(_rt, Self);
@@ -2794,17 +2957,43 @@ begin
 end;
 
 function TJSContext.eval_with_result(const Code: string; const CodeContext: string): TValue;
+begin
+  Result := eval_with_result(Code, CodeContext, nil);
+end;
+
+function TJSContext.eval_with_result(const Code: string; const CodeContext: string; CancelFlag: PInteger): TValue;
 const
   TimeoutMs = 3 * 60 * 1000;
   MonitorSleepMs = 50;
+
+  procedure RaiseIfInterrupted(Interrupt: PInteger; TimedOut: PInteger);
+  begin
+    if Interrupt^ = 0 then
+      Exit;
+
+    if (TimedOut <> nil) and (TimedOut^ <> 0) then
+      raise Exception.CreateFmt('JavaScript execution timed out after %dms', [TimeoutMs]);
+
+    raise Exception.Create('JavaScript execution was cancelled');
+  end;
+
 begin
   var buf: UTF8String := UTF8Encode(Code + #13#10 + ';export function __run__() { return typeof resultValue !== "undefined" ? resultValue : "resultValue is undefined"; }');
   var filename: UTF8String := UTF8Encode(CodeContext) + #0;
 
+  var pLocalCancelFlag: PInteger := nil;
+  var pInterrupt: PInteger := CancelFlag;
   var pTimedOut: PInteger := nil;
   var pStopMonitor: PInteger := nil;
   var monitorThread: TThread := nil;
   var jsrt := JS_GetRuntime(_ctx);
+
+  if pInterrupt = nil then
+  begin
+    New(pLocalCancelFlag);
+    pLocalCancelFlag^ := 0;
+    pInterrupt := pLocalCancelFlag;
+  end;
 
   if Assigned(JS_SetInterruptHandler) then
   begin
@@ -2822,13 +3011,14 @@ begin
           if Now >= deadline then
           begin
             pTimedOut^ := 1;
+            pInterrupt^ := 1;
             Exit;
           end;
           Sleep(MonitorSleepMs);
         end;
       end);
     monitorThread.FreeOnTerminate := False;
-    JS_SetInterruptHandler(jsrt, @TJSContext.InterruptCheck, pTimedOut);
+    JS_SetInterruptHandler(jsrt, @TJSContext.InterruptCheck, pInterrupt);
     monitorThread.Start;
   end;
 
@@ -2838,8 +3028,7 @@ begin
 
     if not TJSRuntime.Check(_ctx, bytecode) then
     begin
-      if (pTimedOut <> nil) and (pTimedOut^ <> 0) then
-        raise Exception.CreateFmt('JavaScript execution timed out after %dms', [TimeoutMs]);
+      RaiseIfInterrupted(pInterrupt, pTimedOut);
       Exit;
     end;
 
@@ -2854,16 +3043,14 @@ begin
 
     if not TJSRuntime.Check(_ctx, res) then
     begin
-      if (pTimedOut <> nil) and (pTimedOut^ <> 0) then
-        raise Exception.CreateFmt('JavaScript execution timed out after %dms', [TimeoutMs]);
+      RaiseIfInterrupted(pInterrupt, pTimedOut);
       Exit;
     end;
 
     res := TJSRuntime.WaitForJobs(_ctx, res);
     TJSRuntime.Check(_ctx, res);
 
-    if (pTimedOut <> nil) and (pTimedOut^ <> 0) then
-      raise Exception.CreateFmt('JavaScript execution timed out after %dms', [TimeoutMs]);
+    RaiseIfInterrupted(pInterrupt, pTimedOut);
 
     Result := (_runtime as TJSRuntime).JSValueToTValue(_ctx, res, nil);
     JS_FreeValue(_ctx, res);
@@ -2880,6 +3067,7 @@ begin
 
     if pTimedOut <> nil then Dispose(pTimedOut);
     if pStopMonitor <> nil then Dispose(pStopMonitor);
+    if pLocalCancelFlag <> nil then Dispose(pLocalCancelFlag);
   end;
 end;
 

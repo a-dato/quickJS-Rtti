@@ -149,7 +149,8 @@ type
     procedure set_LogString(const Value: TProc<string>);
 
     procedure eval(const Code: string; const CodeContext: string);
-    function  eval_with_result(const Code: string; const CodeContext: string): TValue;
+    function  eval_with_result(const Code: string; const CodeContext: string): TValue; overload;
+    function  eval_with_result(const Code: string; const CodeContext: string; CancelFlag: PInteger): TValue; overload;
     procedure OutputLog(const Value: string);
 
     procedure RegisterLiveObjectInstance(ObjectName: string; AObject: TObject; OwnsObject: Boolean);
