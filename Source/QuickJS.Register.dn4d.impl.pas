@@ -18,6 +18,7 @@ type
   TJSBaseObject = class(TJSObject, IBaseInterface)
   protected
     function AsType(const Value: &Type) : CObject;
+    function TryAsType(const Value: &Type) : CObject;
     procedure Dispose;
     function GetObject: TObject;
     function GetType: &Type;
@@ -147,7 +148,8 @@ implementation
 
 uses
   {$IFDEF MSWINDOWS}Winapi.Windows,{$ENDIF}
-  System.SysUtils, System.Math;
+  System.SysUtils, System.Math
+  {$IFDEF DEBUG}, ADato.TraceEvents.intf{$ENDIF};
 
 // Helper: Check if a JSValue is a JavaScript Array by checking constructor.name
 // Note: JS_IsArray from QuickJS doesn't work reliably, so we use this instead
@@ -171,16 +173,22 @@ end;
 
 function TJSBaseObject.AsType(const Value: &Type) : CObject;
 begin
+  Result := TryAsType(Value);
+  if Result = nil then
+    raise InvalidCastException.Create('cast to: ''' +  Value.Name + ''' failed');
+end;
+
+function TJSBaseObject.TryAsType(const Value: &Type) : CObject;
+begin
+  Result := nil;
+
   var ii: IInterface;
   if Value.IsInterfaceType and (QueryInterface(Value.Guid, ii) = S_OK) then
   begin
     var v: TValue;
     TValue.Make(@ii, Value.GetTypeInfo, v);
     Result := CObject.From<TValue>(v);
-    Exit;
   end;
-
-  raise InvalidCastException.Create('cast to: ''' +  Value.Name + ''' failed');
 end;
 
 procedure TJSBaseObject.Dispose;
@@ -515,9 +523,15 @@ begin
   // Did we get a constructor?
   if JS_IsConstructor(ctx, Value) then
   begin
-    // Registered Delphi object?
+    // Registered Delphi object? Resolve through the class ID stamped on the
+    // constructor: constructor JSValues are context-local, class IDs are not.
+    {$IFDEF APP_PLATFORM_MD}
+    if runtime.TryGetRegisteredObjectFromConstructor(ctx, Value, reg) then
+      Exit(&Type.Create(reg.GetTypeInfo));
+    {$ELSE}
     if runtime.TryGetRegisteredObjectFromConstructor(Value, reg) then
       Exit(&Type.Create(reg.GetTypeInfo));
+    {$ENDIF}
 
     // Registered JS Object?
     if not runtime.TryGetRegisteredJSObject(Value, reg) then

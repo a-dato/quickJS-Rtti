@@ -123,7 +123,12 @@ type
     function  TryGetRegisteredObjectFromJSValue(Value: JSValue; out AObject: TRegisteredObjectWithPtr): Boolean;
     function  TryGetRegisteredObjectFromClassID(ClassID: JSClassID; out RegisteredObject: IRegisteredObject): Boolean;
     function  TryGetRegisteredObjectFromTypeInfo(TypeInfo: PTypeInfo; out RegisteredObject: IRegisteredObject): Boolean;
+    {$IFDEF APP_PLATFORM_MD}
+    function  TryGetRegisteredObjectFromConstructor(JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject): Boolean; overload;
+    function  TryGetRegisteredObjectFromConstructor(ctx: JSContext; JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject): Boolean; overload;
+    {$ELSE}
     function  TryGetRegisteredObjectFromConstructor(JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject): Boolean;
+    {$ENDIF}
     function  TryGetRegisteredJSObject(JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject): Boolean;
     function  TryGetRegisteredInterface(const IID: TGuid; out RegisteredObject: IRegisteredObject): Boolean;
 

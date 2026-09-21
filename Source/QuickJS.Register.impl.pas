@@ -182,7 +182,12 @@ type
     function  TryGetRegisteredObjectFromJSValue(ctx: JSContext; Value: JSValue; out AObject: TRegisteredObjectWithPtr): Boolean; overload;
     function  TryGetRegisteredObjectFromClassID(ClassID: JSClassID; out RegisteredObject: IRegisteredObject): Boolean;
     function  TryGetRegisteredObjectFromTypeInfo(TypeInfo: PTypeInfo; out RegisteredObject: IRegisteredObject): Boolean;
+    {$IFDEF APP_PLATFORM_MD}
+    function  TryGetRegisteredObjectFromConstructor(JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject): Boolean; overload;
+    function  TryGetRegisteredObjectFromConstructor(ctx: JSContext; JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject): Boolean; overload;
+    {$ELSE}
     function  TryGetRegisteredObjectFromConstructor(JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject): Boolean;
+    {$ENDIF}
     function  TryGetRegisteredJSObject(JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject): Boolean;
     function  TryGetRegisteredInterface(const IID: TGuid; out RegisteredObject: IRegisteredObject): Boolean;
 
@@ -2568,6 +2573,21 @@ begin
   // Set the Class native constructor.
   obj := JS_NewCFunction2(jsctx, @TJSRuntime.CConstructor, JClass.class_name, 1, JS_CFUNC_constructor_magic, classID);
 
+  {$IFDEF APP_PLATFORM_MD}
+  // Store context-independent registration identity on every context's
+  // constructor. JSValue handles themselves are context-local.
+  if JS_DefinePropertyValueStr(
+    jsctx,
+    obj,
+    '__quickjs_registered_class_id',
+    JS_NewInt32(jsctx, Integer(classID)),
+    0
+  ) < 0 then
+    raise Exception.Create('Could not attach registered class ID to constructor');
+  {$ELSE}
+  // Legacy builds keep the original context-local constructor registration.
+  {$ENDIF}
+
   // Add the Class to Global Object so we can use it.
   global := JS_GetGlobalObject(jsctx);
   JS_SetPropertyStr(jsctx, global, JClass.class_name, obj);
@@ -2844,6 +2864,37 @@ begin
     TMonitor.Exit(FRegisteredObjectsByConstructor);
   end;
 end;
+
+{$IFDEF APP_PLATFORM_MD}
+function TJSRuntime.TryGetRegisteredObjectFromConstructor(
+  ctx: JSContext; JSConstructor: JSValueConst;
+  out RegisteredObject: IRegisteredObject): Boolean;
+begin
+  Result := False;
+  RegisteredObject := nil;
+  if (ctx = nil) or not JS_IsConstructor(ctx, JSConstructor) then Exit;
+
+  var classIDValue := JS_GetPropertyStr(
+    ctx,
+    JSConstructor,
+    '__quickjs_registered_class_id'
+  );
+  try
+    if JS_IsException(classIDValue) or not JS_IsNumber(classIDValue) then Exit;
+
+    var classID: Integer;
+    if JS_ToInt32(ctx, @classID, classIDValue) <> 0 then Exit;
+    if classID <= 0 then Exit;
+
+    Result := TryGetRegisteredObjectFromClassID(
+      JSClassID(classID),
+      RegisteredObject
+    );
+  finally
+    JS_FreeValue(ctx, classIDValue);
+  end;
+end;
+{$ENDIF}
 
 function TJSRuntime.TryGetRegisteredJSObject(JSConstructor: JSValueConst; out RegisteredObject: IRegisteredObject): Boolean;
 begin

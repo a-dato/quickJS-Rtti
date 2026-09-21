@@ -1,4 +1,4 @@
-﻿unit App.impl;
+unit App.impl;
 
 interface
 
@@ -27,6 +27,7 @@ type
     _extendabePropertyValues: Dictionary<string, JSValue>;
 
     function AsType(const AType: &Type) : CObject; override;
+    function TryAsType(const AType: &Type) : CObject; override;
 
     // IAppObject
     function get_Config: IAppConfig;
@@ -69,6 +70,12 @@ begin
 end;
 
 function TAppObject.AsType(const AType: &Type) : CObject;
+begin
+  if (_typeConverter = nil) or not _typeConverter.TryAsType(AType, Result) then
+    Result := inherited;
+end;
+
+function TAppObject.TryAsType(const AType: &Type) : CObject;
 begin
   if (_typeConverter = nil) or not _typeConverter.TryAsType(AType, Result) then
     Result := inherited;
