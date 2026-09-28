@@ -977,10 +977,6 @@ begin
     try
       TThread.Synchronize(nil, procedure
         begin
-          {$IFDEF DEBUG}
-          if TThread.CurrentThread.ThreadID <> MainThreadID then
-            EventTracer.TraceMessage(LYNXAPP_SCRIPT, 'HostCall did NOT run on the main thread (thread ' + TThread.CurrentThread.ThreadID.ToString + ')');
-          {$ENDIF}
           res := Func();
         end);
     finally
