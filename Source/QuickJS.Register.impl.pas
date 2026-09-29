@@ -230,6 +230,10 @@ type
     _ctx: JSContext;
     _runtime: IJSRuntime;
     _LogString: TProc<string>;
+    {$IFDEF APP_PLATFORM_MD}
+    // Tick count of the last console output; read by the eval timeout monitor thread.
+    _lastActivityTicks: Int64;
+    {$ENDIF}
 
     function  get_ctx: JSContext;
     function  get_Runtime: IJSRuntime;
@@ -354,6 +358,9 @@ type
 implementation
 uses
   System.Classes, System.DateUtils,
+  {$IFDEF APP_PLATFORM_MD}
+  System.SyncObjs,
+  {$ENDIF}
   ADato.TraceEvents.intf,
   QuickJS.VirtualMethod.impl, QuickJS.Register.ObjectBridge.impl,
   QuickJS.Register.ObjectBridgeTypes.intf,
@@ -3010,7 +3017,13 @@ end;
 
 function TJSContext.eval_with_result(const Code: string; const CodeContext: string; CancelFlag: PInteger): TValue;
 const
+  {$IFDEF APP_PLATFORM_MD}
+  // Idle timeout: every console output (progress() included) restarts the clock,
+  // so long scripts that keep reporting progress are never stopped by it.
+  IdleTimeoutMs = 3 * 60 * 1000;
+  {$ELSE}
   TimeoutMs = 3 * 60 * 1000;
+  {$ENDIF}
   MonitorSleepMs = 50;
 
   procedure RaiseIfInterrupted(Interrupt: PInteger; TimedOut: PInteger);
@@ -3019,7 +3032,11 @@ const
       Exit;
 
     if (TimedOut <> nil) and (TimedOut^ <> 0) then
+      {$IFDEF APP_PLATFORM_MD}
+      raise Exception.CreateFmt('JavaScript execution timed out after %dms without progress', [IdleTimeoutMs]);
+      {$ELSE}
       raise Exception.CreateFmt('JavaScript execution timed out after %dms', [TimeoutMs]);
+      {$ENDIF}
 
     raise Exception.Create('JavaScript execution was cancelled');
   end;
@@ -3049,13 +3066,24 @@ begin
     pTimedOut^ := 0;
     pStopMonitor^ := 0;
 
+    {$IFDEF APP_PLATFORM_MD}
+    TInterlocked.Exchange(_lastActivityTicks, Int64(TThread.GetTickCount64));
+    {$ENDIF}
+
     monitorThread := TThread.CreateAnonymousThread(
       procedure
       begin
+        {$IFNDEF APP_PLATFORM_MD}
         var deadline := IncMilliSecond(Now, TimeoutMs);
+        {$ENDIF}
         while pStopMonitor^ = 0 do
         begin
+          {$IFDEF APP_PLATFORM_MD}
+          var idleMs := Int64(TThread.GetTickCount64) - TInterlocked.Read(_lastActivityTicks);
+          if idleMs >= IdleTimeoutMs then
+          {$ELSE}
           if Now >= deadline then
+          {$ENDIF}
           begin
             pTimedOut^ := 1;
             pInterrupt^ := 1;
@@ -3174,6 +3202,10 @@ end;
 
 procedure TJSContext.OutputLog(const Value: string);
 begin
+  {$IFDEF APP_PLATFORM_MD}
+  TInterlocked.Exchange(_lastActivityTicks, Int64(TThread.GetTickCount64));
+  {$ENDIF}
+
   if Assigned(_LogString) then
     _LogString(Value);
 end;
