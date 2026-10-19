@@ -1,0 +1,46 @@
+﻿{
+  "type": "IProject",
+  "storage": "Projects",
+  "objects": [
+    {
+      "ID": "0",
+      "Description": "Project 0"
+    },
+    {
+      "ID": "1",
+      "Description": "Project 1"
+    },
+    {
+      "ID": "2",
+      "Description": "Project 2"
+    },
+    {
+      "ID": "3",
+      "Description": "Project 3"
+    },
+    {
+      "ID": "4",
+      "Description": "Project 4"
+    },
+    {
+      "ID": "5",
+      "Description": "Project 5"
+    },
+    {
+      "ID": "6",
+      "Description": "Project 6"
+    },
+    {
+      "ID": "7",
+      "Description": "Project 7"
+    },
+    {
+      "ID": "8",
+      "Description": "Project 8"
+    },
+    {
+      "ID": "9",
+      "Description": "Project 9"
+    }
+  ]
+}

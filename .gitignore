@@ -37,3 +37,7 @@ LynxConnnector/LynxConnector/Server/obj/*
 /QuickNodeJS/Win64
 /QuickNodeJS/Win32
 /QuickNodeJSConsole/Win64
+
+# AppPlatformWithAI: local secrets next to the exe
+tokens.json
+app-tokens.json

@@ -117,7 +117,8 @@ begin
     for var notify in _Notifiers do
       val := notify.OnChanging(obj, val);
 
-  if (_marshaller <> nil) and (Value.IsInterface or Value.IsObject) then
+  // IsInterface reads the type info, which an empty value does not have
+  if (_marshaller <> nil) and not Value.IsNull and (Value.IsInterface or Value.IsObject) then
     val := _marshaller.Marshal(obj, Value) else
     val := Value;
 

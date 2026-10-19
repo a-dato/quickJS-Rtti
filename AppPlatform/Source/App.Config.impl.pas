@@ -34,6 +34,7 @@ type
     {$ENDIF}
 
     procedure RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
+    function  UnregisterType(const AType: &Type) : Boolean;
     procedure RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);
 
     function  FindType(const Name: string; out AType: &Type) : Boolean;
@@ -238,6 +239,11 @@ begin
   // Notify all registered handlers
   for var handler in _TypeRegisteredHandlers do
     handler(AType, TypeDescriptor);
+end;
+
+function TAppConfig.UnregisterType(const AType: &Type) : Boolean;
+begin
+  Result := _Types.Remove(AType);
 end;
 
 procedure TAppConfig.AddOnTypeRegistered(const Handler: TTypeRegisteredEvent);

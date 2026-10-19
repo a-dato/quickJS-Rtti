@@ -28,6 +28,9 @@ type
     {$ENDIF}
 
     procedure RegisterType(const AType: &Type; const ObjectType: ITypeDescriptor);
+    // Removes a registered type, e.g. before a type script defines it again
+    // (a JavaScript class that is evaluated again is a new &Type).
+    function  UnregisterType(const AType: &Type) : Boolean;
     procedure RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);
 
     function  FindType(const Name: string; out AType: &Type) : Boolean;

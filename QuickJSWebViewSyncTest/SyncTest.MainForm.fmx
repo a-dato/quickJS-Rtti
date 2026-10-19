@@ -1,0 +1,400 @@
+object frmSyncTest: TfrmSyncTest
+  Left = 0
+  Top = 0
+  Caption = 'QuickJS WebView Sync Test'
+  ClientHeight = 760
+  ClientWidth = 1600
+  Position = ScreenCenter
+  FormFactor.Width = 320
+  FormFactor.Height = 480
+  FormFactor.Devices = [Desktop]
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  DesignerMasterStyle = 0
+  object lytDelphi: TLayout
+    Align = Left
+    Padding.Left = 16.000000000000000000
+    Padding.Top = 16.000000000000000000
+    Padding.Right = 16.000000000000000000
+    Padding.Bottom = 16.000000000000000000
+    Size.Width = 860.000000000000000000
+    Size.Height = 760.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    object lblTitle: TLabel
+      Align = Top
+      StyledSettings = [Family, Style, FontColor]
+      Size.Width = 828.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      TextSettings.Font.Size = 18.000000000000000000
+      Text = 'Delphi'
+      TabOrder = 0
+    end
+    object lblHint: TLabel
+      Align = Top
+      Margins.Bottom = 12.000000000000000000
+      Position.Y = 26.000000000000000000
+      Size.Width = 828.000000000000000000
+      Size.Height = 20.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'A list in TObjectListModel, shown by TDataControl. The page binds to the same model.'
+      TabOrder = 1
+    end
+    object DataControl1: TDataControl
+      Align = Top
+      HitTest = True
+      Position.Y = 50.000000000000000000
+      Size.Width = 828.000000000000000000
+      Size.Height = 190.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 6
+      Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid]
+      RowHeightDefault = 26.000000000000000000
+      DragDropOnIndividualRows = False
+      HeaderHeight = 24.000000000000000000
+      AutoExtraColumnSizeMax = -1.000000000000000000
+      CellTopBottomPadding = 6.000000000000000000
+      CellLeftRightPadding = 8.000000000000000000
+      VisualizeParentChilds = No
+    end
+    object lytListButtons: TLayout
+      Align = Top
+      Margins.Top = 6.000000000000000000
+      Position.Y = 244.000000000000000000
+      Size.Width = 828.000000000000000000
+      Size.Height = 30.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 8
+      object btnAdd: TButton
+        Align = Left
+        Position.X = 0.000000000000000000
+        Margins.Right = 6.000000000000000000
+        Size.Width = 86.000000000000000000
+        Size.Height = 30.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Text = 'Add'
+        OnClick = btnAddClick
+      end
+      object btnRemove: TButton
+        Align = Left
+        Position.X = 100.000000000000000000
+        Margins.Right = 6.000000000000000000
+        Size.Width = 86.000000000000000000
+        Size.Height = 30.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        Text = 'Remove'
+        OnClick = btnRemoveClick
+      end
+      object btnEndEdit: TButton
+        Align = Left
+        Position.X = 200.000000000000000000
+        Margins.Right = 6.000000000000000000
+        Size.Width = 86.000000000000000000
+        Size.Height = 30.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+        Text = 'End edit'
+        OnClick = btnEndEditClick
+      end
+      object btnCancelEdit: TButton
+        Align = Left
+        Position.X = 300.000000000000000000
+        Margins.Right = 6.000000000000000000
+        Size.Width = 86.000000000000000000
+        Size.Height = 30.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 3
+        Text = 'Cancel edit'
+        OnClick = btnCancelEditClick
+      end
+      object lblListState: TLabel
+        Align = Client
+        StyledSettings = [Family, Size, Style]
+        Margins.Left = 8.000000000000000000
+        Size.Width = 400.000000000000000000
+        Size.Height = 30.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.FontColor = claGray
+        TabOrder = 4
+      end
+    end
+    object lblDetailTitle: TLabel
+      Align = Top
+      Margins.Top = 10.000000000000000000
+      Position.Y = 284.000000000000000000
+      Size.Width = 828.000000000000000000
+      Size.Height = 22.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Current row  (controls bound to ListModel.ObjectModelContext)'
+      TabOrder = 7
+    end
+    object lytValues: TLayout
+      Align = Top
+      Position.Y = 310.000000000000000000
+      Size.Width = 828.000000000000000000
+      Size.Height = 172.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 2
+      object lytQuantity: TLayout
+        Align = Top
+        Position.Y = 0.000000000000000000
+        Size.Width = 828.000000000000000000
+        Size.Height = 34.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        object lblQuantityCaption: TLabel
+          Align = Left
+          Size.Width = 90.000000000000000000
+          Size.Height = 34.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'Quantity'
+          TabOrder = 0
+        end
+        object spinQuantity: TSpinBox
+          Touch.InteractiveGestures = [LongTap, DoubleTap]
+          Align = Left
+          TabOrder = 1
+          Cursor = crIBeam
+          Max = 100000.000000000000000000
+          Position.X = 90.000000000000000000
+          Margins.Top = 3.000000000000000000
+          Margins.Right = 14.000000000000000000
+          Margins.Bottom = 3.000000000000000000
+          Size.Width = 110.000000000000000000
+          Size.Height = 28.000000000000000000
+          Size.PlatformDefault = False
+        end
+        object lblQuantityBind: TLabel
+          Align = Client
+          StyledSettings = [Family, Size, Style]
+          Size.Width = 600.000000000000000000
+          Size.Height = 34.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.FontColor = claGray
+          Text = 'Bind(''Quantity'', spinQuantity)'
+          TabOrder = 2
+        end
+      end
+      object lytUnitPrice: TLayout
+        Align = Top
+        Position.Y = 34.000000000000000000
+        Size.Width = 828.000000000000000000
+        Size.Height = 34.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        object lblUnitPriceCaption: TLabel
+          Align = Left
+          Size.Width = 90.000000000000000000
+          Size.Height = 34.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'Unit price'
+          TabOrder = 0
+        end
+        object spinUnitPrice: TSpinBox
+          Touch.InteractiveGestures = [LongTap, DoubleTap]
+          Align = Left
+          TabOrder = 1
+          Cursor = crIBeam
+          ValueType = Float
+          DecimalDigits = 2
+          Increment = 5.000000000000000000
+          Max = 100000.000000000000000000
+          Position.X = 90.000000000000000000
+          Margins.Top = 3.000000000000000000
+          Margins.Right = 14.000000000000000000
+          Margins.Bottom = 3.000000000000000000
+          Size.Width = 110.000000000000000000
+          Size.Height = 28.000000000000000000
+          Size.PlatformDefault = False
+        end
+        object lblUnitPriceBind: TLabel
+          Align = Client
+          StyledSettings = [Family, Size, Style]
+          Size.Width = 600.000000000000000000
+          Size.Height = 34.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.FontColor = claGray
+          Text = 'Bind(''UnitPrice'', spinUnitPrice)'
+          TabOrder = 2
+        end
+      end
+      object lytSubtotal: TLayout
+        Align = Top
+        Position.Y = 68.000000000000000000
+        Size.Width = 828.000000000000000000
+        Size.Height = 34.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+        object lblSubtotalCaption: TLabel
+          Align = Left
+          Size.Width = 90.000000000000000000
+          Size.Height = 34.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'Subtotal'
+          TabOrder = 0
+        end
+        object lblSubtotal: TLabel
+          Align = Left
+          Position.X = 90.000000000000000000
+          Margins.Right = 14.000000000000000000
+          Size.Width = 110.000000000000000000
+          Size.Height = 34.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.HorzAlign = Trailing
+          TabOrder = 1
+        end
+        object lblSubtotalBind: TLabel
+          Align = Client
+          StyledSettings = [Family, Size, Style]
+          Size.Width = 600.000000000000000000
+          Size.Height = 34.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.FontColor = claGray
+          Text = 'Bind(''Subtotal'', lblSubtotal) + Link to Quantity, UnitPrice    = Quantity x Unit price'
+          TabOrder = 2
+        end
+      end
+      object lytDiscount: TLayout
+        Align = Top
+        Position.Y = 102.000000000000000000
+        Size.Width = 828.000000000000000000
+        Size.Height = 34.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 3
+        object lblDiscountCaption: TLabel
+          Align = Left
+          Size.Width = 90.000000000000000000
+          Size.Height = 34.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'Discount'
+          TabOrder = 0
+        end
+        object spinDiscount: TSpinBox
+          Touch.InteractiveGestures = [LongTap, DoubleTap]
+          Align = Left
+          TabOrder = 1
+          Cursor = crIBeam
+          ValueType = Float
+          DecimalDigits = 2
+          Increment = 5.000000000000000000
+          Max = 100000.000000000000000000
+          Position.X = 90.000000000000000000
+          Margins.Top = 3.000000000000000000
+          Margins.Right = 14.000000000000000000
+          Margins.Bottom = 3.000000000000000000
+          Size.Width = 110.000000000000000000
+          Size.Height = 28.000000000000000000
+          Size.PlatformDefault = False
+        end
+        object lblDiscountBind: TLabel
+          Align = Client
+          StyledSettings = [Family, Size, Style]
+          Size.Width = 600.000000000000000000
+          Size.Height = 34.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.FontColor = claGray
+          Text = 'Bind(''Discount'', spinDiscount) + Link to Quantity, UnitPrice    editable only when Subtotal > 100'
+          TabOrder = 2
+        end
+      end
+      object lytTotal: TLayout
+        Align = Top
+        Position.Y = 136.000000000000000000
+        Size.Width = 828.000000000000000000
+        Size.Height = 34.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 4
+        object lblTotalCaption: TLabel
+          Align = Left
+          Size.Width = 90.000000000000000000
+          Size.Height = 34.000000000000000000
+          Size.PlatformDefault = False
+          Text = 'Total'
+          TabOrder = 0
+        end
+        object lblTotal: TLabel
+          Align = Left
+          Position.X = 90.000000000000000000
+          Margins.Right = 14.000000000000000000
+          Size.Width = 110.000000000000000000
+          Size.Height = 34.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.HorzAlign = Trailing
+          TabOrder = 1
+        end
+        object lblTotalBind: TLabel
+          Align = Client
+          StyledSettings = [Family, Size, Style]
+          Size.Width = 600.000000000000000000
+          Size.Height = 34.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.FontColor = claGray
+          Text = 'Bind(''Total'', lblTotal) + Link to Quantity, UnitPrice, Discount    = Subtotal - Discount'
+          TabOrder = 2
+        end
+      end
+    end
+    object lblTraceTitle: TLabel
+      Align = Top
+      Margins.Top = 12.000000000000000000
+      Position.Y = 242.000000000000000000
+      Size.Width = 828.000000000000000000
+      Size.Height = 30.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Call trace (indented = caused by the line above)'
+      TabOrder = 3
+      object btnClearLog: TButton
+        Align = Right
+        Margins.Top = 2.000000000000000000
+        Margins.Bottom = 2.000000000000000000
+        Size.Width = 90.000000000000000000
+        Size.Height = 26.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Text = 'Clear log'
+        OnClick = btnClearLogClick
+      end
+    end
+    object mmLog: TMemo
+      Touch.InteractiveGestures = [Pan, LongTap, DoubleTap]
+      DataDetectorTypes = []
+      ReadOnly = True
+      StyledSettings = [Style, FontColor]
+      TextSettings.Font.Family = 'Consolas'
+      TextSettings.Font.Size = 11.000000000000000000
+      TextSettings.WordWrap = False
+      Align = Client
+      Size.Width = 828.000000000000000000
+      Size.Height = 450.000000000000000000
+      Size.PlatformDefault = False
+      TabOrder = 4
+      Viewport.Width = 824.000000000000000000
+      Viewport.Height = 446.000000000000000000
+    end
+  end
+  object Splitter1: TSplitter
+    Align = Left
+    Cursor = crHSplit
+    MinSize = 20.000000000000000000
+    Position.X = 860.000000000000000000
+    Size.Width = 5.000000000000000000
+    Size.Height = 760.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object WebBrowser1: TWebBrowser
+    Align = Client
+    Size.Width = 735.000000000000000000
+    Size.Height = 760.000000000000000000
+    Size.PlatformDefault = False
+    WindowsEngine = EdgeOnly
+  end
+  object tmListState: TTimer
+    Interval = 250
+    OnTimer = tmListStateTimer
+    Left = 40
+    Top = 700
+  end
+end

@@ -1,0 +1,436 @@
+﻿{
+  "type": "TrelloTask",
+  "storage": "TrelloTasks",
+  "objects": [
+    {
+      "ID": "10",
+      "Name": "Kickoff meeting [30 minutes]",
+      "CardID": "6a16e9c5b2cbf178f253c449",
+      "Description": "",
+      "URL": "https://trello.com/c/rh93HQuy/2-kickoff-meeting-30-minutes",
+      "BoardID": "6a16e9c5b2cbf178f253c438",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "11",
+      "Name": "Make AI integration [5 hours]",
+      "CardID": "6a16e9c5b2cbf178f253c44c",
+      "Description": "",
+      "URL": "https://trello.com/c/XIGZbbyF/3-make-ai-integration-5-hours",
+      "BoardID": "6a16e9c5b2cbf178f253c438",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "12",
+      "Name": "Make Rest API Work [1 hour]",
+      "CardID": "6a16e9c5b2cbf178f253c44f",
+      "Description": "",
+      "URL": "https://trello.com/c/zVMs1c9q/4-make-rest-api-work-1-hour",
+      "BoardID": "6a16e9c5b2cbf178f253c438",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "13",
+      "Name": "Make it work more [2 days]",
+      "CardID": "6a16e9c5b2cbf178f253c452",
+      "Description": "",
+      "URL": "https://trello.com/c/tSSceLTI/5-make-it-work-more-2-days",
+      "BoardID": "6a16e9c5b2cbf178f253c438",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "14",
+      "Name": "Prepare for demo [3 days]",
+      "CardID": "6a16e9c5b2cbf178f253c455",
+      "Description": "",
+      "URL": "https://trello.com/c/kTBvqxJ6/6-prepare-for-demo-3-days",
+      "BoardID": "6a16e9c5b2cbf178f253c438",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "15",
+      "Name": "Figure out how todo trello integration. [3 hours]",
+      "CardID": "6a16e9c5b2cbf178f253c461",
+      "Description": "",
+      "URL": "https://trello.com/c/y7WEDDev/10-figure-out-how-todo-trello-integration-3-hours",
+      "BoardID": "6a16e9c5b2cbf178f253c438",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "16",
+      "Name": "Project planning [3 hours]",
+      "CardID": "6a16e9c5b2cbf178f253c446",
+      "Description": "",
+      "URL": "https://trello.com/c/3ByUZ1Ut/1-project-planning-3-hours",
+      "BoardID": "6a16e9c5b2cbf178f253c438",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "17",
+      "Name": "Think about what todo [6 hours]",
+      "CardID": "6a16e9c5b2cbf178f253c458",
+      "Description": "",
+      "URL": "https://trello.com/c/q4qcO5pw/7-think-about-what-todo-6-hours",
+      "BoardID": "6a16e9c5b2cbf178f253c438",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "18",
+      "Name": "Get a coffee [30 minutes]",
+      "CardID": "6a16e9c5b2cbf178f253c45b",
+      "Description": "",
+      "URL": "https://trello.com/c/EvwbWTdO/8-get-a-coffee-30-minutes",
+      "BoardID": "6a16e9c5b2cbf178f253c438",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "19",
+      "Name": "Fill bottle of water, with water, but from the sink thats far away [3 hours]",
+      "CardID": "6a16e9c5b2cbf178f253c45e",
+      "Description": "",
+      "URL": "https://trello.com/c/n5lzuug0/9-fill-bottle-of-water-with-water-but-from-the-sink-thats-far-away-3-hours",
+      "BoardID": "6a16e9c5b2cbf178f253c438",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "20",
+      "Name": "Kickoff meeting [30 minutes]",
+      "CardID": "6a16eae83f1bde2f4ed18e07",
+      "Description": "",
+      "URL": "https://trello.com/c/isnai6ui/2-kickoff-meeting-30-minutes",
+      "BoardID": "6a16eae83f1bde2f4ed18dfc",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "21",
+      "Name": "Make AI integration [5 hours]",
+      "CardID": "6a16eae83f1bde2f4ed18e0a",
+      "Description": "",
+      "URL": "https://trello.com/c/OYNyxok5/3-make-ai-integration-5-hours",
+      "BoardID": "6a16eae83f1bde2f4ed18dfc",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "22",
+      "Name": "Make Rest API Work [1 hour]",
+      "CardID": "6a16eae83f1bde2f4ed18e0d",
+      "Description": "",
+      "URL": "https://trello.com/c/CwOtItod/4-make-rest-api-work-1-hour",
+      "BoardID": "6a16eae83f1bde2f4ed18dfc",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "23",
+      "Name": "Make it work more [2 days]",
+      "CardID": "6a16eae83f1bde2f4ed18e10",
+      "Description": "",
+      "URL": "https://trello.com/c/ZitqJpFV/5-make-it-work-more-2-days",
+      "BoardID": "6a16eae83f1bde2f4ed18dfc",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "24",
+      "Name": "Prepare for demo [3 days]",
+      "CardID": "6a16eae83f1bde2f4ed18e13",
+      "Description": "",
+      "URL": "https://trello.com/c/u30taCQT/6-prepare-for-demo-3-days",
+      "BoardID": "6a16eae83f1bde2f4ed18dfc",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "25",
+      "Name": "Figure out how todo trello integration. [3 hours]",
+      "CardID": "6a16eae83f1bde2f4ed18e1f",
+      "Description": "",
+      "URL": "https://trello.com/c/DetfVyXZ/10-figure-out-how-todo-trello-integration-3-hours",
+      "BoardID": "6a16eae83f1bde2f4ed18dfc",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "26",
+      "Name": "Project planning [3 hours]",
+      "CardID": "6a16eae83f1bde2f4ed18e04",
+      "Description": "",
+      "URL": "https://trello.com/c/cWTTBkwy/1-project-planning-3-hours",
+      "BoardID": "6a16eae83f1bde2f4ed18dfc",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "27",
+      "Name": "Think about what todo [6 hours]",
+      "CardID": "6a16eae83f1bde2f4ed18e16",
+      "Description": "",
+      "URL": "https://trello.com/c/xo3S0a5W/7-think-about-what-todo-6-hours",
+      "BoardID": "6a16eae83f1bde2f4ed18dfc",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "28",
+      "Name": "Get a coffee [30 minutes]",
+      "CardID": "6a16eae83f1bde2f4ed18e19",
+      "Description": "",
+      "URL": "https://trello.com/c/NufvUysz/8-get-a-coffee-30-minutes",
+      "BoardID": "6a16eae83f1bde2f4ed18dfc",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "29",
+      "Name": "Fill bottle of water, with water, but from the sink thats far away [3 hours]",
+      "CardID": "6a16eae83f1bde2f4ed18e1c",
+      "Description": "",
+      "URL": "https://trello.com/c/aGkTJAMB/9-fill-bottle-of-water-with-water-but-from-the-sink-thats-far-away-3-hours",
+      "BoardID": "6a16eae83f1bde2f4ed18dfc",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "30",
+      "Name": "Kickoff meeting [30 minutes]",
+      "CardID": "6a16eb11041e9dbad4272167",
+      "Description": "",
+      "URL": "https://trello.com/c/DJHYl41c/2-kickoff-meeting-30-minutes",
+      "BoardID": "6a16eb11041e9dbad427215c",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "31",
+      "Name": "Make AI integration [5 hours]",
+      "CardID": "6a16eb11041e9dbad427216a",
+      "Description": "",
+      "URL": "https://trello.com/c/sw8gpeDw/3-make-ai-integration-5-hours",
+      "BoardID": "6a16eb11041e9dbad427215c",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "32",
+      "Name": "Make Rest API Work [1 hour]",
+      "CardID": "6a16eb11041e9dbad427216d",
+      "Description": "",
+      "URL": "https://trello.com/c/7b1jqHnq/4-make-rest-api-work-1-hour",
+      "BoardID": "6a16eb11041e9dbad427215c",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "33",
+      "Name": "Make it work more [2 days]",
+      "CardID": "6a16eb11041e9dbad4272170",
+      "Description": "",
+      "URL": "https://trello.com/c/o0VuQWWw/5-make-it-work-more-2-days",
+      "BoardID": "6a16eb11041e9dbad427215c",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "34",
+      "Name": "Prepare for demo [3 days]",
+      "CardID": "6a16eb11041e9dbad4272173",
+      "Description": "",
+      "URL": "https://trello.com/c/zKTsyMVV/6-prepare-for-demo-3-days",
+      "BoardID": "6a16eb11041e9dbad427215c",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "35",
+      "Name": "Figure out how todo trello integration. [3 hours]",
+      "CardID": "6a16eb11041e9dbad427217f",
+      "Description": "",
+      "URL": "https://trello.com/c/xxER8ni8/10-figure-out-how-todo-trello-integration-3-hours",
+      "BoardID": "6a16eb11041e9dbad427215c",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "36",
+      "Name": "Project planning [3 hours]",
+      "CardID": "6a16eb11041e9dbad4272164",
+      "Description": "",
+      "URL": "https://trello.com/c/p6TGScI9/1-project-planning-3-hours",
+      "BoardID": "6a16eb11041e9dbad427215c",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "37",
+      "Name": "Think about what todo [6 hours]",
+      "CardID": "6a16eb11041e9dbad4272176",
+      "Description": "",
+      "URL": "https://trello.com/c/sCIEXVm9/7-think-about-what-todo-6-hours",
+      "BoardID": "6a16eb11041e9dbad427215c",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "38",
+      "Name": "Get a coffee [30 minutes]",
+      "CardID": "6a16eb11041e9dbad4272179",
+      "Description": "",
+      "URL": "https://trello.com/c/OezGDdzS/8-get-a-coffee-30-minutes",
+      "BoardID": "6a16eb11041e9dbad427215c",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "39",
+      "Name": "Fill bottle of water, with water, but from the sink thats far away [3 hours]",
+      "CardID": "6a16eb11041e9dbad427217c",
+      "Description": "",
+      "URL": "https://trello.com/c/lqLoqyj8/9-fill-bottle-of-water-with-water-but-from-the-sink-thats-far-away-3-hours",
+      "BoardID": "6a16eb11041e9dbad427215c",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "40",
+      "Name": "Kickoff meeting [30 minutes]",
+      "CardID": "66cca3f1c3b9c880a5f4e898",
+      "Description": "",
+      "URL": "https://trello.com/c/FPlv68x4/2-kickoff-meeting-30-minutes",
+      "BoardID": "66cca3ef5a8eb3a2ed0e6da8",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "41",
+      "Name": "Make AI integration [5 hours]",
+      "CardID": "6a10059f761acf7012fb5eb7",
+      "Description": "",
+      "URL": "https://trello.com/c/iXYYGD6C/3-make-ai-integration-5-hours",
+      "BoardID": "66cca3ef5a8eb3a2ed0e6da8",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "42",
+      "Name": "Make Rest API Work [1 hour]",
+      "CardID": "6a1005ad6f40fa3a4d214dc3",
+      "Description": "",
+      "URL": "https://trello.com/c/fMMQzcGS/4-make-rest-api-work-1-hour",
+      "BoardID": "66cca3ef5a8eb3a2ed0e6da8",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "43",
+      "Name": "Make it work more [2 days]",
+      "CardID": "6a1005af595d583c6bd08f94",
+      "Description": "",
+      "URL": "https://trello.com/c/M3iOv6kT/5-make-it-work-more-2-days",
+      "BoardID": "66cca3ef5a8eb3a2ed0e6da8",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "44",
+      "Name": "Prepare for demo [3 days]",
+      "CardID": "6a1005b1661f13dee5169e2b",
+      "Description": "",
+      "URL": "https://trello.com/c/qyeFX5T4/6-prepare-for-demo-3-days",
+      "BoardID": "66cca3ef5a8eb3a2ed0e6da8",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "45",
+      "Name": "Figure out how todo trello integration. [3 hours]",
+      "CardID": "6a100d58c3355b8af6a40e0e",
+      "Description": "",
+      "URL": "https://trello.com/c/TOc1f3th/10-figure-out-how-todo-trello-integration-3-hours",
+      "BoardID": "66cca3ef5a8eb3a2ed0e6da8",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "46",
+      "Name": "Project planning [3 hours]",
+      "CardID": "66cca3f0b24652605a2113c9",
+      "Description": "",
+      "URL": "https://trello.com/c/LPcwsGtx/1-project-planning-3-hours",
+      "BoardID": "66cca3ef5a8eb3a2ed0e6da8",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "47",
+      "Name": "Think about what todo [6 hours]",
+      "CardID": "6a100d0b245b39f511f9aaf4",
+      "Description": "",
+      "URL": "https://trello.com/c/vG0Ih5OW/7-think-about-what-todo-6-hours",
+      "BoardID": "66cca3ef5a8eb3a2ed0e6da8",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "48",
+      "Name": "Get a coffee [30 minutes]",
+      "CardID": "6a100d1f6e1268224bf1cf1c",
+      "Description": "",
+      "URL": "https://trello.com/c/pxnKYLwN/8-get-a-coffee-30-minutes",
+      "BoardID": "66cca3ef5a8eb3a2ed0e6da8",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "49",
+      "Name": "Fill bottle of water, with water, but from the sink thats far away [3 hours]",
+      "CardID": "6a100d513b15a3aa25a822e4",
+      "Description": "",
+      "URL": "https://trello.com/c/IFJPgxe1/9-fill-bottle-of-water-with-water-but-from-the-sink-thats-far-away-3-hours",
+      "BoardID": "66cca3ef5a8eb3a2ed0e6da8",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "50",
+      "Name": "Hmm",
+      "CardID": "6a16e9ca8b343d659abad42c",
+      "Description": "",
+      "URL": "https://trello.com/c/NJVVhzFy/1-hmm",
+      "BoardID": "6a16e97fd7a41289b2c43dbe",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "51",
+      "Name": "woah",
+      "CardID": "6a16e9cbe58b47407f6d9b09",
+      "Description": "",
+      "URL": "https://trello.com/c/9HFVbtOM/2-woah",
+      "BoardID": "6a16e97fd7a41289b2c43dbe",
+      "Closed": false,
+      "ProjectID": ""
+    },
+    {
+      "ID": "52",
+      "Name": "Flah",
+      "CardID": "6a16e9cd3254262b98d30090",
+      "Description": "",
+      "URL": "https://trello.com/c/6IBZQ6NO/3-flah",
+      "BoardID": "6a16e97fd7a41289b2c43dbe",
+      "Closed": false,
+      "ProjectID": ""
+    }
+  ]
+}

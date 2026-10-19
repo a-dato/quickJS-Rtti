@@ -1,0 +1,422 @@
+object ProjectFrame: TProjectFrame
+  Size.Width = 891.000000000000000000
+  Size.Height = 586.000000000000000000
+  Size.PlatformDefault = False
+  object IProject_Model: TDataControl
+    Align = Left
+    HitTest = True
+    Position.Y = 50.000000000000000000
+    Size.Width = 281.000000000000000000
+    Size.Height = 494.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 0
+    Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid, TreeOption_MultiSelect]
+    RowHeightDefault = 30.000000000000000000
+    DragDropOnIndividualRows = False
+    HeaderHeight = 24.000000000000000000
+    AutoExtraColumnSizeMax = -1.000000000000000000
+    CellTopBottomPadding = 5.000000000000000000
+    CellLeftRightPadding = 5.000000000000000000
+    VisualizeParentChilds = No
+    Columns_ = 
+      '<Columns><Item type="TDCTreeCheckboxColumn"><Caption>*</Caption>' +
+      '<InfoControlClass>CheckBox</InfoControlClass><WidthSettings><Wid' +
+      'thType>Pixel</WidthType><Width>50</Width><WidthMin>50</WidthMin>' +
+      '<WidthMax>50</WidthMax></WidthSettings><Visualisation><Visible>T' +
+      'rue</Visible><Frozen>False</Frozen><ReadOnly>False</ReadOnly><Se' +
+      'lectable>True</Selectable><AllowResize>False</AllowResize><Allow' +
+      'Hide>False</AllowHide><HideWhenEmpty>False</HideWhenEmpty><HideG' +
+      'rid>False</HideGrid><IgnoreHeightByRowCalculation>False</IgnoreH' +
+      'eightByRowCalculation><HorzAlign>Default</HorzAlign><VertAlign>D' +
+      'efault</VertAlign></Visualisation><SortAndFilter><Sort>None</Sor' +
+      't><ShowSortMenu>False</ShowSortMenu><ShowFilterMenu>False</ShowF' +
+      'ilterMenu></SortAndFilter><SubControlSettings><SubInfoControlCla' +
+      'ss>Custom</SubInfoControlClass></SubControlSettings><Hierarchy><' +
+      'ShowHierarchy>False</ShowHierarchy><Indent>0</Indent></Hierarchy' +
+      '></Item><Item type="TDCTreeColumn"><Caption>ID</Caption><Propert' +
+      'yName>ID</PropertyName><InfoControlClass>Text</InfoControlClass>' +
+      '<WidthSettings><WidthType>Pixel</WidthType><Width>50</Width><Wid' +
+      'thMin>50</WidthMin><WidthMax>50</WidthMax></WidthSettings><Visua' +
+      'lisation><Visible>True</Visible><Frozen>False</Frozen><ReadOnly>' +
+      'False</ReadOnly><Selectable>True</Selectable><AllowResize>False<' +
+      '/AllowResize><AllowHide>False</AllowHide><HideWhenEmpty>False</H' +
+      'ideWhenEmpty><HideGrid>False</HideGrid><IgnoreHeightByRowCalcula' +
+      'tion>False</IgnoreHeightByRowCalculation><HorzAlign>Default</Hor' +
+      'zAlign><VertAlign>Default</VertAlign></Visualisation><SortAndFil' +
+      'ter><Sort>None</Sort><ShowSortMenu>False</ShowSortMenu><ShowFilt' +
+      'erMenu>False</ShowFilterMenu></SortAndFilter><SubControlSettings' +
+      '><SubInfoControlClass>Custom</SubInfoControlClass></SubControlSe' +
+      'ttings><Hierarchy><ShowHierarchy>False</ShowHierarchy><Indent>0<' +
+      '/Indent></Hierarchy></Item><Item type="TDCTreeColumn"><Caption>D' +
+      'escription</Caption><PropertyName>Description</PropertyName><Inf' +
+      'oControlClass>Text</InfoControlClass><WidthSettings><WidthType>P' +
+      'ixel</WidthType><Width>50</Width><WidthMin>50</WidthMin><WidthMa' +
+      'x>50</WidthMax></WidthSettings><Visualisation><Visible>True</Vis' +
+      'ible><Frozen>False</Frozen><ReadOnly>False</ReadOnly><Selectable' +
+      '>True</Selectable><AllowResize>False</AllowResize><AllowHide>Fal' +
+      'se</AllowHide><HideWhenEmpty>False</HideWhenEmpty><HideGrid>Fals' +
+      'e</HideGrid><IgnoreHeightByRowCalculation>False</IgnoreHeightByR' +
+      'owCalculation><HorzAlign>Default</HorzAlign><VertAlign>Default</' +
+      'VertAlign></Visualisation><SortAndFilter><Sort>None</Sort><ShowS' +
+      'ortMenu>False</ShowSortMenu><ShowFilterMenu>False</ShowFilterMen' +
+      'u></SortAndFilter><SubControlSettings><SubInfoControlClass>Custo' +
+      'm</SubInfoControlClass></SubControlSettings><Hierarchy><ShowHier' +
+      'archy>False</ShowHierarchy><Indent>0</Indent></Hierarchy></Item>' +
+      '</Columns>'#13#10
+  end
+  object Layout1: TLayout
+    Align = Top
+    Size.Width = 891.000000000000000000
+    Size.Height = 50.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 1
+    object Label1: TLabel
+      Position.X = 24.000000000000000000
+      Position.Y = 8.000000000000000000
+      Size.Width = 65.000000000000000000
+      Size.Height = 17.000000000000000000
+      Size.PlatformDefault = False
+      Text = 'Project:'
+      TabOrder = 0
+    end
+    object IProject_Description_1: TLabel
+      Position.X = 86.000000000000000000
+      Position.Y = 8.000000000000000000
+      Text = 'IProject_Description_1'
+      TabOrder = 1
+    end
+    object Button2: TButton
+      Position.X = 287.000000000000000000
+      Position.Y = 8.000000000000000000
+      TabOrder = 2
+      Text = 'Button2'
+      OnClick = Button2Click
+    end
+  end
+  object Splitter1: TSplitter
+    Align = Left
+    Cursor = crHSplit
+    MinSize = 20.000000000000000000
+    Position.X = 281.000000000000000000
+    Position.Y = 50.000000000000000000
+    Size.Width = 5.000000000000000000
+    Size.Height = 494.000000000000000000
+    Size.PlatformDefault = False
+  end
+  object TabPages: TTabControl
+    Align = Client
+    Size.Width = 605.000000000000000000
+    Size.Height = 494.000000000000000000
+    Size.PlatformDefault = False
+    TabIndex = 0
+    TabOrder = 2
+    TabPosition = PlatformDefault
+    Sizes = (
+      605s
+      468s
+      605s
+      468s
+      605s
+      468s)
+    object tbGeneral: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = True
+      Size.Width = 61.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'General'
+      ExplicitSize.cx = 61.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object Label2: TLabel
+        Position.X = 24.000000000000000000
+        Position.Y = 30.000000000000000000
+        Size.Width = 120.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.HorzAlign = Trailing
+        Text = 'Description'
+        TabOrder = 5
+      end
+      object IProject_Description_2: TEdit
+        Touch.InteractiveGestures = [LongTap, DoubleTap]
+        TabOrder = 7
+        Position.X = 160.000000000000000000
+        Position.Y = 30.000000000000000000
+        Size.Width = 193.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+      end
+      object Label3: TLabel
+        Position.X = 24.000000000000000000
+        Position.Y = 60.000000000000000000
+        Size.Width = 120.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.HorzAlign = Trailing
+        Text = 'Age'
+        TabOrder = 1
+      end
+      object IProject_Age_1: TEdit
+        Touch.InteractiveGestures = [LongTap, DoubleTap]
+        TabOrder = 2
+        Position.X = 160.000000000000000000
+        Position.Y = 60.000000000000000000
+        Size.Width = 193.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+      end
+      object Label4: TLabel
+        Position.X = 24.000000000000000000
+        Position.Y = 143.000000000000000000
+        Size.Width = 120.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.HorzAlign = Trailing
+        Text = 'Customer'
+        TabOrder = 4
+      end
+      object IProject_Customer_0: TComboBox
+        Position.X = 160.000000000000000000
+        Position.Y = 143.000000000000000000
+        Size.Width = 193.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 8
+      end
+      object Label5: TLabel
+        Position.X = 24.000000000000000000
+        Position.Y = 173.000000000000000000
+        Size.Width = 120.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.HorzAlign = Trailing
+        Text = 'Customer address'
+        TabOrder = 0
+      end
+      object IProject_Customer_Address_0: TLabel
+        Position.X = 160.000000000000000000
+        Position.Y = 178.000000000000000000
+        Size.Width = 193.000000000000000000
+        Size.Height = 17.000000000000000000
+        Size.PlatformDefault = False
+        Text = 'IProject_Customer_Address_0'
+        TabOrder = 9
+      end
+      object Label6: TLabel
+        StyledSettings = [Family, FontColor]
+        Position.X = 24.000000000000000000
+        Position.Y = 116.000000000000000000
+        TextSettings.Font.Size = 20.000000000000000000
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
+        Text = 'Customer'
+        TabOrder = 11
+      end
+      object Label7: TLabel
+        StyledSettings = [Family, FontColor]
+        Position.X = 24.000000000000000000
+        Position.Y = 220.000000000000000000
+        TextSettings.Font.Size = 20.000000000000000000
+        TextSettings.Font.StyleExt = {00070000000000000004000000}
+        Text = 'Sales force'
+        TabOrder = 10
+      end
+      object Label8: TLabel
+        Position.X = 24.000000000000000000
+        Position.Y = 258.000000000000000000
+        Size.Width = 120.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+        TextSettings.HorzAlign = Trailing
+        Text = 'Account'
+        TabOrder = 3
+      end
+      object IProject_SFAccount_0: TComboBox
+        Position.X = 160.000000000000000000
+        Position.Y = 258.000000000000000000
+        Size.Width = 193.000000000000000000
+        Size.Height = 22.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 6
+      end
+    end
+    object ProjectCustomersModel: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = False
+      Size.Width = 158.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'Project_Customers_Model'
+      ExplicitSize.cx = 93.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object IProject_Customers_Model: TDataControl
+        Align = Client
+        HitTest = True
+        Size.Width = 282.000000000000000000
+        Size.Height = 468.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid]
+        RowHeightDefault = 30.000000000000000000
+        DragDropOnIndividualRows = False
+        HeaderHeight = 24.000000000000000000
+        AutoExtraColumnSizeMax = -1.000000000000000000
+        CellTopBottomPadding = 10.000000000000000000
+        CellLeftRightPadding = 5.000000000000000000
+        VisualizeParentChilds = No
+      end
+      object Customers_Model: TDataControl
+        Align = Left
+        HitTest = True
+        Size.Width = 273.000000000000000000
+        Size.Height = 468.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid]
+        RowHeightDefault = 30.000000000000000000
+        DragDropOnIndividualRows = False
+        HeaderHeight = 24.000000000000000000
+        AutoExtraColumnSizeMax = -1.000000000000000000
+        CellTopBottomPadding = 10.000000000000000000
+        CellLeftRightPadding = 5.000000000000000000
+        VisualizeParentChilds = No
+      end
+      object Layout5: TLayout
+        Align = Left
+        Position.X = 273.000000000000000000
+        Size.Width = 50.000000000000000000
+        Size.Height = 468.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 2
+        object Button3: TButton
+          Position.X = 5.000000000000000000
+          Position.Y = 24.000000000000000000
+          Size.Width = 41.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 1
+          Text = '>>'
+          OnClick = Button3Click
+        end
+        object Button4: TButton
+          Position.X = 5.000000000000000000
+          Position.Y = 52.000000000000000000
+          Size.Width = 41.000000000000000000
+          Size.Height = 22.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          Text = '<<'
+        end
+      end
+    end
+    object Holidays: TTabItem
+      CustomIcon = <
+        item
+        end>
+      IsSelected = False
+      Size.Width = 66.000000000000000000
+      Size.Height = 26.000000000000000000
+      Size.PlatformDefault = False
+      StyleLookup = ''
+      TabOrder = 0
+      Text = 'Holidays'
+      ExplicitSize.cx = 66.000000000000000000
+      ExplicitSize.cy = 26.000000000000000000
+      object Layout3: TLayout
+        Align = Client
+        Size.Width = 336.000000000000000000
+        Size.Height = 468.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 1
+        object IProject_Holidays: TDataControl
+          Align = Client
+          HitTest = True
+          Size.Width = 336.000000000000000000
+          Size.Height = 451.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid]
+          RowHeightDefault = 30.000000000000000000
+          DragDropOnIndividualRows = False
+          HeaderHeight = 24.000000000000000000
+          AutoExtraColumnSizeMax = -1.000000000000000000
+          CellTopBottomPadding = 10.000000000000000000
+          CellLeftRightPadding = 5.000000000000000000
+          VisualizeParentChilds = No
+        end
+        object Label10: TLabel
+          Align = Top
+          Size.Width = 336.000000000000000000
+          Size.Height = 17.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.HorzAlign = Center
+          Text = 'Holidays'
+          TabOrder = 1
+        end
+      end
+      object Layout4: TLayout
+        Align = Right
+        Position.X = 336.000000000000000000
+        Size.Width = 269.000000000000000000
+        Size.Height = 468.000000000000000000
+        Size.PlatformDefault = False
+        TabOrder = 0
+        object IProject_Holidays_IceCreams: TDataControl
+          Align = Client
+          HitTest = True
+          Size.Width = 269.000000000000000000
+          Size.Height = 451.000000000000000000
+          Size.PlatformDefault = False
+          TabOrder = 0
+          Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid]
+          RowHeightDefault = 30.000000000000000000
+          DragDropOnIndividualRows = False
+          HeaderHeight = 24.000000000000000000
+          AutoExtraColumnSizeMax = -1.000000000000000000
+          CellTopBottomPadding = 10.000000000000000000
+          CellLeftRightPadding = 5.000000000000000000
+          VisualizeParentChilds = No
+        end
+        object Label9: TLabel
+          Align = Top
+          Size.Width = 269.000000000000000000
+          Size.Height = 17.000000000000000000
+          Size.PlatformDefault = False
+          TextSettings.HorzAlign = Center
+          Text = 'Ice creams'
+          TabOrder = 1
+        end
+      end
+    end
+  end
+  object Layout2: TLayout
+    Align = Bottom
+    Position.Y = 544.000000000000000000
+    Size.Width = 891.000000000000000000
+    Size.Height = 42.000000000000000000
+    Size.PlatformDefault = False
+    TabOrder = 4
+    object Button1: TButton
+      Action = acOk
+      ImageIndex = -1
+      Position.X = 592.000000000000000000
+      Position.Y = 12.000000000000000000
+      TabOrder = 0
+    end
+  end
+  object ActionList1: TActionList
+    Left = 214
+    Top = 226
+    object acOk: TAction
+      Text = 'Ok'
+      OnExecute = acOkExecute
+    end
+  end
+end

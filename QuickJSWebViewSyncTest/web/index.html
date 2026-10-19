@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Webview</title>
+<style>
+  body { margin: 0; padding: 16px; font: 14px/1.5 "Segoe UI", system-ui, sans-serif; color: #1d2330; background: #fff; }
+  h1 { font-size: 18px; margin: 0; }
+  header { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+  #stats { font: 12px Consolas, monospace; color: #6b7385; }
+  .tabs { display: flex; gap: 4px; border-bottom: 1px solid #dfe3ea; margin-bottom: 12px; }
+  .tabs button { font: inherit; padding: 6px 14px; border: 1px solid transparent; border-bottom: none; background: none; cursor: pointer; border-radius: 6px 6px 0 0; color: #6b7385; }
+  .tabs button[aria-selected="true"] { border-color: #dfe3ea; background: #fff; color: #1d2330; margin-bottom: -1px; }
+  .hint { margin: 0 0 8px; color: #6b7385; font-size: 13px; }
+  .toolbar { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+  .toolbar button { font: inherit; font-size: 13px; padding: 3px 12px; }
+  #listState { font: 12px Consolas, monospace; color: #6b7385; margin-left: 6px; }
+  table.list { border-collapse: collapse; width: 100%; font-size: 13px; }
+  table.list th, table.list td { padding: 4px 8px; text-align: right; border-bottom: 1px solid #eef0f4; }
+  table.list th:first-child, table.list td:first-child { text-align: left; }
+  table.list th { color: #6b7385; font-weight: 600; font-size: 12px; }
+  table.list tbody tr.current { background: #e1ebf6; }
+  table.list tbody tr.added { animation: added 1.2s; }
+  @keyframes added { from { background: #d7f2dc; } }
+  table.list button.row { font: inherit; border: none; background: none; padding: 0; color: #2f6fb3; cursor: pointer; text-decoration: underline; }
+  .panel { margin-top: 14px; border: 1px solid #dfe3ea; border-radius: 8px; padding: 10px 12px; max-width: 360px; }
+  .panel h2 { font-size: 14px; margin: 0 0 6px; }
+  .panel table { border-collapse: collapse; width: 100%; }
+  .panel td { padding: 2px 6px 2px 0; }
+  td.v { text-align: right; width: 110px; padding: 2px 6px; border-radius: 4px; transition: background-color 1s; }
+  .panel input { font: inherit; width: 90px; text-align: right; }
+  /* read only (Delphi says so): looks like text */
+  .panel input[readonly] { border-color: transparent; background: transparent; outline: none; }
+  .panel tr.invisible { display: none; }
+  select { font: inherit; padding: 2px 6px; }
+  .direct  { background: #cfe3ff !important; transition: none !important; }
+  .derived { background: #ffe2a8 !important; transition: none !important; }
+  #error { color: #c62828; min-height: 1.4em; font-size: 13px; }
+  h3 { font-size: 13px; color: #6b7385; margin: 16px 0 4px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+  button.clear { font: inherit; font-weight: 400; font-size: 12px; padding: 1px 10px; }
+  #trace { margin: 0; font: 12px/1.5 Consolas, monospace; color: #3a4252; white-space: pre-wrap; max-height: 240px; overflow: auto; }
+  #trace .tag { color: #6b7385; }
+</style>
+</head>
+<body>
+  <header><h1>Webview</h1><span id="stats">page bindings: 0</span></header>
+
+  <div class="tabs" role="tablist">
+    <button role="tab" data-tab="list" aria-selected="true">List</button>
+    <button role="tab" data-tab="select" aria-selected="false">Select one</button>
+  </div>
+
+  <div id="tab-list">
+    <p class="hint">Every row is subscribed to its order. Click a name to make it the list's current item: the panel below is bound to the list model's ObjectModelContext, the same context as the Delphi detail controls. Add and Remove call the list model, like the DataControl does.</p>
+    <div class="toolbar">
+      <button id="btnAdd">Add</button>
+      <button id="btnRemove">Remove current</button>
+      <button id="btnEndEdit">End edit</button>
+      <button id="btnCancelEdit">Cancel edit</button>
+      <span id="listState"></span>
+    </div>
+    <table class="list"><thead><tr><th>Name</th><th>Quantity</th><th>Unit price</th><th>Subtotal</th><th>Discount</th><th>Total</th></tr></thead><tbody id="rows"></tbody></table>
+    <div class="panel"><h2>Current item <span id="currentName"></span></h2><table id="currentPanel"></table></div>
+  </div>
+
+  <div id="tab-select" hidden>
+    <p class="hint">Pick an order. The page unbinds the previous one and binds the chosen one in a context of its own. The list updates when items are added or removed.</p>
+    <select id="picker" aria-label="Order"></select>
+    <div class="panel"><h2 id="selectedName"></h2><table id="selectedPanel"></table></div>
+  </div>
+
+  <div id="error"></div>
+
+  <h3>Calls in and out of this page <button id="clearTrace" class="clear">Clear</button></h3>
+  <pre id="trace"></pre>
+
+<script src="syncHost.js"></script>
+<script>
+  const FIELDS = ['Name', 'Quantity', 'UnitPrice', 'Subtotal', 'Discount', 'Total'];
+  const MONEY = ['UnitPrice', 'Subtotal', 'Discount', 'Total'];
+  // Which fields can be edited is NOT listed here: every bind answer and push
+  // says {editable, visible}, decided by the Delphi object (IPropertyAccessibility)
+
+  const $ = (id) => document.getElementById(id);
+  const elementsById = new Map();   // binding id -> element
+  let subscriptions = [];           // what the active tab has bound: [{context, ids}]
+  let activeTab = null;
+
+  // Bind/unbind changes run one after the other, so a quick second click
+  // (tab, dropdown, add/remove) never unbinds something still being bound
+  let queue = Promise.resolve();
+  const serial = (fn) => (queue = queue.then(fn).catch(reportError));
+
+  // ---- helpers -------------------------------------------------------------
+
+  function show(el, value) {
+    const empty = value === null || value === undefined || value === '';
+    const text = empty ? '' : MONEY.includes(el.dataset.field) ? Number(value).toFixed(2) : String(value);
+    if (el.tagName === 'INPUT') el.value = text; else el.textContent = text;
+  }
+
+  // Editable / visible, as Delphi reports it for this field right now
+  function applyState(el, editable, visible) {
+    if (editable === undefined) return;
+    if (el.tagName === 'INPUT') {
+      el.readOnly = !editable;
+      el.tabIndex = editable ? 0 : -1;
+    }
+    const row = el.closest('.panel tr');
+    if (row) row.classList.toggle('invisible', visible === false);
+  }
+
+  function setStats(stats) {
+    if (stats) $('stats').textContent = `page bindings: ${stats.bindings} in ${stats.contexts} context(s)`;
+  }
+
+  function reportError(e) { $('error').textContent = e ? e.message || String(e) : ''; }
+
+  // Wire a subscribe answer to elements: remember id -> element, show the
+  // value, send edits for inputs. Returns the subscription (for unsubscribe).
+  function attach(sub, elements) {
+    const ids = [];
+    for (const [field, el] of Object.entries(elements)) {
+      const { id, value, editable, visible } = sub.fields[field];
+      elementsById.set(id, el);
+      ids.push(id);
+      show(el, value);
+      applyState(el, editable, visible);
+      if (el.tagName === 'INPUT') {
+        el.onchange = () => syncHost.call('edit', { id, value: el.value })
+          .then(() => { reportError(); if (activeTab === 'list') refreshListState(); }, reportError);
+      }
+    }
+    const s = { context: sub.context, ids };
+    subscriptions.push(s);
+    setStats(sub.stats);
+    return s;
+  }
+
+  async function unsubscribe(s) {
+    s.ids.forEach(id => elementsById.delete(id));
+    subscriptions = subscriptions.filter(x => x !== s);
+    const { result } = await syncHost.call('unsubscribe', { context: s.context });
+    setStats(result.stats);
+  }
+
+  // One round trip for all of them
+  async function unsubscribeAll() {
+    if (subscriptions.length === 0) return;
+    const all = subscriptions;
+    subscriptions = [];
+    all.forEach(s => s.ids.forEach(id => elementsById.delete(id)));
+    const { result } = await syncHost.call('unsubscribe', { contexts: all.map(s => s.context) });
+    setStats(result.stats);
+  }
+
+  // A small field table for a panel: label | input. Every field gets an input;
+  // whether it can be edited comes from Delphi with the bind answer and pushes.
+  function buildPanel(table, fields) {
+    table.innerHTML = '';
+    const els = {};
+    for (const field of fields) {
+      const row = table.insertRow();
+      row.insertCell().textContent = field;
+      const td = row.insertCell();
+      td.className = 'v';
+      const el = document.createElement('input');
+      el.type = 'number';
+      el.readOnly = true;   // until Delphi says otherwise
+      el.dataset.field = field;
+      td.appendChild(el);
+      els[field] = el;
+    }
+    return els;
+  }
+
+  // ---- tab: List -------------------------------------------------------------
+
+  const rowsByKey = new Map();   // key -> { tr, sub }
+
+  // A table row for an order (not yet subscribed); index -1 = append
+  function createRow(key, index) {
+    const tbody = $('rows');
+    const tr = tbody.insertRow(index < 0 || index > tbody.rows.length ? -1 : index);
+    tr.dataset.key = key;
+    const cells = {};
+    for (const field of FIELDS) {
+      const td = tr.insertCell();
+      td.dataset.field = field;
+      cells[field] = td;
+    }
+    // The name is a button: clicking it moves the list's current item
+    const nameButton = document.createElement('button');
+    nameButton.className = 'row';
+    nameButton.dataset.field = 'Name';
+    nameButton.onclick = () => syncHost.call('setCurrent', { type: 'order', key }).catch(reportError);
+    cells.Name.appendChild(nameButton);
+    cells.Name = nameButton;
+    return { tr, cells };
+  }
+
+  async function openListTab() {
+    // 1. Ask QuickJS for the orders
+    const { result: orders } = await syncHost.call('run', { code: 'return app.orders();' });
+
+    // 2. Build a row per order and subscribe all rows in one request
+    $('rows').innerHTML = '';
+    rowsByKey.clear();
+    const rows = orders.map(o => ({ key: o.key, ...createRow(o.key, -1) }));
+    const { result: many } = await syncHost.call('subscribeMany',
+      { type: 'order', keys: orders.map(o => o.key), properties: FIELDS });
+    many.subs.forEach((sub, i) => rowsByKey.set(rows[i].key, { tr: rows[i].tr, sub: attach(sub, rows[i].cells) }));
+    setStats(many.stats);
+
+    // 3. The current item: bind into the list model's own context
+    const els = buildPanel($('currentPanel'), FIELDS.filter(f => f !== 'Name'));
+    els.Name = $('currentName');
+    els.Name.dataset.field = 'Name';
+    const { result: sub } = await syncHost.call('subscribeList', { type: 'order', properties: FIELDS });
+    attach(sub, els);
+    markCurrent(sub.current);
+
+    const { result: state } = await syncHost.call('listState', { type: 'order' });
+    showListState(state);
+  }
+
+  // An item was added to the list (by anyone): subscribe a row for it
+  async function rowAdded(key, index) {
+    if (rowsByKey.has(key)) return;
+    const { tr, cells } = createRow(key, index);
+    tr.classList.add('added');
+    const { result: sub } = await syncHost.call('subscribe', { type: 'order', key, properties: FIELDS });
+    rowsByKey.set(key, { tr, sub: attach(sub, cells) });
+  }
+
+  // An item was removed from the list: unsubscribe and drop its row
+  async function rowRemoved(key) {
+    const row = rowsByKey.get(key);
+    if (!row) return;
+    rowsByKey.delete(key);
+    row.tr.remove();
+    await unsubscribe(row.sub);
+  }
+
+  function markCurrent(key) {
+    for (const tr of $('rows').rows) tr.classList.toggle('current', tr.dataset.key === key);
+    // No current item (e.g. a new item was cancelled): the list context has
+    // no object, so its bindings have nothing to show
+    if (!key) {
+      $('currentName').textContent = '(none)';
+      for (const el of $('currentPanel').querySelectorAll('input, span')) show(el, '');
+    }
+  }
+
+  // An edit can start an edit session or mark it changed; no list event says so
+  async function refreshListState() {
+    const { result } = await syncHost.call('listState', { type: 'order' });
+    showListState(result);
+  }
+
+  function showListState(st) {
+    if (!st) return;
+    const can = ['Add', 'Edit', 'Remove'].filter(c => st['can' + c]).join(' ');
+    const edit = st.isNew ? 'New' : st.isEdit ? 'Edit' : 'idle';
+    $('listState').textContent = `${st.count} items · can: ${can} · state: ${edit}${st.isChanged ? ' (changed)' : ''}`;
+    $('btnAdd').disabled = !st.canAdd;
+    $('btnRemove').disabled = !st.canRemove;
+    $('btnEndEdit').disabled = !(st.isNew || st.isEdit);
+    $('btnCancelEdit').disabled = !(st.isNew || st.isEdit);
+  }
+
+  // The list model's own operations; the resulting add/remove arrives as a 'list' push
+  for (const [button, method] of [['btnAdd', 'addNew'], ['btnRemove', 'removeCurrent'], ['btnEndEdit', 'endEdit'], ['btnCancelEdit', 'cancelEdit']])
+    $(button).onclick = () => syncHost.call(method, { type: 'order' }).then(r => { reportError(); showListState(r.result); }, reportError);
+
+  // ---- tab: Select one -------------------------------------------------------
+
+  let selected = null;   // the subscription of the chosen order
+
+  async function fillPicker() {
+    const { result: items } = await syncHost.call('run',
+      { code: 'return app.orders().map(o => ({ key: o.key, caption: o.caption }));' });
+    const keep = $('picker').value;
+    $('picker').innerHTML = '';
+    for (const item of items) $('picker').add(new Option(item.caption, item.key));
+    if (items.some(i => i.key === keep)) $('picker').value = keep;
+    return items;
+  }
+
+  async function openSelectTab() {
+    $('picker').innerHTML = '';
+    await fillPicker();
+    await bindSelected($('picker').value);
+  }
+
+  async function bindSelected(key) {
+    if (selected) {                                    // unbind the previous order
+      const previous = selected;
+      selected = null;
+      await unsubscribe(previous);
+    }
+    if (!key) { $('selectedPanel').innerHTML = ''; $('selectedName').textContent = 'no orders'; return; }
+    const els = buildPanel($('selectedPanel'), FIELDS.filter(f => f !== 'Name'));
+    els.Name = $('selectedName');
+    els.Name.dataset.field = 'Name';
+    const { result: sub } = await syncHost.call('subscribe', { type: 'order', key, properties: FIELDS });
+    selected = attach(sub, els);
+    selected.key = key;
+  }
+
+  // The list changed while "Select one" is open: refresh the dropdown, rebind
+  // when the chosen order is gone
+  async function selectListChanged() {
+    await fillPicker();
+    if (!selected || $('picker').value !== selected.key) await bindSelected($('picker').value);
+  }
+
+  $('picker').onchange = () => serial(() => bindSelected($('picker').value));
+
+  // ---- switching tabs: unbind what the old tab bound -------------------------
+
+  async function switchTab(name) {
+    reportError();
+    await unsubscribeAll();
+    selected = null;
+    rowsByKey.clear();
+    activeTab = name;
+    for (const b of document.querySelectorAll('.tabs button')) b.setAttribute('aria-selected', String(b.dataset.tab === name));
+    $('tab-list').hidden = name !== 'list';
+    $('tab-select').hidden = name !== 'select';
+    if (name === 'list') await openListTab(); else await openSelectTab();
+  }
+
+  for (const b of document.querySelectorAll('.tabs button'))
+    b.onclick = () => serial(() => switchTab(b.dataset.tab));
+
+  // ---- pushes from Delphi ----------------------------------------------------
+
+  syncHost.on('value', ({ id, value, editable, visible, reason }) => {
+    const el = elementsById.get(id);
+    if (!el) return;
+    show(el, value);
+    applyState(el, editable, visible);
+    const target = el.closest('td') || el;
+    const cls = reason.startsWith('linked') ? 'derived' : 'direct';
+    target.classList.add(cls);
+    setTimeout(() => target.classList.remove(cls), 800);
+  });
+
+  syncHost.on('current', ({ key }) => markCurrent(key));
+
+  // Items added/removed, edit sessions started/ended (IListItemChanged)
+  syncHost.on('list', (msg) => serial(async () => {
+    showListState(msg.state);
+    if (activeTab === 'list') {
+      if (msg.change === 'added') await rowAdded(msg.key, msg.index);
+      if (msg.change === 'removed') await rowRemoved(msg.key);
+      markCurrent(msg.state.current);
+    } else if (activeTab === 'select' && (msg.change === 'added' || msg.change === 'removed')) {
+      await selectListChanged();
+    }
+  }));
+
+  syncHost.onTrace((tag, text) => {
+    const line = document.createElement('div');
+    line.innerHTML = `${new Date().toTimeString().slice(0, 8)} <span class="tag">[${tag}]</span> `;
+    line.append(text);
+    $('trace').appendChild(line);
+    $('trace').scrollTop = $('trace').scrollHeight;
+  });
+
+  $('clearTrace').onclick = () => { $('trace').innerHTML = ''; };
+
+  serial(() => switchTab('list'));
+</script>
+</body>
+</html>

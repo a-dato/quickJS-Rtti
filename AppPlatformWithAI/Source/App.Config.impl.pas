@@ -1,0 +1,282 @@
+﻿unit App.Config.impl;
+
+interface
+
+uses
+  System_,
+  System.Collections.Generic,
+  App.Config.intf,
+  App.TypeDescriptor.intf,
+  App.TypeDescriptor.impl,
+  QuickJS.Register.dn4d.intf,
+  App.Content.intf,
+  App.Windows.intf,
+  ADato.ObjectModel.List.intf,
+  App.PropertyDescriptor.intf;
+
+type
+  TAppConfig = class(TBaseInterfacedObject, IAppConfig)
+  protected
+    _Types: Dictionary<&Type, ITypeDescriptor>;
+    _WindowTypes: Dictionary<string {Name}, IWindowType>;
+    _TypeRegisteredHandlers: IList<TTypeRegisteredEvent>;
+
+    function get_Types: List<&Type>;
+    {$IFDEF APP_PLATFORM_MD}
+    function get_TypeDescriptors: List<ITypeDescriptor>;
+    {$ENDIF}
+
+    function  AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
+    function  WrapProperty(const AProperty: _PropertyInfo) : _PropertyInfo;
+    {$IFDEF APP_PLATFORM_MD}
+    function  GetProperties(const AType: &Type) : List<_PropertyInfo>;
+    function  PropertyDisplayName(const AType: &Type; const PropertyName: CString) : CString;
+    {$ENDIF}
+
+    procedure RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
+    procedure RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);
+
+    function  FindType(const Name: string; out AType: &Type) : Boolean;
+    function  FullName(const AType: &Type) : string;
+    function  TypeIsRegistered(const AType: &Type) : Boolean;
+    function  TypeByName(const Name: string) : &Type;
+    function  TypeDescriptor(const AType: &Type): ITypeDescriptor;
+    function  TypeDescriptorByName(const Name: string) : ITypeDescriptor;
+
+    function  TryGetWindowType(const Name: string; out WindowType : IWindowType) : Boolean;
+
+    procedure AddOnTypeRegistered(const Handler: TTypeRegisteredEvent);
+    procedure RemoveOnTypeRegistered(const Handler: TTypeRegisteredEvent);
+  public
+    constructor Create;
+    destructor Destroy; override;
+  end;
+
+implementation
+
+uses
+  App.Windows.impl,
+  System.ClassHelpers,
+  System.Rtti,
+  ADato.Extensions.intf,
+  ADato.ObjectModel.impl, App.PropertyDescriptor.impl, System.Collections;
+
+{ TAppConfig }
+
+constructor TAppConfig.Create;
+begin
+  _Types := CDictionary<&Type, ITypeDescriptor>.Create(10, TypeEqualityComparer.Create);
+  _WindowTypes := CDictionary<string, IWindowType>.Create;
+  _TypeRegisteredHandlers := CList<TTypeRegisteredEvent>.Create;
+end;
+
+destructor TAppConfig.Destroy;
+begin
+  _TypeRegisteredHandlers := nil;
+  inherited;
+end;
+
+function TAppConfig.FindType(const Name: string; out AType: &Type) : Boolean;
+begin
+  Result := False;
+  AType := Default(&Type);
+
+  for var e in _Types do
+  begin
+    Result := (e.Value <> nil) and CString.Equals(e.Value.FullName, Name);
+    if Result then
+    begin
+      AType := e.Key;
+      Exit;
+    end;
+  end;
+
+  Exit;
+end;
+
+function TAppConfig.FullName(const AType: &Type): string;
+begin
+  var td: ITypeDescriptor;
+  if _Types.TryGetValue(AType, td) and (td <> nil) then
+    Result := td.FullName else
+    Result := AType.FullName;
+end;
+
+function TAppConfig.TypeDescriptor(const AType: &Type): ITypeDescriptor;
+begin
+  {$IFDEF DEBUG}
+  if not _Types.TryGetValue(AType, Result) then
+    _Types.TryGetValue(AType, Result);
+  {$ELSE}
+  _Types.TryGetValue(AType, Result);
+  {$ENDIF}
+end;
+
+{$IFDEF APP_PLATFORM_MD}
+function TAppConfig.get_TypeDescriptors: List<ITypeDescriptor>;
+begin
+  Result := CList<ITypeDescriptor>.Create(_Types.Values);
+end;
+{$ENDIF}
+
+function TAppConfig.get_Types: List<&Type>;
+begin
+  Result := CList<&Type>.Create(_Types.Keys);
+end;
+
+{$IFDEF APP_PLATFORM_MD}
+function TAppConfig.GetProperties(const AType: &Type): List<_PropertyInfo>;
+begin
+  Result := CList<_PropertyInfo>.Create;
+
+  for var prop in AType.GetProperties do
+    Result.Add(WrapProperty(prop));
+end;
+
+function TAppConfig.PropertyDisplayName(const AType: &Type; const PropertyName: CString) : CString;
+begin
+  var prop := AType.PropertyByName(PropertyName);
+  if prop = nil then
+    Exit(nil);
+
+  if prop is CustomProperty then
+    Exit((prop as CustomProperty).DisplayName);
+
+  Result := prop.Name;
+end;
+{$ENDIF}
+
+function TAppConfig.AddProperty(const OwnerType: &Type; const Name: CString; const ALabel: CString; const PropType: &Type; const Descriptor: IPropertyDescriptor) : _PropertyInfo;
+begin
+  {$IFDEF APP_PLATFORM}
+  if ExtensionManager <> nil then
+  begin
+    var prop: _PropertyInfo := CustomProperty.Create(OwnerType, Name, ALabel, PropType);
+
+    if Descriptor <> nil then
+    begin
+      if PropType.IsOfType<IList> then
+        prop := TCollectionPropertyWithDescriptor.Create(prop, descriptor) else
+        prop := TPropertyWithDescriptor.Create(prop, descriptor);
+    end;
+
+    if Name.Contains('.') then
+    begin
+      var sub_properties := Name.Split(['.']);
+
+      var path: TArray<_PropertyInfo>;
+      SetLength(path, Length(sub_properties));
+      var property_type := OwnerType;
+
+      for var i := 0 to High(sub_properties) do
+      begin
+        var sub_property := property_type.PropertyByName(sub_properties[i]);
+        path[i] := sub_property;
+        property_type := sub_property.GetType;
+      end;
+
+      prop := TPathProperty.Create(prop, path);
+    end;
+
+    ExtensionManager.AddProperty(OwnerType, prop);
+
+    Result := prop;
+  end;
+  {$ENDIF}
+end;
+
+function TAppConfig.WrapProperty(const AProperty: _PropertyInfo) : _PropertyInfo;
+begin
+  {$IFDEF APP_PLATFORM}
+  Result := AProperty;
+
+  var propType := AProperty.GetType;
+  var descriptor := TypeDescriptor(propType);
+  if descriptor <> nil then
+  begin
+    var prop_descriptor := descriptor.PropertyDescriptor[propType.Name];
+
+    {$IFDEF APP_PLATFORM_MD}
+    if prop_descriptor <> nil then
+    begin
+      if propType.IsOfType<IList> then
+        Result := TCollectionPropertyWithDescriptor.Create(Result, prop_descriptor) else
+        Result := TPropertyWithDescriptor.Create(Result, prop_descriptor);
+    end;
+    {$ELSE}
+    if propType.IsOfType<IList> then
+      Result := TCollectionPropertyWithDescriptor.Create(Result, prop_descriptor) else
+      Result := TPropertyWithDescriptor.Create(Result, prop_descriptor);
+    {$ENDIF}
+  end;
+
+  // Path property, like: Customer.Address
+  if AProperty.Name.Contains('.') then
+  begin
+    var sub_properties := AProperty.Name.Split(['.']);
+
+    var path: TArray<_PropertyInfo>;
+    SetLength(path, Length(sub_properties));
+    var property_type := AProperty.OwnerType;
+
+    for var i := 0 to High(sub_properties) do
+    begin
+      var sub_property := property_type.PropertyByName(sub_properties[i]);
+      path[i] := sub_property;
+      property_type := sub_property.GetType;
+    end;
+
+    Result := TPathProperty.Create(Result, path);
+  end;
+  {$ENDIF}
+end;
+
+procedure TAppConfig.RegisterType(const AType: &Type; const TypeDescriptor: ITypeDescriptor);
+begin
+  _Types[AType] := TypeDescriptor {can be nil};
+  
+  // Notify all registered handlers
+  for var handler in _TypeRegisteredHandlers do
+    handler(AType, TypeDescriptor);
+end;
+
+procedure TAppConfig.AddOnTypeRegistered(const Handler: TTypeRegisteredEvent);
+begin
+  if not _TypeRegisteredHandlers.Contains(Handler) then
+    _TypeRegisteredHandlers.Add(Handler);
+end;
+
+procedure TAppConfig.RemoveOnTypeRegistered(const Handler: TTypeRegisteredEvent);
+begin
+  _TypeRegisteredHandlers.Remove(Handler);
+end;
+
+function TAppConfig.TypeByName(const Name: string): &Type;
+begin
+  for var entry in _Types do
+    if CString.Equals(entry.Key.Name, Name) then
+      Exit(entry.Key);
+end;
+
+procedure TAppConfig.RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);
+begin
+  _WindowTypes[Name] := TWindowType.Create(Name, CreateFunc);
+end;
+
+function TAppConfig.TypeDescriptorByName(const Name: string): ITypeDescriptor;
+begin
+  Result := TypeDescriptor(TypeByName(Name));
+end;
+
+function TAppConfig.TypeIsRegistered(const AType: &Type): Boolean;
+begin
+  Result := _Types.ContainsKey(AType);
+end;
+
+function TAppConfig.TryGetWindowType(const Name: string; out WindowType : IWindowType) : Boolean;
+begin
+  Result := _WindowTypes.TryGetValue(Name, WindowType);
+end;
+
+end.
+

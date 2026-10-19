@@ -1,0 +1,11 @@
+Win64/
+Win32/
+__history/
+__recovery/
+*.local
+*.identcache
+*.dsk
+# IDE output when building into the project folder
+*.dcu
+/QuickJSWebViewSyncTest.exe
+*.dproj.local

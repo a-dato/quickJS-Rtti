@@ -579,9 +579,12 @@ begin
 
     else if JS_IsNumber(Value) then
     begin
-      var v: Integer;
-      JS_ToInt32(ctx, @v, Value);
-      Result := v;
+      // JavaScript has one number type: keep the fraction of 2875.5
+      var d: Double;
+      JS_ToFloat64(ctx, @d, Value);
+      if (Frac(d) = 0) and (Abs(d) <= MaxInt) then
+        Result := Integer(Trunc(d)) else
+        Result := d;
     end
 
     else if JS_IsBigInt(Value) then
@@ -684,9 +687,11 @@ begin
 
       else if JS_IsNumber(Value) then
       begin
-        var v: Integer;
-        JS_ToInt32(ctx, @v, Value);
-        Result := TValue.From<CString>(v.ToString);
+        var d: Double;
+        JS_ToFloat64(ctx, @d, Value);
+        if (Frac(d) = 0) and (Abs(d) <= MaxInt) then
+          Result := TValue.From<CString>(Trunc(d).ToString) else
+          Result := TValue.From<CString>(FloatToStr(d, TFormatSettings.Invariant));
       end
     end
 
@@ -714,9 +719,17 @@ begin
 
       else if JS_IsNumber(Value) then
       begin
-        var v: Int64;
-        JS_ToInt64(ctx, @v, Value);
-        Result := TValue.From<CObject>(v);
+        // Whole numbers stay Int64; 2875.5 stays 2875.5
+        var d: Double;
+        JS_ToFloat64(ctx, @d, Value);
+        if (Frac(d) = 0) and (Abs(d) < 9.2e18) then
+        begin
+          var v: Int64;
+          JS_ToInt64(ctx, @v, Value);
+          Result := TValue.From<CObject>(v);
+        end
+        else
+          Result := TValue.From<CObject>(d);
       end
 
       else if JS_IsObject(Value) then
