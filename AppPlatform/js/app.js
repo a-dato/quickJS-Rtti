@@ -59,7 +59,7 @@ export class IBaseInterface_ {
 	}
 	
 	QueryInterface(type) {
-		if(type === IBaseInterface || type === IInterfaceWithID || type === ICloneable) {
+		if(type === IBaseInterface || /*type === IInterfaceWithID ||*/ type === ICloneable) {
 			return this;
 		}
 	}	

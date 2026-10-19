@@ -75,7 +75,7 @@ type
 
   ProjectProvider = class(TContentProvider)
   protected
-    function CreateInstance: CObject; override;
+    // function CreateInstance: CObject; override;
     function Data(const Filter: CObject): IList; override;
   end;
 
@@ -212,10 +212,10 @@ begin
   _PropertyValue[AProperty] := Value;
 end;
 
-function ProjectProvider.CreateInstance: CObject;
-begin
-  Result := _app.Factory.CreateInstance(_descriptor.GetType);
-end;
+//function ProjectProvider.CreateInstance: CObject;
+//begin
+//  Result := _app.Factory.CreateInstance(_descriptor.GetType);
+//end;
 
 function ProjectProvider.Data(const Filter: CObject): IList;
 begin

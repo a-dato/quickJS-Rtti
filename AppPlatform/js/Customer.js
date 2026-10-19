@@ -228,9 +228,11 @@ export class CustomerType extends ITypeDescriptor_ {
 				},
 				Notify: {
 					OnChanging: (ctx, item) => {
-						return item;
+                        console.log("OnChanging: " + item);
+						// return item;
 					},
 					OnChanged: (ctx, item) => {
+                        console.log("OnChanged: " + item);
 					}				
 				},
 				Marshaller: {
