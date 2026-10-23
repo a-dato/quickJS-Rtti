@@ -1,8 +1,8 @@
-10:36:34  Loading type scripts from D:\adato_quickJS\AppPlatformWithAI\js\types
-10:36:36  Restored the saved state of 10 IProject objects
-10:36:36  Type IProject: storage 'Projects' with 10 objects; properties: ID, Description, Holidays, ChildProject, Tasks
-10:36:36  Type Address: no storage; properties: Street, Zip, City
-10:36:36  Type Customer: storage 'Customers' with 4 objects; properties: Name, Email, Active, Address
-10:36:36  Type Invoice: storage 'Invoices' with 1 objects; properties: Name
-10:36:36  Type TrelloTask: storage 'TrelloTasks' with 43 objects; properties: Name, CardID, Description, URL, BoardID, Closed, ProjectID
-10:36:36  Type Weather: storage 'Weathers' with 1 objects; properties: Name, TemperatureC, HumidityPercent, WindKmh, WeatherCode, ObservedUTC, Source
+10:27:55  Loading type scripts from D:\adato_quickjs\AppPlatformWithAI\js\types
+10:27:57  Restored the saved state of 10 IProject objects
+10:27:57  Type IProject: storage 'Projects' with 10 objects; properties: ID, Description, Holidays, ChildProject, Tasks
+10:27:57  Type Address: no storage; properties: Street, Zip, City
+10:27:57  Type Customer: storage 'Customers' with 4 objects; properties: Name, Email, Active, Address
+10:27:57  Type Invoice: storage 'Invoices' with 1 objects; properties: Name, Project
+10:27:57  Type TrelloTask: storage 'TrelloTasks' with 43 objects; properties: Name, CardID, Description, URL, BoardID, Closed, ProjectID
+10:27:57  Type Weather: storage 'Weathers' with 1 objects; properties: Name, TemperatureC, HumidityPercent, WindKmh, WeatherCode, ObservedUTC, Source

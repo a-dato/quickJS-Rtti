@@ -1,5 +1,5 @@
 
----- 10:44:24 ----
+---- 10:31:29 ----
 [ORDER] new Order 1: Quantity 2, UnitPrice 40.00, Discount 0.00, calculate the rest
   [RULE] Subtotal = Quantity x UnitPrice = 2 x 40.00 -> 80.00 (was 0.00)
   [RULE] Discount = 0 and read only, because Subtotal 80.00 <= 100 -> 0.00 (unchanged)
@@ -27,12 +27,12 @@
 [DELPHI] ListModel.ObjectModelContext.Bind("Total", lblTotal) + Link to Quantity, UnitPrice, Discount
 [DELPHI] DataControl1.Model := ListModel (selecting a row sets ListModel.ObjectContext)
 
----- 10:44:29 ----
+---- 10:31:31 ----
 [DELPHI -> QJS] run qjs\sync-bridge.js  (startup: it registers its handlers)
   [QJS -> DELPHI] webview.SetRequestHandler(<js function>)
   [QJS -> DELPHI] bindings.SetPushHandler(<js function>)
 
----- 10:44:30 ----
+---- 10:31:33 ----
 [WEBVIEW -> DELPHI] SyncRequest("run_1", {"method":"run","payload":{"code":"return app.orders();"}})
   [DELPHI -> QJS] requestHandler({"method":"run","payload":{"code":"return app.orders();"}})
     [QJS -> DELPHI] bindings.ListObjects("order")
@@ -41,7 +41,7 @@
   [DELPHI -> WEBVIEW] syncHost.onResponse("run_1", {"ok":true,"result":[{"key":"Order 1","caption":"Order 1","Name":"Order 1","Quantity":2,"UnitPrice":40,"Subtotal":80,"Discount":0,"Total":80},{"key":"Order 2","...)
   [TIMING] run_1 handled in 0 ms (0 ms of it writing 6 trace lines); -1 ms since the previous request finished
 
----- 10:44:30 ----
+---- 10:31:33 ----
 [WEBVIEW -> DELPHI] SyncRequest("subscribeMany_2", {"method":"subscribeMany","payload":{"type":"order","keys":["Order 1","Order 2","Order 3","Order 4","Order 5"],"properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
   [DELPHI -> QJS] requestHandler({"method":"subscribeMany","payload":{"type":"order","keys":["Order 1","Order 2","Order 3","Order 4","Order 5"],"properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
     [QJS -> DELPHI] bindings.OpenContext("order", "Order 1")
@@ -121,7 +121,9 @@
       <- returns {"id":35,"value":90.0,"editable":false,"visible":true}
     <- returns {"ok":true,"result":{"subs":[{"context":1,"fields":{"Name":{"id":2,"value":"Order 1","editable":false,"visible":true},"Quantity":{"id":3,"value":2,"editable":tr...
   [DELPHI -> WEBVIEW] syncHost.onResponse("subscribeMany_2", {"ok":true,"result":{"subs":[{"context":1,"fields":{"Name":{"id":2,"value":"Order 1","editable":false,"visible":true},"Quantity":{"id":3,"value":2,"editable":tr...)
-  [TIMING] subscribeMany_2 handled in 2 ms (0 ms of it writing 79 trace lines); 307 ms since the previous request finished
+  [TIMING] subscribeMany_2 handled in 2 ms (0 ms of it writing 79 trace lines); 364 ms since the previous request finished
+
+---- 10:31:34 ----
 [WEBVIEW -> DELPHI] SyncRequest("subscribeList_3", {"method":"subscribeList","payload":{"type":"order","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
   [DELPHI -> QJS] requestHandler({"method":"subscribeList","payload":{"type":"order","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
     [QJS -> DELPHI] bindings.OpenListContext("order")
@@ -147,581 +149,58 @@
       <- returns {"id":42,"value":80.0,"editable":false,"visible":true}
     <- returns {"ok":true,"result":{"context":36,"fields":{"Name":{"id":37,"value":"Order 1","editable":false,"visible":true},"Quantity":{"id":38,"value":2,"editable":true,"vi...
   [DELPHI -> WEBVIEW] syncHost.onResponse("subscribeList_3", {"ok":true,"result":{"context":36,"fields":{"Name":{"id":37,"value":"Order 1","editable":false,"visible":true},"Quantity":{"id":38,"value":2,"editable":true,"vi...)
-  [TIMING] subscribeList_3 handled in 0 ms (0 ms of it writing 25 trace lines); 261 ms since the previous request finished
+  [TIMING] subscribeList_3 handled in 0 ms (0 ms of it writing 25 trace lines); 382 ms since the previous request finished
+
+---- 10:31:34 ----
 [WEBVIEW -> DELPHI] SyncRequest("listState_4", {"method":"listState","payload":{"type":"order"}})
   [DELPHI -> QJS] requestHandler({"method":"listState","payload":{"type":"order"}})
     <- returns {"ok":true,"result":{"count":5,"current":"Order 1","canAdd":true,"canEdit":true,"canRemove":true,"isNew":false,"isEdit":false,"isChanged":false}}
   [DELPHI -> WEBVIEW] syncHost.onResponse("listState_4", {"ok":true,"result":{"count":5,"current":"Order 1","canAdd":true,"canEdit":true,"canRemove":true,"isNew":false,"isEdit":false,"isChanged":false}})
-  [TIMING] listState_4 handled in 0 ms (0 ms of it writing 4 trace lines); 189 ms since the previous request finished
+  [TIMING] listState_4 handled in 0 ms (0 ms of it writing 4 trace lines); 424 ms since the previous request finished
 
----- 11:10:52 ----
-[DELPHI UI] Add: (ListModel as IAddToList).AddNew
-[ORDER] new Order 6: Quantity 1, UnitPrice 10.00, Discount 0.00, calculate the rest
-  [RULE] Subtotal = Quantity x UnitPrice = 1 x 10.00 -> 10.00 (was 0.00)
-  [RULE] Discount = 0 and read only, because Subtotal 10.00 <= 100 -> 0.00 (unchanged)
-  [RULE] Total = Subtotal - Discount = 10.00 - 0.00 -> 10.00 (was 0.00)
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 1
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 6
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 6","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 6","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 6","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 6: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 6"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 6"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 6"})
-[LIST] added: Order 6 (index 5), tell the page
-[DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"added","key":"Order 6","index":5,"state":{"count":6,"current":"Order 6","canAdd":true,"canEdit":true,"canRemove":true...)
-  [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"added","key":"Order 6","index":5,"state":{"count":6,"current":"Order 6","canAdd":true,"canEdit":true,"canRemove":true...)
-    [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"added","key":"Order 6","index":5,"state":{"count":6,"current":"Order 6","canAdd":true,"canEdit":true,"canRemove":true...)
-[WEBVIEW -> DELPHI] SyncRequest("subscribe_5", {"method":"subscribe","payload":{"type":"order","key":"Order 6","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-  [DELPHI -> QJS] requestHandler({"method":"subscribe","payload":{"type":"order","key":"Order 6","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-    [QJS -> DELPHI] bindings.OpenContext("order", "Order 6")
-      [DELPHI] new IObjectModelContext #43 (page owned), Context := Order 6
-      <- returns {"context":43,"key":"Order 6"}
-    [QJS -> DELPHI] bindings.Bind(43, "Name")
-      [WEB BINDING #37 (context 36)] Name: bound property changed, value Order 6 unchanged, page not told
-      <- returns {"id":44,"value":"Order 6","editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(43, "Quantity")
-      [WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-      <- returns {"id":45,"value":1.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(43, "UnitPrice")
-      [WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":46,"value":10.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(43, "Subtotal")
-      [WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":47,"value":10.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(43, "Discount")
+---- 10:31:37 ----
+[WEBVIEW -> DELPHI] SyncRequest("setCurrent_5", {"method":"setCurrent","payload":{"type":"order","key":"Order 3"}})
+  [DELPHI -> QJS] requestHandler({"method":"setCurrent","payload":{"type":"order","key":"Order 3"}})
+    [QJS -> DELPHI] bindings.SetCurrent("order", "Order 3")
+      [DELPHI] listModel.ObjectContext := Order 3
+      [WEB BINDING #17 (context 15)] Quantity: bound property changed, value 1 unchanged, page not told
+      [WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 1
+        [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
+          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
+            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
+      [WEB BINDING #18 (context 15)] UnitPrice: bound property changed, value 99 unchanged, page not told
+      [WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 99
+        [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":99.0,"editable":true,"visible":true,"reason":"bound property changed"})
+          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":99.0,"editable":true,"visible":true,"reason":"bound property changed"})
+            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":99.0,"editable":true,"visible":true,"reason":"bound property changed"})
+      [WEB BINDING #19 (context 15)] Subtotal: bound property changed, value 99 unchanged, page not told
+      [WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 99
+        [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
+          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
+            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
+      [WEB BINDING #20 (context 15)] Discount: bound property changed, value 0 unchanged, page not told
       [WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-      <- returns {"id":48,"value":0.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(43, "Total")
-      [WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":49,"value":10.0,"editable":false,"visible":true}
-    <- returns {"ok":true,"result":{"context":43,"fields":{"Name":{"id":44,"value":"Order 6","editable":false,"visible":true},"Quantity":{"id":45,"value":1,"editable":true,"vi...
-  [DELPHI -> WEBVIEW] syncHost.onResponse("subscribe_5", {"ok":true,"result":{"context":43,"fields":{"Name":{"id":44,"value":"Order 6","editable":false,"visible":true},"Quantity":{"id":45,"value":1,"editable":true,"vi...)
-  [TIMING] subscribe_5 handled in 1 ms (0 ms of it writing 25 trace lines); 1580936 ms since the previous request finished
-
----- 11:14:34 ----
-[WEB BINDING #31 (context 29)] Quantity: bound property changed, value 3 unchanged, page not told
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 3
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":3.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":3.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":3.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #32 (context 29)] UnitPrice: bound property changed, value 30 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 30
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":30.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":30.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":30.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #33 (context 29)] Subtotal: bound property changed, value 90 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 90
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":90.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":90.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":90.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #34 (context 29)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #35 (context 29)] Total: bound property changed, value 90 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 90
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":90.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":90.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":90.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #30 (context 29)] Name: bound property changed, value Order 5 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 5
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 5","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 5","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 5","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 5: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 5"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 5"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 5"})
-
----- 11:15:21 ----
-[WEB BINDING #17 (context 15)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 1
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #18 (context 15)] UnitPrice: bound property changed, value 99 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 99
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":99.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":99.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":99.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #19 (context 15)] Subtotal: bound property changed, value 99 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 99
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #20 (context 15)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #21 (context 15)] Total: bound property changed, value 99 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 99
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #16 (context 15)] Name: bound property changed, value Order 3 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 3
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 3","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 3","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 3","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 3: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 3"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 3"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 3"})
-
----- 11:15:23 ----
-[DELPHI UI] Add: (ListModel as IAddToList).AddNew
-[ORDER] new Order 7: Quantity 1, UnitPrice 10.00, Discount 0.00, calculate the rest
-  [RULE] Subtotal = Quantity x UnitPrice = 1 x 10.00 -> 10.00 (was 0.00)
-  [RULE] Discount = 0 and read only, because Subtotal 10.00 <= 100 -> 0.00 (unchanged)
-  [RULE] Total = Subtotal - Discount = 10.00 - 0.00 -> 10.00 (was 0.00)
-[WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 7
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 7","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 7","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 7","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 7: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 7"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 7"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 7"})
-[LIST] added: Order 7 (index 6), tell the page
-[DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"added","key":"Order 7","index":6,"state":{"count":7,"current":"Order 7","canAdd":true,"canEdit":true,"canRemove":true...)
-  [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"added","key":"Order 7","index":6,"state":{"count":7,"current":"Order 7","canAdd":true,"canEdit":true,"canRemove":true...)
-    [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"added","key":"Order 7","index":6,"state":{"count":7,"current":"Order 7","canAdd":true,"canEdit":true,"canRemove":true...)
-[WEBVIEW -> DELPHI] SyncRequest("subscribe_6", {"method":"subscribe","payload":{"type":"order","key":"Order 7","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-  [DELPHI -> QJS] requestHandler({"method":"subscribe","payload":{"type":"order","key":"Order 7","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-    [QJS -> DELPHI] bindings.OpenContext("order", "Order 7")
-      [DELPHI] new IObjectModelContext #50 (page owned), Context := Order 7
-      <- returns {"context":50,"key":"Order 7"}
-    [QJS -> DELPHI] bindings.Bind(50, "Name")
-      [WEB BINDING #37 (context 36)] Name: bound property changed, value Order 7 unchanged, page not told
-      <- returns {"id":51,"value":"Order 7","editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(50, "Quantity")
-      [WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-      <- returns {"id":52,"value":1.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(50, "UnitPrice")
-      [WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":53,"value":10.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(50, "Subtotal")
-      [WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":54,"value":10.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(50, "Discount")
-      [WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-      <- returns {"id":55,"value":0.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(50, "Total")
-      [WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":56,"value":10.0,"editable":false,"visible":true}
-    <- returns {"ok":true,"result":{"context":50,"fields":{"Name":{"id":51,"value":"Order 7","editable":false,"visible":true},"Quantity":{"id":52,"value":1,"editable":true,"vi...
-  [DELPHI -> WEBVIEW] syncHost.onResponse("subscribe_6", {"ok":true,"result":{"context":50,"fields":{"Name":{"id":51,"value":"Order 7","editable":false,"visible":true},"Quantity":{"id":52,"value":1,"editable":true,"vi...)
-  [TIMING] subscribe_6 handled in 0 ms (0 ms of it writing 25 trace lines); 271118 ms since the previous request finished
-
----- 11:15:25 ----
-[DELPHI UI] Remove: (ListModel as IEditableModel).Remove
-[LIST] removed: Order 7 (index 6), tell the page
-[DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"removed","key":"Order 7","index":6,"state":{"count":6,"current":"Order 7","canAdd":true,"canEdit":true,"canRemove":tr...)
-  [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"removed","key":"Order 7","index":6,"state":{"count":6,"current":"Order 7","canAdd":true,"canEdit":true,"canRemove":tr...)
-    [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"removed","key":"Order 7","index":6,"state":{"count":6,"current":"Order 7","canAdd":true,"canEdit":true,"canRemove":tr...)
-[WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #45 (context 43)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #46 (context 43)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #47 (context 43)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #48 (context 43)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #49 (context 43)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 6
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 6","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 6","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 6","editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #44 (context 43)] Name: bound property changed, value Order 6 unchanged, page not told
-[DELPHI] list current item -> Order 6: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 6"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 6"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 6"})
-[WEBVIEW -> DELPHI] SyncRequest("unsubscribe_7", {"method":"unsubscribe","payload":{"context":50}})
-  [DELPHI -> QJS] requestHandler({"method":"unsubscribe","payload":{"context":50}})
-    [QJS -> DELPHI] bindings.CloseContext(50)
-      [DELPHI] context #50: ctx.Unbind (all 6 bindings)
-      <- returns {}
-    <- returns {"ok":true,"result":{"stats":{"contexts":7,"bindings":42}}}
-  [DELPHI -> WEBVIEW] syncHost.onResponse("unsubscribe_7", {"ok":true,"result":{"stats":{"contexts":7,"bindings":42}}})
-  [TIMING] unsubscribe_7 handled in 0 ms (0 ms of it writing 7 trace lines); 2041 ms since the previous request finished
-
----- 11:15:26 ----
-[DELPHI UI] Remove: (ListModel as IEditableModel).Remove
-[LIST] removed: Order 6 (index 5), tell the page
-[DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"removed","key":"Order 6","index":5,"state":{"count":5,"current":"Order 6","canAdd":true,"canEdit":true,"canRemove":tr...)
-  [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"removed","key":"Order 6","index":5,"state":{"count":5,"current":"Order 6","canAdd":true,"canEdit":true,"canRemove":tr...)
-    [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"removed","key":"Order 6","index":5,"state":{"count":5,"current":"Order 6","canAdd":true,"canEdit":true,"canRemove":tr...)
-[WEB BINDING #31 (context 29)] Quantity: bound property changed, value 3 unchanged, page not told
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 3
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":3.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":3.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":3.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #32 (context 29)] UnitPrice: bound property changed, value 30 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 30
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":30.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":30.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":30.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #33 (context 29)] Subtotal: bound property changed, value 90 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 90
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":90.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":90.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":90.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #34 (context 29)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #35 (context 29)] Total: bound property changed, value 90 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 90
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":90.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":90.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":90.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #30 (context 29)] Name: bound property changed, value Order 5 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 5
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 5","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 5","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 5","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 5: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 5"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 5"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 5"})
-[WEBVIEW -> DELPHI] SyncRequest("unsubscribe_8", {"method":"unsubscribe","payload":{"context":43}})
-  [DELPHI -> QJS] requestHandler({"method":"unsubscribe","payload":{"context":43}})
-    [QJS -> DELPHI] bindings.CloseContext(43)
-      [DELPHI] context #43: ctx.Unbind (all 6 bindings)
-      <- returns {}
-    <- returns {"ok":true,"result":{"stats":{"contexts":6,"bindings":36}}}
-  [DELPHI -> WEBVIEW] syncHost.onResponse("unsubscribe_8", {"ok":true,"result":{"stats":{"contexts":6,"bindings":36}}})
-  [TIMING] unsubscribe_8 handled in 0 ms (0 ms of it writing 7 trace lines); 942 ms since the previous request finished
-
----- 11:15:28 ----
-[DELPHI UI] Remove: (ListModel as IEditableModel).Remove
-[LIST] removed: Order 5 (index 4), tell the page
-[DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"removed","key":"Order 5","index":4,"state":{"count":4,"current":"Order 5","canAdd":true,"canEdit":true,"canRemove":tr...)
-  [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"removed","key":"Order 5","index":4,"state":{"count":4,"current":"Order 5","canAdd":true,"canEdit":true,"canRemove":tr...)
-    [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"removed","key":"Order 5","index":4,"state":{"count":4,"current":"Order 5","canAdd":true,"canEdit":true,"canRemove":tr...)
-[WEB BINDING #24 (context 22)] Quantity: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #25 (context 22)] UnitPrice: bound property changed, value 12,5 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 12,5
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":12.5,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":12.5,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":12.5,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #26 (context 22)] Subtotal: bound property changed, value 125 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 125
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #27 (context 22)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed -> push 0, now editable
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":0.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #28 (context 22)] Total: bound property changed, value 125 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 125
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #23 (context 22)] Name: bound property changed, value Order 4 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 4
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 4","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 4","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 4","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 4: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 4"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 4"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 4"})
-[WEBVIEW -> DELPHI] SyncRequest("unsubscribe_9", {"method":"unsubscribe","payload":{"context":29}})
-  [DELPHI -> QJS] requestHandler({"method":"unsubscribe","payload":{"context":29}})
-    [QJS -> DELPHI] bindings.CloseContext(29)
-      [DELPHI] context #29: ctx.Unbind (all 6 bindings)
-      <- returns {}
-    <- returns {"ok":true,"result":{"stats":{"contexts":5,"bindings":30}}}
-  [DELPHI -> WEBVIEW] syncHost.onResponse("unsubscribe_9", {"ok":true,"result":{"stats":{"contexts":5,"bindings":30}}})
-  [TIMING] unsubscribe_9 handled in 0 ms (0 ms of it writing 7 trace lines); 2538 ms since the previous request finished
-
----- 11:15:29 ----
-[DELPHI UI] Remove: (ListModel as IEditableModel).Remove
-[LIST] removed: Order 4 (index 3), tell the page
-[DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"removed","key":"Order 4","index":3,"state":{"count":3,"current":"Order 4","canAdd":true,"canEdit":true,"canRemove":tr...)
-  [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"removed","key":"Order 4","index":3,"state":{"count":3,"current":"Order 4","canAdd":true,"canEdit":true,"canRemove":tr...)
-    [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"removed","key":"Order 4","index":3,"state":{"count":3,"current":"Order 4","canAdd":true,"canEdit":true,"canRemove":tr...)
-[WEB BINDING #17 (context 15)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 1
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #18 (context 15)] UnitPrice: bound property changed, value 99 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 99
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":99.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":99.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":99.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #19 (context 15)] Subtotal: bound property changed, value 99 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 99
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #20 (context 15)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed -> push 0, now read only
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #21 (context 15)] Total: bound property changed, value 99 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 99
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #16 (context 15)] Name: bound property changed, value Order 3 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 3
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 3","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 3","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 3","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 3: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 3"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 3"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 3"})
-[WEBVIEW -> DELPHI] SyncRequest("unsubscribe_10", {"method":"unsubscribe","payload":{"context":22}})
-  [DELPHI -> QJS] requestHandler({"method":"unsubscribe","payload":{"context":22}})
-    [QJS -> DELPHI] bindings.CloseContext(22)
-      [DELPHI] context #22: ctx.Unbind (all 6 bindings)
-      <- returns {}
-    <- returns {"ok":true,"result":{"stats":{"contexts":4,"bindings":24}}}
-  [DELPHI -> WEBVIEW] syncHost.onResponse("unsubscribe_10", {"ok":true,"result":{"stats":{"contexts":4,"bindings":24}}})
-  [TIMING] unsubscribe_10 handled in 0 ms (0 ms of it writing 7 trace lines); 985 ms since the previous request finished
-
----- 11:15:31 ----
-[DELPHI UI] Remove: (ListModel as IEditableModel).Remove
-[LIST] removed: Order 3 (index 2), tell the page
-[DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"removed","key":"Order 3","index":2,"state":{"count":2,"current":"Order 3","canAdd":true,"canEdit":true,"canRemove":fa...)
-  [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"removed","key":"Order 3","index":2,"state":{"count":2,"current":"Order 3","canAdd":true,"canEdit":true,"canRemove":fa...)
-    [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"removed","key":"Order 3","index":2,"state":{"count":2,"current":"Order 3","canAdd":true,"canEdit":true,"canRemove":fa...)
-[WEB BINDING #10 (context 8)] Quantity: bound property changed, value 5 unchanged, page not told
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 5
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #11 (context 8)] UnitPrice: bound property changed, value 25 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 25
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #12 (context 8)] Subtotal: bound property changed, value 125 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 125
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #13 (context 8)] Discount: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed -> push 10, now editable
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #14 (context 8)] Total: bound property changed, value 115 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 115
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #9 (context 8)] Name: bound property changed, value Order 2 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 2
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 2: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 2"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 2"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 2"})
-[WEBVIEW -> DELPHI] SyncRequest("unsubscribe_11", {"method":"unsubscribe","payload":{"context":15}})
-  [DELPHI -> QJS] requestHandler({"method":"unsubscribe","payload":{"context":15}})
-    [QJS -> DELPHI] bindings.CloseContext(15)
-      [DELPHI] context #15: ctx.Unbind (all 6 bindings)
-      <- returns {}
-    <- returns {"ok":true,"result":{"stats":{"contexts":3,"bindings":18}}}
-  [DELPHI -> WEBVIEW] syncHost.onResponse("unsubscribe_11", {"ok":true,"result":{"stats":{"contexts":3,"bindings":18}}})
-  [TIMING] unsubscribe_11 handled in 0 ms (0 ms of it writing 7 trace lines); 1882 ms since the previous request finished
-
----- 11:15:34 ----
-[WEB BINDING #3 (context 1)] Quantity: bound property changed, value 2 unchanged, page not told
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 2
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":2.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":2.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":2.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #4 (context 1)] UnitPrice: bound property changed, value 40 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 40
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":40.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":40.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":40.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #5 (context 1)] Subtotal: bound property changed, value 80 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 80
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #6 (context 1)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed -> push 0, now read only
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #7 (context 1)] Total: bound property changed, value 80 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 80
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #2 (context 1)] Name: bound property changed, value Order 1 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 1
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 1","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 1","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 1","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 1: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 1"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 1"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 1"})
-
----- 11:16:13 ----
-[WEB BINDING #10 (context 8)] Quantity: bound property changed, value 5 unchanged, page not told
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 5
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #11 (context 8)] UnitPrice: bound property changed, value 25 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 25
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #12 (context 8)] Subtotal: bound property changed, value 125 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 125
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #13 (context 8)] Discount: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed -> push 10, now editable
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #14 (context 8)] Total: bound property changed, value 115 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 115
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #9 (context 8)] Name: bound property changed, value Order 2 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 2
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 2: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 2"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 2"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 2"})
-
----- 11:16:14 ----
-[WEB BINDING #3 (context 1)] Quantity: bound property changed, value 2 unchanged, page not told
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 2
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":2.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":2.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":2.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #4 (context 1)] UnitPrice: bound property changed, value 40 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 40
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":40.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":40.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":40.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #5 (context 1)] Subtotal: bound property changed, value 80 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 80
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #6 (context 1)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed -> push 0, now read only
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #7 (context 1)] Total: bound property changed, value 80 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 80
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #2 (context 1)] Name: bound property changed, value Order 1 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 1
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 1","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 1","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 1","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 1: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 1"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 1"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 1"})
-
----- 11:16:16 ----
-[WEBVIEW -> DELPHI] SyncRequest("setCurrent_12", {"method":"setCurrent","payload":{"type":"order","key":"Order 2"}})
-  [DELPHI -> QJS] requestHandler({"method":"setCurrent","payload":{"type":"order","key":"Order 2"}})
-    [QJS -> DELPHI] bindings.SetCurrent("order", "Order 2")
-      [DELPHI] listModel.ObjectContext := Order 2
-      [WEB BINDING #10 (context 8)] Quantity: bound property changed, value 5 unchanged, page not told
-      [WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 5
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #11 (context 8)] UnitPrice: bound property changed, value 25 unchanged, page not told
-      [WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 25
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #12 (context 8)] Subtotal: bound property changed, value 125 unchanged, page not told
-      [WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 125
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #13 (context 8)] Discount: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #41 (context 36)] Discount: bound property changed -> push 10, now editable
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #14 (context 8)] Total: bound property changed, value 115 unchanged, page not told
-      [WEB BINDING #42 (context 36)] Total: bound property changed -> push 115
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #9 (context 8)] Name: bound property changed, value Order 2 unchanged, page not told
-      [WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 2
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI] list current item -> Order 2: tell the page
-      [DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 2"})
-        [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 2"})
-          [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 2"})
+      [WEB BINDING #21 (context 15)] Total: bound property changed, value 99 unchanged, page not told
+      [WEB BINDING #42 (context 36)] Total: bound property changed -> push 99
+        [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
+          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
+            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":99.0,"editable":false,"visible":true,"reason":"bound property changed"})
+      [WEB BINDING #16 (context 15)] Name: bound property changed, value Order 3 unchanged, page not told
+      [WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 3
+        [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 3","editable":false,"visible":true,"reason":"bound property changed"})
+          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 3","editable":false,"visible":true,"reason":"bound property changed"})
+            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 3","editable":false,"visible":true,"reason":"bound property changed"})
+      [DELPHI] list current item -> Order 3: tell the page
+      [DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 3"})
+        [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 3"})
+          [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 3"})
       <- returns {}
     <- returns {"ok":true,"result":{}}
-  [DELPHI -> WEBVIEW] syncHost.onResponse("setCurrent_12", {"ok":true,"result":{}})
-  [TIMING] setCurrent_12 handled in 1 ms (0 ms of it writing 41 trace lines); 44743 ms since the previous request finished
+  [DELPHI -> WEBVIEW] syncHost.onResponse("setCurrent_5", {"ok":true,"result":{}})
+  [TIMING] setCurrent_5 handled in 3 ms (0 ms of it writing 38 trace lines); 3270 ms since the previous request finished
 
----- 11:16:19 ----
-[WEBVIEW -> DELPHI] SyncRequest("setCurrent_13", {"method":"setCurrent","payload":{"type":"order","key":"Order 1"}})
+---- 11:11:15 ----
+[WEBVIEW -> DELPHI] SyncRequest("setCurrent_6", {"method":"setCurrent","payload":{"type":"order","key":"Order 1"}})
   [DELPHI -> QJS] requestHandler({"method":"setCurrent","payload":{"type":"order","key":"Order 1"}})
     [QJS -> DELPHI] bindings.SetCurrent("order", "Order 1")
       [DELPHI] listModel.ObjectContext := Order 1
@@ -741,10 +220,7 @@
           [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
             [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
       [WEB BINDING #6 (context 1)] Discount: bound property changed, value 0 unchanged, page not told
-      [WEB BINDING #41 (context 36)] Discount: bound property changed -> push 0, now read only
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
+      [WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
       [WEB BINDING #7 (context 1)] Total: bound property changed, value 80 unchanged, page not told
       [WEB BINDING #42 (context 36)] Total: bound property changed -> push 80
         [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
@@ -761,820 +237,64 @@
           [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 1"})
       <- returns {}
     <- returns {"ok":true,"result":{}}
-  [DELPHI -> WEBVIEW] syncHost.onResponse("setCurrent_13", {"ok":true,"result":{}})
-  [TIMING] setCurrent_13 handled in 2 ms (0 ms of it writing 41 trace lines); 3247 ms since the previous request finished
+  [DELPHI -> WEBVIEW] syncHost.onResponse("setCurrent_6", {"ok":true,"result":{}})
+  [TIMING] setCurrent_6 handled in 3 ms (0 ms of it writing 38 trace lines); 2378059 ms since the previous request finished
 
----- 11:16:21 ----
-[WEB BINDING #10 (context 8)] Quantity: bound property changed, value 5 unchanged, page not told
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 5
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #11 (context 8)] UnitPrice: bound property changed, value 25 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 25
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #12 (context 8)] Subtotal: bound property changed, value 125 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 125
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #13 (context 8)] Discount: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed -> push 10, now editable
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #14 (context 8)] Total: bound property changed, value 115 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 115
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #9 (context 8)] Name: bound property changed, value Order 2 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 2
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 2: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 2"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 2"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 2"})
-
----- 11:16:43 ----
-[WEB BINDING #3 (context 1)] Quantity: bound property changed, value 2 unchanged, page not told
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 2
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":2.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":2.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":2.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #4 (context 1)] UnitPrice: bound property changed, value 40 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 40
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":40.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":40.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":40.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #5 (context 1)] Subtotal: bound property changed, value 80 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 80
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #6 (context 1)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed -> push 0, now read only
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #7 (context 1)] Total: bound property changed, value 80 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 80
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":80.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #2 (context 1)] Name: bound property changed, value Order 1 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 1
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 1","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 1","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 1","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 1: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 1"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 1"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 1"})
-
----- 11:16:44 ----
-[WEB BINDING #10 (context 8)] Quantity: bound property changed, value 5 unchanged, page not told
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 5
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #11 (context 8)] UnitPrice: bound property changed, value 25 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 25
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #12 (context 8)] Subtotal: bound property changed, value 125 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 125
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #13 (context 8)] Discount: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed -> push 10, now editable
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #14 (context 8)] Total: bound property changed, value 115 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 115
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #9 (context 8)] Name: bound property changed, value Order 2 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 2
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 2: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 2"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 2"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 2"})
-
----- 11:17:01 ----
-[DELPHI UI] Add: (ListModel as IAddToList).AddNew
-[ORDER] new Order 8: Quantity 1, UnitPrice 10.00, Discount 0.00, calculate the rest
-  [RULE] Subtotal = Quantity x UnitPrice = 1 x 10.00 -> 10.00 (was 0.00)
-  [RULE] Discount = 0 and read only, because Subtotal 10.00 <= 100 -> 0.00 (unchanged)
-  [RULE] Total = Subtotal - Discount = 10.00 - 0.00 -> 10.00 (was 0.00)
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 1
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #41 (context 36)] Discount: bound property changed -> push 0, now read only
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 8
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 8","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 8","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 8","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 8: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 8"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 8"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 8"})
-[LIST] added: Order 8 (index 2), tell the page
-[DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"added","key":"Order 8","index":2,"state":{"count":3,"current":"Order 8","canAdd":true,"canEdit":true,"canRemove":true...)
-  [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"added","key":"Order 8","index":2,"state":{"count":3,"current":"Order 8","canAdd":true,"canEdit":true,"canRemove":true...)
-    [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"added","key":"Order 8","index":2,"state":{"count":3,"current":"Order 8","canAdd":true,"canEdit":true,"canRemove":true...)
-[WEBVIEW -> DELPHI] SyncRequest("subscribe_14", {"method":"subscribe","payload":{"type":"order","key":"Order 8","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-  [DELPHI -> QJS] requestHandler({"method":"subscribe","payload":{"type":"order","key":"Order 8","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-    [QJS -> DELPHI] bindings.OpenContext("order", "Order 8")
-      [DELPHI] new IObjectModelContext #57 (page owned), Context := Order 8
-      <- returns {"context":57,"key":"Order 8"}
-    [QJS -> DELPHI] bindings.Bind(57, "Name")
-      [WEB BINDING #37 (context 36)] Name: bound property changed, value Order 8 unchanged, page not told
-      <- returns {"id":58,"value":"Order 8","editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(57, "Quantity")
-      [WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-      <- returns {"id":59,"value":1.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(57, "UnitPrice")
-      [WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":60,"value":10.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(57, "Subtotal")
-      [WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":61,"value":10.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(57, "Discount")
-      [WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-      <- returns {"id":62,"value":0.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(57, "Total")
-      [WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":63,"value":10.0,"editable":false,"visible":true}
-    <- returns {"ok":true,"result":{"context":57,"fields":{"Name":{"id":58,"value":"Order 8","editable":false,"visible":true},"Quantity":{"id":59,"value":1,"editable":true,"vi...
-  [DELPHI -> WEBVIEW] syncHost.onResponse("subscribe_14", {"ok":true,"result":{"context":57,"fields":{"Name":{"id":58,"value":"Order 8","editable":false,"visible":true},"Quantity":{"id":59,"value":1,"editable":true,"vi...)
-  [TIMING] subscribe_14 handled in 0 ms (0 ms of it writing 25 trace lines); 42211 ms since the previous request finished
-
----- 11:17:02 ----
-[DELPHI UI] Remove: (ListModel as IEditableModel).Remove
-
----- 11:17:08 ----
-[LIST] removed: Order 8 (index 2), tell the page
-[DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"removed","key":"Order 8","index":2,"state":{"count":2,"current":"Order 8","canAdd":true,"canEdit":true,"canRemove":fa...)
-  [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"removed","key":"Order 8","index":2,"state":{"count":2,"current":"Order 8","canAdd":true,"canEdit":true,"canRemove":fa...)
-    [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"removed","key":"Order 8","index":2,"state":{"count":2,"current":"Order 8","canAdd":true,"canEdit":true,"canRemove":fa...)
-[WEB BINDING #10 (context 8)] Quantity: bound property changed, value 5 unchanged, page not told
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 5
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #11 (context 8)] UnitPrice: bound property changed, value 25 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 25
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #12 (context 8)] Subtotal: bound property changed, value 125 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 125
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #13 (context 8)] Discount: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed -> push 10, now editable
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #14 (context 8)] Total: bound property changed, value 115 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 115
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #9 (context 8)] Name: bound property changed, value Order 2 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 2
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 2: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 2"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 2"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 2"})
-[WEBVIEW -> DELPHI] SyncRequest("unsubscribe_15", {"method":"unsubscribe","payload":{"context":57}})
-  [DELPHI -> QJS] requestHandler({"method":"unsubscribe","payload":{"context":57}})
-    [QJS -> DELPHI] bindings.CloseContext(57)
-      [DELPHI] context #57: ctx.Unbind (all 6 bindings)
+---- 11:11:20 ----
+[WEBVIEW -> DELPHI] SyncRequest("unsubscribe_7", {"method":"unsubscribe","payload":{"contexts":[1,8,15,22,29,36]}})
+  [DELPHI -> QJS] requestHandler({"method":"unsubscribe","payload":{"contexts":[1,8,15,22,29,36]}})
+    [QJS -> DELPHI] bindings.CloseContext(1)
+      [DELPHI] context #1: ctx.Unbind (all 6 bindings)
       <- returns {}
-    <- returns {"ok":true,"result":{"stats":{"contexts":3,"bindings":18}}}
-  [DELPHI -> WEBVIEW] syncHost.onResponse("unsubscribe_15", {"ok":true,"result":{"stats":{"contexts":3,"bindings":18}}})
-  [TIMING] unsubscribe_15 handled in 0 ms (0 ms of it writing 7 trace lines); 6465 ms since the previous request finished
-
----- 11:17:13 ----
-[DELPHI UI] Add: (ListModel as IAddToList).AddNew
-[ORDER] new Order 9: Quantity 1, UnitPrice 10.00, Discount 0.00, calculate the rest
-  [RULE] Subtotal = Quantity x UnitPrice = 1 x 10.00 -> 10.00 (was 0.00)
-  [RULE] Discount = 0 and read only, because Subtotal 10.00 <= 100 -> 0.00 (unchanged)
-  [RULE] Total = Subtotal - Discount = 10.00 - 0.00 -> 10.00 (was 0.00)
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 1
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #41 (context 36)] Discount: bound property changed -> push 0, now read only
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 9
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 9: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 9"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 9"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 9"})
-[LIST] added: Order 9 (index 2), tell the page
-[DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"added","key":"Order 9","index":2,"state":{"count":3,"current":"Order 9","canAdd":true,"canEdit":true,"canRemove":true...)
-  [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"added","key":"Order 9","index":2,"state":{"count":3,"current":"Order 9","canAdd":true,"canEdit":true,"canRemove":true...)
-    [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"added","key":"Order 9","index":2,"state":{"count":3,"current":"Order 9","canAdd":true,"canEdit":true,"canRemove":true...)
-[WEBVIEW -> DELPHI] SyncRequest("subscribe_16", {"method":"subscribe","payload":{"type":"order","key":"Order 9","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-  [DELPHI -> QJS] requestHandler({"method":"subscribe","payload":{"type":"order","key":"Order 9","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-    [QJS -> DELPHI] bindings.OpenContext("order", "Order 9")
-      [DELPHI] new IObjectModelContext #64 (page owned), Context := Order 9
-      <- returns {"context":64,"key":"Order 9"}
-    [QJS -> DELPHI] bindings.Bind(64, "Name")
-      [WEB BINDING #37 (context 36)] Name: bound property changed, value Order 9 unchanged, page not told
-      <- returns {"id":65,"value":"Order 9","editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(64, "Quantity")
-      [WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-      <- returns {"id":66,"value":1.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(64, "UnitPrice")
-      [WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":67,"value":10.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(64, "Subtotal")
-      [WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":68,"value":10.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(64, "Discount")
-      [WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-      <- returns {"id":69,"value":0.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(64, "Total")
-      [WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":70,"value":10.0,"editable":false,"visible":true}
-    <- returns {"ok":true,"result":{"context":64,"fields":{"Name":{"id":65,"value":"Order 9","editable":false,"visible":true},"Quantity":{"id":66,"value":1,"editable":true,"vi...
-  [DELPHI -> WEBVIEW] syncHost.onResponse("subscribe_16", {"ok":true,"result":{"context":64,"fields":{"Name":{"id":65,"value":"Order 9","editable":false,"visible":true},"Quantity":{"id":66,"value":1,"editable":true,"vi...)
-  [TIMING] subscribe_16 handled in 0 ms (0 ms of it writing 25 trace lines); 5560 ms since the previous request finished
-[DELPHI UI] Add: (ListModel as IAddToList).AddNew
-[ORDER] new Order 10: Quantity 1, UnitPrice 10.00, Discount 0.00, calculate the rest
-  [RULE] Subtotal = Quantity x UnitPrice = 1 x 10.00 -> 10.00 (was 0.00)
-  [RULE] Discount = 0 and read only, because Subtotal 10.00 <= 100 -> 0.00 (unchanged)
-  [RULE] Total = Subtotal - Discount = 10.00 - 0.00 -> 10.00 (was 0.00)
-[WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 10: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 10"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 10"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 10"})
-[LIST] added: Order 10 (index 3), tell the page
-[DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"added","key":"Order 10","index":3,"state":{"count":4,"current":"Order 10","canAdd":true,"canEdit":true,"canRemove":tr...)
-  [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"added","key":"Order 10","index":3,"state":{"count":4,"current":"Order 10","canAdd":true,"canEdit":true,"canRemove":tr...)
-    [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"added","key":"Order 10","index":3,"state":{"count":4,"current":"Order 10","canAdd":true,"canEdit":true,"canRemove":tr...)
-[WEBVIEW -> DELPHI] SyncRequest("subscribe_17", {"method":"subscribe","payload":{"type":"order","key":"Order 10","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-  [DELPHI -> QJS] requestHandler({"method":"subscribe","payload":{"type":"order","key":"Order 10","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-    [QJS -> DELPHI] bindings.OpenContext("order", "Order 10")
-      [DELPHI] new IObjectModelContext #71 (page owned), Context := Order 10
-      <- returns {"context":71,"key":"Order 10"}
-    [QJS -> DELPHI] bindings.Bind(71, "Name")
-      [WEB BINDING #37 (context 36)] Name: bound property changed, value Order 10 unchanged, page not told
-      <- returns {"id":72,"value":"Order 10","editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(71, "Quantity")
-      [WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-      <- returns {"id":73,"value":1.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(71, "UnitPrice")
-      [WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":74,"value":10.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(71, "Subtotal")
-      [WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":75,"value":10.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(71, "Discount")
-      [WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-      <- returns {"id":76,"value":0.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(71, "Total")
-      [WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":77,"value":10.0,"editable":false,"visible":true}
-    <- returns {"ok":true,"result":{"context":71,"fields":{"Name":{"id":72,"value":"Order 10","editable":false,"visible":true},"Quantity":{"id":73,"value":1,"editable":true,"v...
-  [DELPHI -> WEBVIEW] syncHost.onResponse("subscribe_17", {"ok":true,"result":{"context":71,"fields":{"Name":{"id":72,"value":"Order 10","editable":false,"visible":true},"Quantity":{"id":73,"value":1,"editable":true,"v...)
-  [TIMING] subscribe_17 handled in 0 ms (0 ms of it writing 25 trace lines); 177 ms since the previous request finished
-[DELPHI UI] Add: (ListModel as IAddToList).AddNew
-[ORDER] new Order 11: Quantity 1, UnitPrice 10.00, Discount 0.00, calculate the rest
-  [RULE] Subtotal = Quantity x UnitPrice = 1 x 10.00 -> 10.00 (was 0.00)
-  [RULE] Discount = 0 and read only, because Subtotal 10.00 <= 100 -> 0.00 (unchanged)
-  [RULE] Total = Subtotal - Discount = 10.00 - 0.00 -> 10.00 (was 0.00)
-[WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 11
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 11","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 11","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 11","editable":false,"visible":true,"reason":"bound property changed"})
-[DELPHI] list current item -> Order 11: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 11"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 11"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 11"})
-[LIST] added: Order 11 (index 4), tell the page
-[DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"added","key":"Order 11","index":4,"state":{"count":5,"current":"Order 11","canAdd":true,"canEdit":true,"canRemove":tr...)
-  [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"added","key":"Order 11","index":4,"state":{"count":5,"current":"Order 11","canAdd":true,"canEdit":true,"canRemove":tr...)
-    [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"added","key":"Order 11","index":4,"state":{"count":5,"current":"Order 11","canAdd":true,"canEdit":true,"canRemove":tr...)
-[WEBVIEW -> DELPHI] SyncRequest("subscribe_18", {"method":"subscribe","payload":{"type":"order","key":"Order 11","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-  [DELPHI -> QJS] requestHandler({"method":"subscribe","payload":{"type":"order","key":"Order 11","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-    [QJS -> DELPHI] bindings.OpenContext("order", "Order 11")
-      [DELPHI] new IObjectModelContext #78 (page owned), Context := Order 11
-      <- returns {"context":78,"key":"Order 11"}
-    [QJS -> DELPHI] bindings.Bind(78, "Name")
-      [WEB BINDING #37 (context 36)] Name: bound property changed, value Order 11 unchanged, page not told
-      <- returns {"id":79,"value":"Order 11","editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(78, "Quantity")
-      [WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-      <- returns {"id":80,"value":1.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(78, "UnitPrice")
-      [WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":81,"value":10.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(78, "Subtotal")
-      [WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":82,"value":10.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(78, "Discount")
-      [WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-      <- returns {"id":83,"value":0.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(78, "Total")
-      [WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":84,"value":10.0,"editable":false,"visible":true}
-    <- returns {"ok":true,"result":{"context":78,"fields":{"Name":{"id":79,"value":"Order 11","editable":false,"visible":true},"Quantity":{"id":80,"value":1,"editable":true,"v...
-  [DELPHI -> WEBVIEW] syncHost.onResponse("subscribe_18", {"ok":true,"result":{"context":78,"fields":{"Name":{"id":79,"value":"Order 11","editable":false,"visible":true},"Quantity":{"id":80,"value":1,"editable":true,"v...)
-  [TIMING] subscribe_18 handled in 0 ms (0 ms of it writing 25 trace lines); 378 ms since the previous request finished
-
----- 11:17:24 ----
-[WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #66 (context 64)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #67 (context 64)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #68 (context 64)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #69 (context 64)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #70 (context 64)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 9
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #65 (context 64)] Name: bound property changed, value Order 9 unchanged, page not told
-[DELPHI] list current item -> Order 9: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 9"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 9"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 9"})
-
----- 11:26:19 ----
-[WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #73 (context 71)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #74 (context 71)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #75 (context 71)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #76 (context 71)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #77 (context 71)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #72 (context 71)] Name: bound property changed, value Order 10 unchanged, page not told
-[DELPHI] list current item -> Order 10: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 10"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 10"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 10"})
-
----- 11:26:31 ----
-[WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #66 (context 64)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #67 (context 64)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #68 (context 64)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #69 (context 64)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #70 (context 64)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 9
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #65 (context 64)] Name: bound property changed, value Order 9 unchanged, page not told
-[DELPHI] list current item -> Order 9: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 9"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 9"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 9"})
-
----- 11:26:33 ----
-[WEBVIEW -> DELPHI] SyncRequest("setCurrent_19", {"method":"setCurrent","payload":{"type":"order","key":"Order 2"}})
-  [DELPHI -> QJS] requestHandler({"method":"setCurrent","payload":{"type":"order","key":"Order 2"}})
-    [QJS -> DELPHI] bindings.SetCurrent("order", "Order 2")
-      [DELPHI] listModel.ObjectContext := Order 2
-      [WEB BINDING #10 (context 8)] Quantity: bound property changed, value 5 unchanged, page not told
-      [WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 5
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":5.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #11 (context 8)] UnitPrice: bound property changed, value 25 unchanged, page not told
-      [WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 25
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":25.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #12 (context 8)] Subtotal: bound property changed, value 125 unchanged, page not told
-      [WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 125
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":125.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #13 (context 8)] Discount: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #41 (context 36)] Discount: bound property changed -> push 10, now editable
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #14 (context 8)] Total: bound property changed, value 115 unchanged, page not told
-      [WEB BINDING #42 (context 36)] Total: bound property changed -> push 115
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":115.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #9 (context 8)] Name: bound property changed, value Order 2 unchanged, page not told
-      [WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 2
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 2","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI] list current item -> Order 2: tell the page
-      [DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 2"})
-        [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 2"})
-          [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 2"})
+    [QJS -> DELPHI] bindings.CloseContext(8)
+      [DELPHI] context #8: ctx.Unbind (all 6 bindings)
       <- returns {}
-    <- returns {"ok":true,"result":{}}
-  [DELPHI -> WEBVIEW] syncHost.onResponse("setCurrent_19", {"ok":true,"result":{}})
-  [TIMING] setCurrent_19 handled in 30083 ms (0 ms of it writing 41 trace lines); 559346 ms since the previous request finished
-
----- 11:27:16 ----
-[WEBVIEW -> DELPHI] SyncRequest("setCurrent_20", {"method":"setCurrent","payload":{"type":"order","key":"Order 9"}})
-  [DELPHI -> QJS] requestHandler({"method":"setCurrent","payload":{"type":"order","key":"Order 9"}})
-    [QJS -> DELPHI] bindings.SetCurrent("order", "Order 9")
-      [DELPHI] listModel.ObjectContext := Order 9
-      [WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 1
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #66 (context 64)] Quantity: bound property changed, value 1 unchanged, page not told
-      [WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 10
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #67 (context 64)] UnitPrice: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 10
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #68 (context 64)] Subtotal: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #41 (context 36)] Discount: bound property changed -> push 0, now read only
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #69 (context 64)] Discount: bound property changed, value 0 unchanged, page not told
-      [WEB BINDING #42 (context 36)] Total: bound property changed -> push 10
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #70 (context 64)] Total: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 9
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #65 (context 64)] Name: bound property changed, value Order 9 unchanged, page not told
-      [DELPHI] list current item -> Order 9: tell the page
-      [DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 9"})
-        [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 9"})
-          [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 9"})
+    [QJS -> DELPHI] bindings.CloseContext(15)
+      [DELPHI] context #15: ctx.Unbind (all 6 bindings)
       <- returns {}
-    <- returns {"ok":true,"result":{}}
-  [DELPHI -> WEBVIEW] syncHost.onResponse("setCurrent_20", {"ok":true,"result":{}})
-  [TIMING] setCurrent_20 handled in 5458 ms (0 ms of it writing 41 trace lines); 12851 ms since the previous request finished
-
----- 11:27:24 ----
-[WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #73 (context 71)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #74 (context 71)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #75 (context 71)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #76 (context 71)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #77 (context 71)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #72 (context 71)] Name: bound property changed, value Order 10 unchanged, page not told
-[DELPHI] list current item -> Order 10: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 10"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 10"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 10"})
-
----- 11:27:25 ----
-[WEBVIEW -> DELPHI] SyncRequest("setCurrent_21", {"method":"setCurrent","payload":{"type":"order","key":"Order 9"}})
-  [DELPHI -> QJS] requestHandler({"method":"setCurrent","payload":{"type":"order","key":"Order 9"}})
-    [QJS -> DELPHI] bindings.SetCurrent("order", "Order 9")
-      [DELPHI] listModel.ObjectContext := Order 9
-      [WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-      [WEB BINDING #66 (context 64)] Quantity: bound property changed, value 1 unchanged, page not told
-      [WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #67 (context 64)] UnitPrice: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #68 (context 64)] Subtotal: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-      [WEB BINDING #69 (context 64)] Discount: bound property changed, value 0 unchanged, page not told
-      [WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #70 (context 64)] Total: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 9
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-      [WEB BINDING #65 (context 64)] Name: bound property changed, value Order 9 unchanged, page not told
-      [DELPHI] list current item -> Order 9: tell the page
-      [DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 9"})
-        [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 9"})
-          [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 9"})
+    [QJS -> DELPHI] bindings.CloseContext(22)
+      [DELPHI] context #22: ctx.Unbind (all 6 bindings)
       <- returns {}
-    <- returns {"ok":true,"result":{}}
-  [DELPHI -> WEBVIEW] syncHost.onResponse("setCurrent_21", {"ok":true,"result":{}})
-  [TIMING] setCurrent_21 handled in 0 ms (0 ms of it writing 26 trace lines); 3161 ms since the previous request finished
+    [QJS -> DELPHI] bindings.CloseContext(29)
+      [DELPHI] context #29: ctx.Unbind (all 6 bindings)
+      <- returns {}
+    [QJS -> DELPHI] bindings.CloseContext(36)
+      [DELPHI] context #36 (shared list context): ctx.Unbind(binding) for the page's 6 bindings
+      <- returns {}
+    <- returns {"ok":true,"result":{"stats":{"contexts":0,"bindings":0}}}
+  [DELPHI -> WEBVIEW] syncHost.onResponse("unsubscribe_7", {"ok":true,"result":{"stats":{"contexts":0,"bindings":0}}})
+  [TIMING] unsubscribe_7 handled in 1 ms (0 ms of it writing 22 trace lines); 4624 ms since the previous request finished
 
----- 11:27:26 ----
-[WEBVIEW -> DELPHI] SyncRequest("addNew_22", {"method":"addNew","payload":{"type":"order"}})
-  [DELPHI -> QJS] requestHandler({"method":"addNew","payload":{"type":"order"}})
-    [QJS -> DELPHI] bindings.AddNew("order")
-      [DELPHI] (ListModel as IAddToList).AddNew
-      [ORDER] new Order 12: Quantity 1, UnitPrice 10.00, Discount 0.00, calculate the rest
-        [RULE] Subtotal = Quantity x UnitPrice = 1 x 10.00 -> 10.00 (was 0.00)
-        [RULE] Discount = 0 and read only, because Subtotal 10.00 <= 100 -> 0.00 (unchanged)
-        [RULE] Total = Subtotal - Discount = 10.00 - 0.00 -> 10.00 (was 0.00)
-      [WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-      [WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-      [WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-      [WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 12
-        [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 12","editable":false,"visible":true,"reason":"bound property changed"})
-          [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 12","editable":false,"visible":true,"reason":"bound property changed"})
-            [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 12","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI] list current item -> Order 12: tell the page
-      [DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 12"})
-        [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 12"})
-          [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 12"})
-      [LIST] added: Order 12 (index 5), tell the page
-      [DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"added","key":"Order 12","index":5,"state":{"count":6,"current":"Order 12","canAdd":true,"canEdit":true,"canRemove":tr...)
-        [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"added","key":"Order 12","index":5,"state":{"count":6,"current":"Order 12","canAdd":true,"canEdit":true,"canRemove":tr...)
-          [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"added","key":"Order 12","index":5,"state":{"count":6,"current":"Order 12","canAdd":true,"canEdit":true,"canRemove":tr...)
-      <- returns {"count":6,"current":"Order 12","canAdd":true,"canEdit":true,"canRemove":true,"isNew":true,"isEdit":false,"isChanged":false}
-    <- returns {"ok":true,"result":{"count":6,"current":"Order 12","canAdd":true,"canEdit":true,"canRemove":true,"isNew":true,"isEdit":false,"isChanged":false}}
-  [DELPHI -> WEBVIEW] syncHost.onResponse("addNew_22", {"ok":true,"result":{"count":6,"current":"Order 12","canAdd":true,"canEdit":true,"canRemove":true,"isNew":true,"isEdit":false,"isChanged":false}})
-  [TIMING] addNew_22 handled in 2 ms (0 ms of it writing 28 trace lines); 1089 ms since the previous request finished
-[WEBVIEW -> DELPHI] SyncRequest("subscribe_23", {"method":"subscribe","payload":{"type":"order","key":"Order 12","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-  [DELPHI -> QJS] requestHandler({"method":"subscribe","payload":{"type":"order","key":"Order 12","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
-    [QJS -> DELPHI] bindings.OpenContext("order", "Order 12")
-      [DELPHI] new IObjectModelContext #85 (page owned), Context := Order 12
-      <- returns {"context":85,"key":"Order 12"}
-    [QJS -> DELPHI] bindings.Bind(85, "Name")
-      [WEB BINDING #37 (context 36)] Name: bound property changed, value Order 12 unchanged, page not told
-      <- returns {"id":86,"value":"Order 12","editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(85, "Quantity")
-      [WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-      <- returns {"id":87,"value":1.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(85, "UnitPrice")
-      [WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":88,"value":10.0,"editable":true,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(85, "Subtotal")
-      [WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":89,"value":10.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(85, "Discount")
-      [WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-      <- returns {"id":90,"value":0.0,"editable":false,"visible":true}
-    [QJS -> DELPHI] bindings.Bind(85, "Total")
-      [WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-      <- returns {"id":91,"value":10.0,"editable":false,"visible":true}
-    <- returns {"ok":true,"result":{"context":85,"fields":{"Name":{"id":86,"value":"Order 12","editable":false,"visible":true},"Quantity":{"id":87,"value":1,"editable":true,"v...
-  [DELPHI -> WEBVIEW] syncHost.onResponse("subscribe_23", {"ok":true,"result":{"context":85,"fields":{"Name":{"id":86,"value":"Order 12","editable":false,"visible":true},"Quantity":{"id":87,"value":1,"editable":true,"v...)
-  [TIMING] subscribe_23 handled in 0 ms (0 ms of it writing 25 trace lines); 179 ms since the previous request finished
+---- 11:11:20 ----
+[WEBVIEW -> DELPHI] SyncRequest("run_8", {"method":"run","payload":{"code":"return app.orders().map(o => ({ key: o.key, caption: o.caption }));"}})
+  [DELPHI -> QJS] requestHandler({"method":"run","payload":{"code":"return app.orders().map(o => ({ key: o.key, caption: o.caption }));"}})
+    [QJS -> DELPHI] bindings.ListObjects("order")
+      <- returns [{"key":"Order 1","caption":"Order 1","values":{"Name":"Order 1","Quantity":2.0,"UnitPrice":40.0,"Subtotal":80.0,"Discount":0.0,"Total":80.0}},{"key":"Order 2",...
+    <- returns {"ok":true,"result":[{"key":"Order 1","caption":"Order 1"},{"key":"Order 2","caption":"Order 2"},{"key":"Order 3","caption":"Order 3"},{"key":"Order 4","caption...
+  [DELPHI -> WEBVIEW] syncHost.onResponse("run_8", {"ok":true,"result":[{"key":"Order 1","caption":"Order 1"},{"key":"Order 2","caption":"Order 2"},{"key":"Order 3","caption":"Order 3"},{"key":"Order 4","caption...)
+  [TIMING] run_8 handled in 0 ms (0 ms of it writing 6 trace lines); 305 ms since the previous request finished
+[WEBVIEW -> DELPHI] SyncRequest("subscribe_9", {"method":"subscribe","payload":{"type":"order","key":"Order 1","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
+  [DELPHI -> QJS] requestHandler({"method":"subscribe","payload":{"type":"order","key":"Order 1","properties":["Name","Quantity","UnitPrice","Subtotal","Discount","Total"]}})
+    [QJS -> DELPHI] bindings.OpenContext("order", "Order 1")
+      [DELPHI] new IObjectModelContext #43 (page owned), Context := Order 1
+      <- returns {"context":43,"key":"Order 1"}
+    [QJS -> DELPHI] bindings.Bind(43, "Name")
+      <- returns {"id":44,"value":"Order 1","editable":false,"visible":true}
+    [QJS -> DELPHI] bindings.Bind(43, "Quantity")
+      <- returns {"id":45,"value":2.0,"editable":true,"visible":true}
+    [QJS -> DELPHI] bindings.Bind(43, "UnitPrice")
+      <- returns {"id":46,"value":40.0,"editable":true,"visible":true}
+    [QJS -> DELPHI] bindings.Bind(43, "Subtotal")
+      <- returns {"id":47,"value":80.0,"editable":false,"visible":true}
+    [QJS -> DELPHI] bindings.Bind(43, "Discount")
+      <- returns {"id":48,"value":0.0,"editable":false,"visible":true}
+    [QJS -> DELPHI] bindings.Bind(43, "Total")
+      <- returns {"id":49,"value":80.0,"editable":false,"visible":true}
+    <- returns {"ok":true,"result":{"context":43,"fields":{"Name":{"id":44,"value":"Order 1","editable":false,"visible":true},"Quantity":{"id":45,"value":2,"editable":true,"vi...
+  [DELPHI -> WEBVIEW] syncHost.onResponse("subscribe_9", {"ok":true,"result":{"context":43,"fields":{"Name":{"id":44,"value":"Order 1","editable":false,"visible":true},"Quantity":{"id":45,"value":2,"editable":true,"vi...)
+  [TIMING] subscribe_9 handled in 0 ms (0 ms of it writing 19 trace lines); 282 ms since the previous request finished
 
----- 11:27:27 ----
-[WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #73 (context 71)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #74 (context 71)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #75 (context 71)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #76 (context 71)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #77 (context 71)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #72 (context 71)] Name: bound property changed, value Order 10 unchanged, page not told
-[DELPHI] list current item -> Order 10: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 10"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 10"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 10"})
-
----- 11:27:28 ----
-[WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #66 (context 64)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #67 (context 64)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #68 (context 64)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #69 (context 64)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #70 (context 64)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 9
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 9","editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #65 (context 64)] Name: bound property changed, value Order 9 unchanged, page not told
-[DELPHI] list current item -> Order 9: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 9"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 9"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 9"})
-
----- 11:27:36 ----
-[LIST] beginEdit: Order 9 (index -1), tell the page
-[DELPHI -> QJS] pushHandler({"channel":"list","type":"order","change":"beginEdit","key":"Order 9","index":-1,"state":{"count":6,"current":"Order 9","canAdd":true,"canEdit":true,"canRemove"...)
-  [QJS -> DELPHI] webview.Post("list", {"channel":"list","type":"order","change":"beginEdit","key":"Order 9","index":-1,"state":{"count":6,"current":"Order 9","canAdd":true,"canEdit":true,"canRemove"...)
-    [DELPHI -> WEBVIEW] syncHost.receive("list", {"channel":"list","type":"order","change":"beginEdit","key":"Order 9","index":-1,"state":{"count":6,"current":"Order 9","canAdd":true,"canEdit":true,"canRemove"...)
-
----- 11:27:37 ----
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #40 (context 36)] Subtotal: linked: UnitPrice changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: linked: UnitPrice changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: linked: UnitPrice changed, value 10 unchanged, page not told
-[WEB BINDING #67 (context 64)] UnitPrice: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":67,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":67,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":67,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #68 (context 64)] Subtotal: linked: UnitPrice changed, value 10 unchanged, page not told
-[WEB BINDING #69 (context 64)] Discount: linked: UnitPrice changed, value 0 unchanged, page not told
-[WEB BINDING #70 (context 64)] Total: linked: UnitPrice changed, value 10 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":39,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #67 (context 64)] UnitPrice: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":67,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":67,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":67,"property":"UnitPrice","value":10.0,"editable":true,"visible":true,"reason":"bound property changed"})
-
----- 11:27:39 ----
-[ORDER] Quantity 1 -> 100
-[RULE] Subtotal = Quantity x UnitPrice = 100 x 10.00 -> 1000.00 (was 10.00)
-[RULE] Discount editable, because Subtotal 1000.00 > 100 (stays 0.00)
-[RULE] Total = Subtotal - Discount = 1000.00 - 0.00 -> 1000.00 (was 10.00)
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 100
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":100.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":100.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":100.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #40 (context 36)] Subtotal: linked: Quantity changed -> push 1000
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":1000.0,"editable":false,"visible":true,"reason":"linked: Quantity changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":1000.0,"editable":false,"visible":true,"reason":"linked: Quantity changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":1000.0,"editable":false,"visible":true,"reason":"linked: Quantity changed"})
-[WEB BINDING #41 (context 36)] Discount: linked: Quantity changed -> push 0, now editable
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":0.0,"editable":true,"visible":true,"reason":"linked: Quantity changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":true,"visible":true,"reason":"linked: Quantity changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":true,"visible":true,"reason":"linked: Quantity changed"})
-[WEB BINDING #42 (context 36)] Total: linked: Quantity changed -> push 1000
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":1000.0,"editable":false,"visible":true,"reason":"linked: Quantity changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":1000.0,"editable":false,"visible":true,"reason":"linked: Quantity changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":1000.0,"editable":false,"visible":true,"reason":"linked: Quantity changed"})
-[WEB BINDING #66 (context 64)] Quantity: bound property changed -> push 100
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":66,"property":"Quantity","value":100.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":66,"property":"Quantity","value":100.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":66,"property":"Quantity","value":100.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #68 (context 64)] Subtotal: linked: Quantity changed -> push 1000
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":68,"property":"Subtotal","value":1000.0,"editable":false,"visible":true,"reason":"linked: Quantity changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":68,"property":"Subtotal","value":1000.0,"editable":false,"visible":true,"reason":"linked: Quantity changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":68,"property":"Subtotal","value":1000.0,"editable":false,"visible":true,"reason":"linked: Quantity changed"})
-[WEB BINDING #69 (context 64)] Discount: linked: Quantity changed -> push 0, now editable
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":69,"property":"Discount","value":0.0,"editable":true,"visible":true,"reason":"linked: Quantity changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":69,"property":"Discount","value":0.0,"editable":true,"visible":true,"reason":"linked: Quantity changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":69,"property":"Discount","value":0.0,"editable":true,"visible":true,"reason":"linked: Quantity changed"})
-[WEB BINDING #70 (context 64)] Total: linked: Quantity changed -> push 1000
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":70,"property":"Total","value":1000.0,"editable":false,"visible":true,"reason":"linked: Quantity changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":70,"property":"Total","value":1000.0,"editable":false,"visible":true,"reason":"linked: Quantity changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":70,"property":"Total","value":1000.0,"editable":false,"visible":true,"reason":"linked: Quantity changed"})
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 100
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":100.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":100.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":100.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #66 (context 64)] Quantity: bound property changed -> push 100
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":66,"property":"Quantity","value":100.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":66,"property":"Quantity","value":100.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":66,"property":"Quantity","value":100.0,"editable":true,"visible":true,"reason":"bound property changed"})
-
----- 11:32:48 ----
-[WEB BINDING #38 (context 36)] Quantity: bound property changed -> push 1
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":38,"property":"Quantity","value":1.0,"editable":true,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #73 (context 71)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #74 (context 71)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":40,"property":"Subtotal","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #75 (context 71)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed -> push 0, now read only
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":41,"property":"Discount","value":0.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #76 (context 71)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed -> push 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":42,"property":"Total","value":10.0,"editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #77 (context 71)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 10
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 10","editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #72 (context 71)] Name: bound property changed, value Order 10 unchanged, page not told
-[DELPHI] list current item -> Order 10: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 10"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 10"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 10"})
-
----- 11:32:51 ----
-[WEB BINDING #38 (context 36)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #80 (context 78)] Quantity: bound property changed, value 1 unchanged, page not told
-[WEB BINDING #39 (context 36)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #81 (context 78)] UnitPrice: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #40 (context 36)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #82 (context 78)] Subtotal: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #41 (context 36)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #83 (context 78)] Discount: bound property changed, value 0 unchanged, page not told
-[WEB BINDING #42 (context 36)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #84 (context 78)] Total: bound property changed, value 10 unchanged, page not told
-[WEB BINDING #37 (context 36)] Name: bound property changed -> push Order 11
-  [DELPHI -> QJS] pushHandler({"channel":"value","id":37,"property":"Name","value":"Order 11","editable":false,"visible":true,"reason":"bound property changed"})
-    [QJS -> DELPHI] webview.Post("value", {"channel":"value","id":37,"property":"Name","value":"Order 11","editable":false,"visible":true,"reason":"bound property changed"})
-      [DELPHI -> WEBVIEW] syncHost.receive("value", {"channel":"value","id":37,"property":"Name","value":"Order 11","editable":false,"visible":true,"reason":"bound property changed"})
-[WEB BINDING #79 (context 78)] Name: bound property changed, value Order 11 unchanged, page not told
-[DELPHI] list current item -> Order 11: tell the page
-[DELPHI -> QJS] pushHandler({"channel":"current","type":"order","key":"Order 11"})
-  [QJS -> DELPHI] webview.Post("current", {"channel":"current","type":"order","key":"Order 11"})
-    [DELPHI -> WEBVIEW] syncHost.receive("current", {"channel":"current","type":"order","key":"Order 11"})
+---- 11:50:56 ----
+[QJS -> DELPHI] bindings.CloseContext(43)
+  [DELPHI] context #43: ctx.Unbind (all 6 bindings)
+  <- returns {}
