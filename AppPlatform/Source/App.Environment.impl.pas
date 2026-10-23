@@ -45,10 +45,12 @@ type
     _formClass: TFormClass;
     _windows: List<IWindow>;
     _appActions: IAppActions;
+    _persistence: IAppPersistence;
 
     function get_MainWindow: IWindow;
     function get_Windows: List<IWindow>;
     function get_TickCount: Integer;
+    function get_Persistence: IAppPersistence;
 
     function CreateWindow(const AType: &Type; const AOwner: IComponent)  : IWindow;
     function IsOpen(const AObject: CObject) : Boolean;
@@ -56,7 +58,7 @@ type
     function Close(const AObject: CObject) : Boolean;
 
   public
-    constructor Create(const AClass: TFormClass; const AppActions: IAppActions);
+    constructor Create(const AClass: TFormClass; const AppActions: IAppActions; const Persistence: IAppPersistence = nil);
   end;
 
   TFrameBinder = class(TBaseInterfacedObject, IContentBinder)
@@ -98,10 +100,11 @@ uses
 
 { Environment }
 
-constructor Environment.Create(const AClass: TFormClass; const AppActions: IAppActions);
+constructor Environment.Create(const AClass: TFormClass; const AppActions: IAppActions; const Persistence: IAppPersistence = nil);
 begin
   _formClass := AClass;
   _appActions := AppActions;
+  _persistence := Persistence;
 
   _windows := CList<IWindow>.Create;
 end;
@@ -124,6 +127,11 @@ begin
     _MainWindow := TWindow.Create(&Type.From<IWindow>, Application.MainForm);
 
   Result := _MainWindow;
+end;
+
+function Environment.get_Persistence: IAppPersistence;
+begin
+  Result := _persistence;
 end;
 
 function Environment.get_TickCount: Integer;
