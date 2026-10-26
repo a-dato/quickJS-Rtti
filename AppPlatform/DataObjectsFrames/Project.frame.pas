@@ -9,7 +9,7 @@ uses
   FMX.Controls.Presentation, FMX.Layouts, FMX.ScrollControl.Impl,
   FMX.ScrollControl.WithRows.Impl, FMX.ScrollControl.WithCells.Impl,
   FMX.ScrollControl.WithEditableCells.Impl, FMX.ScrollControl.DataControl.Impl,
-  FMX.ScrollControl.Events, JSGeneral.frame, Customer.frame;
+  FMX.ScrollControl.Events, JSGeneral.frame, Customers.frame;
 
 type
   TProjectFrame = class(TFrame)

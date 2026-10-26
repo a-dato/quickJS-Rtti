@@ -281,7 +281,7 @@
             <Form>Form1</Form>
             <FormType>fmx</FormType>
         </DCCReference>
-        <DCCReference Include="DataObjectsFrames\Customer.frame.pas">
+        <DCCReference Include="DataObjectsFrames\Customers.frame.pas">
             <Form>CustomerFrame</Form>
         </DCCReference>
         <DCCReference Include="DataObjectsFrames\JSGeneral.frame.pas">
@@ -322,6 +322,21 @@
         </DCCReference>
         <DCCReference Include="DataObjects\App.TypeMetadata.pas"/>
         <DCCReference Include="DataObjects\BulkUpdate.intf.pas"/>
+        <DCCReference Include="DataObjectsFrames\App.FrameWithWindowFrame.pas">
+            <Form>FmxFrameWithWindowFrameSupport</Form>
+            <FormType>fmx</FormType>
+            <DesignClass>TFrame</DesignClass>
+        </DCCReference>
+        <DCCReference Include="DataObjectsFrames\App.WebFrameWithWindowFrame.pas">
+            <Form>WebFrameWithWindowFrameSupport</Form>
+            <FormType>fmx</FormType>
+            <DesignClass>TFrame</DesignClass>
+        </DCCReference>
+        <DCCReference Include="DataObjectsFrames\Customer.frame.pas">
+            <Form>CustomerWindowFrame</Form>
+            <FormType>fmx</FormType>
+            <DesignClass>TFrame</DesignClass>
+        </DCCReference>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

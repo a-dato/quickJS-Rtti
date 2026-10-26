@@ -1,4 +1,4 @@
-object CustomerFrame: TCustomerFrame
+object CustomersFrame: TCustomersFrame
   Size.Width = 689.000000000000000000
   Size.Height = 474.000000000000000000
   Size.PlatformDefault = False
@@ -12,6 +12,7 @@ object CustomerFrame: TCustomerFrame
     TabOrder = 0
     Options = [TreeOption_ShowHeaders, TreeOption_ShowHeaderGrid]
     RowHeightDefault = 30.000000000000000000
+    DragDropOnIndividualRows = False
     HeaderHeight = 24.000000000000000000
     AutoExtraColumnSizeMax = -1.000000000000000000
     CellTopBottomPadding = 5.000000000000000000

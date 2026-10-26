@@ -18,22 +18,14 @@ uses
   App.Storage.intf,
 
   {$IFDEF FRAMEWORK_VCL}
-  VCL.Controls,
   VCL.Forms
   {$ELSE}
-  FMX.Controls,
-  FMX.Forms,
-  FMX.Types
+  FMX.Types,
+  FMX.Forms
   {$ENDIF}
   ;
 
 type
-  {$IFDEF FRAMEWORK_VCL}
-  TChildrenList = List<TControl>;
-  {$ELSE}
-  TChildrenList = TFmxChildrenList;
-  {$ENDIF}
-
   Environment = class(TBaseInterfacedObject, IEnvironment)
   type
     TFormClass = class of TForm;
@@ -65,14 +57,15 @@ type
   protected
     _handlers: List<IContextChangedHandler>;
 
-    {$IFDEF FRAMEWORK_VCL}
-    function  CreateChildrenList(const AControl: TWinControl) : TChildrenList;
-    {$ELSE}
-    function  CreateChildrenList(const AControl: TFmxObject) : TChildrenList;
-    {$ENDIF}
-    procedure BindChildren(const AType: &Type; const Children: TChildrenList; const AModel: IObjectListModel);
+//    {$IFDEF FRAMEWORK_VCL}
+//    function  CreateChildrenList(const AControl: TWinControl) : TChildrenList;
+//    {$ELSE}
+//    function  CreateChildrenList(const AControl: TFmxObject) : TChildrenList;
+//    {$ENDIF}
 
-    procedure Bind(const AType: &Type; const Control: TObject; const Data: CObject);
+    procedure BindChildren(const AType: &Type; const Children: List<IComponent>; const AModel: IObjectListModel);
+
+    procedure Bind(const AType: &Type; const Window: IWindow; const Data: CObject);
 
     function WrapProperty(const AProp: _PropertyInfo) : _PropertyInfo; virtual;
   public
@@ -161,23 +154,23 @@ begin
 end;
 
 { TFrameBinder }
-{$IFDEF FRAMEWORK_VCL}
-function TFrameBinder.CreateChildrenList(const AControl: TWinControl) : TChildrenList;
-begin
-  Result := CList<TControl>.Create(AControl.ControlCount);
-  for var i := 0 to AControl.ControlCount -  1 do
-    Result.Add(AControl.Controls[i]);
-end;
-{$ELSE}
-function TFrameBinder.CreateChildrenList(const AControl: TFmxObject) : TChildrenList;
-begin
-  Result := AControl.Children;
-end;
-{$ENDIF}
+//{$IFDEF FRAMEWORK_VCL}
+//function TFrameBinder.CreateChildrenList(const AControl: TWinControl) : TChildrenList;
+//begin
+//  Result := CList<TControl>.Create(AControl.ControlCount);
+//  for var i := 0 to AControl.ControlCount -  1 do
+//    Result.Add(AControl.Controls[i]);
+//end;
+//{$ELSE}
+//function TFrameBinder.CreateChildrenList(const AControl: TFmxObject) : TChildrenList;
+//begin
+//  Result := AControl.Children;
+//end;
+//{$ENDIF}
 
-procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TChildrenList; const AModel: IObjectListModel);
+procedure TFrameBinder.BindChildren(const AType: &Type; const Children: List<IComponent>; const AModel: IObjectListModel);
 
-  function ConcatNames(var Names: TArray<string>) : string;
+  function ConcatNames(var Names: StringArray) : CString;
   begin
     // names: ['IProject', 'Customer', 'Address', 'Zip', '1' <-- Name indexer]
 
@@ -196,7 +189,7 @@ procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TChildre
     end;
   end;
 
-  function GetParentModel(const Names: TArray<string>) : IObjectListModel;
+  function GetParentModel(const Names: StringArray) : IObjectListModel;
   begin
     var s: IStorage;
 
@@ -210,7 +203,7 @@ procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TChildre
     end;
   end;
 
-  function GetModel(const Names: TArray<string>; out PropertyToBind: _PropertyInfo) : IObjectListModel;
+  function GetModel(const Names: StringArray; out PropertyToBind: _PropertyInfo) : IObjectListModel;
   begin
     PropertyToBind := nil;
 
@@ -253,7 +246,7 @@ procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TChildre
     Exit(parentModel);
   end;
 
-  function GetPathProperty(const OwnerType: &Type; const Names: TArray<string>) : _PropertyInfo;
+  function GetPathProperty(const OwnerType: &Type; const Names: StringArray) : _PropertyInfo;
   begin
     var path: TArray<_PropertyInfo>;
     SetLength(path, Length(Names) - 1);
@@ -273,13 +266,13 @@ procedure TFrameBinder.BindChildren(const AType: &Type; const Children: TChildre
 
 begin
   {$IFDEF FRAMEWORK_FMX}
-  for var c in Children do
+  for var child in Children do
   begin
     // Name looks like
     //  ObjectType_Property                     -> IProject_Name
     //  ObjectType_Property_Index               -> IProject_Name_1
     //  ObjectType_Property_SubProperty_Index   -> IProject_Customer_Address_1
-    var names := string(c.Name).Split(['_']);
+    var names := child.Name.Split(['_']);
     if Length(names) >= 2 then
     begin
       var propertyName := ConcatNames(names); // 'Customer.Address.Zip'
@@ -291,26 +284,17 @@ begin
 
         if mdl <> nil then
         begin
-          if (c is TDataControl) then
+          if (child.GetObject is TDataControl) then
           begin
             if propertyToBind <> nil then
             begin
-//              var bind: IPropertyBinding := TDataControlBinding.Create(c as tDataControl);
-//
-//              // KV: 14/07/2026 -> This code should not be necesary
-//              // FMX.ScrollControl.DataControl.Binders
-//              if bind is TDataControlBinding then
-//                (bind as TDataControlBinding).PropType := TTreePropertyType.DataList;
-//
-//              var prop_to_bind := names[High(names) - 1];
-//              AModel.ObjectModelContext.Bind(prop_to_bind, bind);
-              (c as TDataControl).Model := mdl;
+              (child as TDataControl).Model := mdl;
 
               // mdl.ObjectModelContext.Bind(propertyToBind, bind);
             end else
-              (c as TDataControl).Model := mdl;
+              (child.GetObject as TDataControl).Model := mdl;
           end else
-            BindChildren(mdl.ObjectType, CreateChildrenList(c), mdl);
+            BindChildren(mdl.ObjectType, child.Children, mdl);
         end;
 
         continue;
@@ -326,24 +310,25 @@ begin
 
       if objectProperty <> nil then
       begin
-        var bind := TPropertyBinding.CreateBindingByControl(c);
+        var control_binding: IControlWithBindingSupport;
+        var binder: IPropertyBinding;
+        if Interfaces.Supports<IControlWithBindingSupport>(child, control_binding) then
+          continue
+          // binder := TGenericControlBinding.Create(control_binding)
+        else
+        begin
+          binder := TPropertyBinding.CreateBindingByControl(TFMXObject(child.GetObject));
+          // IProject_Holidays -> Binder is a TDataControlBinding
+          // KV: 14/07/2026 -> This code should not be necesary
+          if binder is TDataControlBinding then
+            (binder as TDataControlBinding).PropType := TTreePropertyType.DataList;
+        end;
 
-        // IProject_Holidays -> Binder is a TDataControlBinding
-        // KV: 14/07/2026 -> This code should not be necesary
-        if bind is TDataControlBinding then
-          (bind as TDataControlBinding).PropType := TTreePropertyType.DataList;
-
-        AModel.ObjectModelContext.Bind(propertyName, bind);
+        AModel.ObjectModelContext.Bind(propertyName, binder);
       end;
     end;
 
-    {$IFDEF DEBUG}
-    var control_name: string;
-    control_name := c.Name;
-    {$ENDIF}
-
-    if c.ChildrenCount > 0 then
-      BindChildren(AType, CreateChildrenList(c), AModel);
+    BindChildren(AType, child.Children, AModel);
   end;
   {$ENDIF}
 end;
@@ -355,16 +340,13 @@ begin
     Result := AProp;
 end;
 
-procedure TFrameBinder.Bind(const AType: &Type; const Control: TObject; const Data: CObject);
+procedure TFrameBinder.Bind(const AType: &Type; const Window: IWindow; const Data: CObject);
 begin
   {$IFDEF FRAMEWORK_FMX}
-  _handlers := CList<IContextChangedHandler>.Create;
-
-  if Control is TControl then
+  var children := Window.Children;
+  if (children <> nil) and (children.Count > 0) then
   begin
-    var ctrl: TControl := Control as TControl;
-
-    // var objectType := _app.Config.TypeDescriptor(AType);
+    _handlers := CList<IContextChangedHandler>.Create;
 
     var model: IObjectListModel := nil;
     model := TObjectListModelWithChangeTracking<IBaseInterface>.Create(AType);
@@ -378,15 +360,10 @@ begin
       raise CException.Create('Data is invalid');
 
     model.Context := l;
+    if l.Count > 0 then
+      model.ObjectContext := l[0];
 
-    if model <> nil then
-    begin
-      // var tp := model.ObjectModel.GetType;
-      if ctrl.ChildrenCount > 0 then
-      begin
-        BindChildren(AType, ctrl.Children, model);
-      end;
-    end;
+    BindChildren(AType, children, model);
   end;
   {$ENDIF}
 end;

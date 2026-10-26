@@ -6,7 +6,7 @@ uses
   System.StartUpCopy,
   FMX.Forms,
   AppMain in 'AppMain.pas' {Form1},
-  Customer.frame in 'DataObjectsFrames\Customer.frame.pas' {CustomerFrame},
+  Customers.frame in 'DataObjectsFrames\Customers.frame.pas' {CustomerFrame},
   JSGeneral.frame in 'DataObjectsFrames\JSGeneral.frame.pas' {JSGeneralFrame: TFrame},
   ObjectDesigner in 'AppDialogs\ObjectDesigner.pas' {ObjectDesignerForm},
   Project.impl in 'DataObjects\Project.impl.pas',
@@ -25,7 +25,10 @@ uses
   Person.frame in 'DataObjectsFrames\Person.frame.pas' {PersonFrame: TFrame},
   Integrations.frame in 'DataObjectsFrames\Integrations.frame.pas' {Integrationsframe: TFrame},
   App.TypeMetadata in 'DataObjects\App.TypeMetadata.pas',
-  BulkUpdate.intf in 'DataObjects\BulkUpdate.intf.pas';
+  BulkUpdate.intf in 'DataObjects\BulkUpdate.intf.pas',
+  App.FrameWithWindowFrame in 'DataObjectsFrames\App.FrameWithWindowFrame.pas' {FmxFrameWithWindowFrameSupport: TFrame},
+  App.WebFrameWithWindowFrame in 'DataObjectsFrames\App.WebFrameWithWindowFrame.pas' {WebFrameWithWindowFrameSupport: TFrame},
+  Customer.frame in 'DataObjectsFrames\Customer.frame.pas' {CustomerWindowFrame: TFrame};
 
 {$R *.res}
 

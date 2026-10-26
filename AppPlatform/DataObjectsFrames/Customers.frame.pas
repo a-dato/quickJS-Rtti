@@ -1,4 +1,4 @@
-﻿unit Customer.frame;
+﻿unit Customers.frame;
 
 interface
 
@@ -12,7 +12,7 @@ uses
   FMX.ScrollControl.DataControl.Impl;
 
 type
-  TCustomerFrame = class(TFrame)
+  TCustomersFrame = class(TFrame)
     Layout1: TLayout;
     Label1: TLabel;
     Splitter1: TSplitter;
@@ -46,12 +46,12 @@ uses
 
 {$R *.fmx}
 
-procedure TCustomerFrame.acOkExecute(Sender: TObject);
+procedure TCustomersFrame.acOkExecute(Sender: TObject);
 begin
   // Close;
 end;
 
-constructor TCustomerFrame.Create(AOwner: TComponent);
+constructor TCustomersFrame.Create(AOwner: TComponent);
 begin
   inherited;
 end;

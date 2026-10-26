@@ -4,6 +4,7 @@ interface
 
 uses
   System_,
+  System.SysUtils,
   System.Collections.Generic,
   App.Intf,
   App.Component.intf,
@@ -17,7 +18,7 @@ uses
   {$IFDEF FRAMEWORK_VCL}
   //Vcl.Controls, Vcl.Forms
   {$ELSE}
-
+  , FMX.Forms
   {$ENDIF}
   ;
 
@@ -30,6 +31,7 @@ type
     _onClose: TWindowClose;
 
     function  get_Control: TObject;
+    function  get_Children: List<IComponent>; override;
 
     function  get_Frame: IWindowFrame;
     procedure set_Frame(const Value: IWindowFrame);
@@ -47,12 +49,14 @@ type
     destructor Destroy; override;
   end;
 
-  TWindowFrame = class(TComponent, IWindowFrame)
+  TWindowFrameWrapper = class(TComponent, IWindowFrame)
   protected
     _content: TObject;
 
+    function  WaitFor(CompletionProc: TProc = nil) : Boolean;
     function  get_Content: TObject;
     procedure set_Content(const Value: TObject);
+    function  get_Children: List<IComponent>; override;
 
   public
     constructor Create(const AOwner: IWindow; Content: TObject);
@@ -77,23 +81,33 @@ uses
   {$IFDEF FRAMEWORK_VCL}
   Vcl.Controls, Vcl.Forms
   {$ELSE}
-  FMX.Controls, FMX.Types, FMX.Forms
+  FMX.Controls, FMX.Types, App.Component.FMX.impl
   {$ENDIF}
   , App.Environment.impl;
 
+// Wraps each control directly contained by Container in a TFmxComponent
+function GetChildComponents(const Parent: IComponent; Container: TObject) : List<IComponent>;
+begin
+  {$IFNDEF FRAMEWORK_VCL}
+  if Container is TFmxObject then
+    Exit(TFmxComponent.CreateChildren(Parent, Container as TFmxObject));
+  {$ENDIF}
+  Result := CList<IComponent>.Create;
+end;
 
 { Window }
 
 function TWindow.Bind(const Data: CObject): IWindow;
 begin
-  var c := _frame.Content;
+  _frame.WaitFor(nil);
+
   var descr := _app.Config.TypeDescriptor(_Type);
   if descr = nil then
     raise CException.Create(CString.Format('Type descriptor for type ''{0}'' not registered', _Type));
   var binder := descr.Binder;
   if binder = nil then
     binder := TFrameBinder.Create;
-  binder.Bind(_Type, c, Data);
+  binder.Bind(_Type, Self, Data);
   Result := Self;
 end;
 
@@ -118,6 +132,11 @@ begin
   set_Frame(frame);
 
   Result := Self;
+end;
+
+function TWindow.get_Children: List<IComponent>;
+begin
+  Result := GetChildComponents(Self, _control);
 end;
 
 function TWindow.get_Control: TObject;
@@ -202,25 +221,41 @@ begin
   Result := _Name;
 end;
 
-{ TWindowFrame }
+{ TWindowFrameWrapper }
 
-constructor TWindowFrame.Create(const AOwner: IWindow; Content: TObject);
+constructor TWindowFrameWrapper.Create(const AOwner: IWindow; Content: TObject);
 begin
   inherited Create(nil);
   _content := Content;
 end;
 
-destructor TWindowFrame.Destroy;
+destructor TWindowFrameWrapper.Destroy;
 begin
   inherited;
 end;
 
-function TWindowFrame.get_Content: TObject;
+function TWindowFrameWrapper.get_Children: List<IComponent>;
+begin
+  Result := GetChildComponents(Self, _content);
+end;
+
+function TWindowFrameWrapper.WaitFor(CompletionProc: TProc) : Boolean;
+begin
+  // Ready as soon as it is created
+  if Assigned(CompletionProc) then
+  begin
+    CompletionProc();
+    Result := False;
+  end else
+    Result := True;
+end;
+
+function TWindowFrameWrapper.get_Content: TObject;
 begin
   Result := _content;
 end;
 
-procedure TWindowFrame.set_Content(const Value: TObject);
+procedure TWindowFrameWrapper.set_Content(const Value: TObject);
 begin
   _content := Value;
 end;

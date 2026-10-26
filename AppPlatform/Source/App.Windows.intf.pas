@@ -4,10 +4,10 @@ interface
 
 uses
   System_,
+  System.SysUtils,
   System.Collections.Generic,
   App.Component.intf,
-  App.Storage.intf,
-  App.Content.intf;
+  App.Storage.intf;
 
 type
   {$M+}
@@ -20,6 +20,11 @@ type
   {$M+}
   IWindowFrame = interface(IComponent)
 
+    // Waits until the frame is ready to use.
+    // CompletionProc = nil: blocks (while processing messages) and returns True once the frame is ready.
+    // CompletionProc <> nil: returns False immediately, CompletionProc is called when the frame is ready
+    // (directly, when the frame already is ready).
+    function  WaitFor(CompletionProc: TProc = nil) : Boolean;
     function  get_Content: TObject;
     procedure set_Content(const Value: TObject);
 

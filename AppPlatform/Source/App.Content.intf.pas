@@ -5,12 +5,13 @@ interface
 uses
   System_,
   System.Collections,
-  App.Storage.intf;
+  App.Storage.intf,
+  App.Windows.intf;
 
 type
   {$M+}
   IContentBinder = interface(IBaseInterface)
-    procedure Bind(const AType: &Type; const Control: TObject; const Data: CObject);
+    procedure Bind(const AType: &Type; const Window: IWindow; const Data: CObject);
   end;
 
   {$M+}

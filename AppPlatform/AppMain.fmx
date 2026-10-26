@@ -124,8 +124,8 @@ object Form1: TForm1
     Size.Height = 145.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
-    Viewport.Width = 1436.000000000000000000
-    Viewport.Height = 141.000000000000000000
+    Viewport.Width = 1440.000000000000000000
+    Viewport.Height = 145.000000000000000000
   end
   object Splitter1: TSplitter
     Align = Bottom
@@ -200,15 +200,15 @@ object Form1: TForm1
     Size.Height = 388.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 10
-    Viewport.Width = 253.000000000000000000
-    Viewport.Height = 368.000000000000000000
+    Viewport.Width = 273.000000000000000000
+    Viewport.Height = 388.000000000000000000
   end
   object TabControl1: TTabControl
     Align = Client
     Size.Width = 1167.000000000000000000
     Size.Height = 388.000000000000000000
     Size.PlatformDefault = False
-    TabIndex = 3
+    TabIndex = 0
     TabOrder = 14
     TabPosition = PlatformDefault
     Sizes = (
@@ -226,7 +226,7 @@ object Form1: TForm1
       CustomIcon = <
         item
         end>
-      IsSelected = False
+      IsSelected = True
       Size.Width = 77.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
@@ -259,8 +259,8 @@ object Form1: TForm1
         Size.Height = 362.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 3
-        Viewport.Width = 1163.000000000000000000
-        Viewport.Height = 358.000000000000000000
+        Viewport.Width = 1167.000000000000000000
+        Viewport.Height = 362.000000000000000000
       end
     end
     object tsOpenProject: TTabItem
@@ -293,8 +293,8 @@ object Form1: TForm1
         Size.Height = 362.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 3
-        Viewport.Width = 1163.000000000000000000
-        Viewport.Height = 358.000000000000000000
+        Viewport.Width = 1167.000000000000000000
+        Viewport.Height = 362.000000000000000000
       end
     end
     object tsPolarion: TTabItem
@@ -333,15 +333,15 @@ object Form1: TForm1
         Size.Height = 362.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 3
-        Viewport.Width = 1163.000000000000000000
-        Viewport.Height = 358.000000000000000000
+        Viewport.Width = 1167.000000000000000000
+        Viewport.Height = 362.000000000000000000
       end
     end
     object tsPersons: TTabItem
       CustomIcon = <
         item
         end>
-      IsSelected = True
+      IsSelected = False
       Size.Width = 61.000000000000000000
       Size.Height = 26.000000000000000000
       Size.PlatformDefault = False
@@ -355,8 +355,9 @@ object Form1: TForm1
         DataDetectorTypes = []
         Lines.Strings = (
           
-            'const { TypeMetadataProvider } = await import('#39'D:/adato_webservice/' +
-            'MicroServices/IntegrationProject/wwwroot/TypeMetadataProvider.js'#39');'
+            'const { TypeMetadataProvider } = await import('#39'D:/adato_webservi' +
+            'ce/MicroServices/IntegrationProject/wwwroot/TypeMetadataProvider' +
+            '.js'#39');'
           'const typeMetadataProvider = new TypeMetadataProvider();'
           'console.log('#39'Types:'#39');'
           'console.log(typeMetadataProvider.GetAvailableTypesAsJSON());'
@@ -369,8 +370,8 @@ object Form1: TForm1
         Size.Height = 362.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 3
-        Viewport.Width = 1163.000000000000000000
-        Viewport.Height = 358.000000000000000000
+        Viewport.Width = 1167.000000000000000000
+        Viewport.Height = 362.000000000000000000
       end
     end
     object tsCustomerEdit: TTabItem
@@ -504,8 +505,8 @@ object Form1: TForm1
         Size.Height = 362.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 3
-        Viewport.Width = 1147.000000000000000000
-        Viewport.Height = 358.000000000000000000
+        Viewport.Width = 1167.000000000000000000
+        Viewport.Height = 362.000000000000000000
       end
     end
   end

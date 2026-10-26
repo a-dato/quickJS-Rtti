@@ -4,32 +4,49 @@ interface
 
 uses
   System_,
-  App.Component.intf;
+  App.Component.intf, System.Collections.Generic;
 
 type
   {$M+}
   TComponent = class(TBaseInterfacedObject, IComponent)
   protected
-    _owner: IComponent;
+    function  get_Parent: IComponent; virtual;
+    function  get_Children: List<IComponent>; virtual;
 
-    function get_Owner: IComponent;
+    function  get_Name: CString; virtual;
+    procedure set_Name(const Value: CString); virtual;
 
   public
-    constructor Create(const Owner: IComponent);
+    constructor Create(const Parent: IComponent);
   end;
 
 implementation
 
 { TComponent }
 
-constructor TComponent.Create(const Owner: IComponent);
+constructor TComponent.Create(const Parent: IComponent);
 begin
-  _owner := Owner;
+  // _parent := Parent;
 end;
 
-function TComponent.get_Owner: IComponent;
+function TComponent.get_Children: List<IComponent>;
 begin
-  Result := _owner;
+
+end;
+
+function TComponent.get_Name: CString;
+begin
+
+end;
+
+function TComponent.get_Parent: IComponent;
+begin
+//
+end;
+
+procedure TComponent.set_Name(const Value: CString);
+begin
+
 end;
 
 end.

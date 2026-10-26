@@ -194,6 +194,7 @@ uses
   FMX.App.MasterForm,
   Project.impl,
   Customer.frame,
+  Customers.frame,
   QuickJS.Register.dn4d.intf,
   ADato.ObjectModel.List.Tracking.intf,
   ADato.ObjectModel.List.Tracking.impl,
@@ -215,7 +216,7 @@ uses
   App.Config.intf, App.Windows.impl, App.Component.intf,
   ProjectSelection.frame, Task.impl, Task.intf,
   Person.frame,
-  Integrations.frame;
+  Integrations.frame, App.FrameWithWindowFrame, App.WebFrameWithWindowFrame;
 
 {$R *.fmx}
 
@@ -418,15 +419,25 @@ begin
   {$ENDIF}
 
   _app.Config.RegisterWindow('Projects', function(const Window: IWindow) : IWindowFrame begin
-    Result := TWindowFrame.Create(Window, TProjectFrame.Create(Window.Control as TComponent));
+    Result := TWindowFrameWrapper.Create(Window, TProjectFrame.Create(Window.Control as TComponent));
   end);
 
   _app.Config.RegisterWindow('ProjectSelection', function(const Window: IWindow) : IWindowFrame begin
-    Result := TWindowFrame.Create(Window, TProjectSelectionFrame.Create(Window.Control as TComponent));
+    Result := TWindowFrameWrapper.Create(Window, TProjectSelectionFrame.Create(Window.Control as TComponent));
+  end);
+
+  _app.Config.RegisterWindow('Customer', function(const Window: IWindow) : IWindowFrame begin
+    // Result := TWindowFrame.Create(Window, TCustomerFrame.Create(Window.Control as TComponent));
+    // Result := TCustomerFrame.Create(Window.Control as TComponent);
+    Result := TCustomerWindowFrame.Create(Window.Control as TComponent);
+  end);
+
+  _app.Config.RegisterWindow('WebCustomer', function(const Window: IWindow) : IWindowFrame begin
+    Result := TWebFrameWithWindowFrameSupport.Create(Window.Control as TComponent);
   end);
 
   _app.Config.RegisterWindow('Customers', function(const Window: IWindow) : IWindowFrame begin
-    Result := TWindowFrame.Create(Window, TCustomerFrame.Create(Window.Control as TComponent));
+    Result := TWindowFrameWrapper.Create(Window, TCustomersFrame.Create(Window.Control as TComponent));
   end);
 
   _app.Config.RegisterWindow('Persons', function(const Window: IWindow) : IWindowFrame begin
@@ -436,11 +447,11 @@ begin
       _context.eval(AnsiString(JavaScriptCode), '<person-frame>');
     end;
 
-    Result := TWindowFrame.Create(Window, Frame);
+    Result := TWindowFrameWrapper.Create(Window, Frame);
   end);
 
   _app.Config.RegisterWindow('Integrations', function(const Window: IWindow) : IWindowFrame begin
-    Result := TWindowFrame.Create(Window, TPersonFrame.Create(Window.Control as TComponent));
+    Result := TWindowFrameWrapper.Create(Window, TPersonFrame.Create(Window.Control as TComponent));
   end);
 
 //  _app.Config.RegisterWindow('Integrations', function(const Window: IWindow) : IWindowFrame begin
