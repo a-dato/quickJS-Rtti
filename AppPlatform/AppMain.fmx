@@ -18,12 +18,12 @@ object Form1: TForm1
     object Button1: TButton
       Action = acExecute
       ImageIndex = -1
-      Position.X = 273.000000000000000000
+      Position.X = 9.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 0
     end
     object btnProjectWindow: TButton
-      Position.X = 440.000000000000000000
+      Position.X = 96.000000000000000000
       Position.Y = 8.000000000000000000
       Size.Width = 90.000000000000000000
       Size.Height = 22.000000000000000000
@@ -33,14 +33,14 @@ object Form1: TForm1
       OnClick = btnProjectWindowClick
     end
     object Button2: TButton
-      Position.X = 719.000000000000000000
+      Position.X = 375.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 2
       Text = 'Customer'
       OnClick = Button2Click
     end
     object Button3: TButton
-      Position.X = 624.000000000000000000
+      Position.X = 280.000000000000000000
       Position.Y = 8.000000000000000000
       Size.Width = 87.000000000000000000
       Size.Height = 22.000000000000000000
@@ -50,14 +50,14 @@ object Form1: TForm1
       OnClick = Button3Click
     end
     object Button4: TButton
-      Position.X = 538.000000000000000000
+      Position.X = 194.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 4
       Text = 'Designer'
       OnClick = Button4Click
     end
     object Button5: TButton
-      Position.X = 807.000000000000000000
+      Position.X = 463.000000000000000000
       Position.Y = 8.000000000000000000
       Size.Width = 131.000000000000000000
       Size.Height = 22.000000000000000000
@@ -67,14 +67,14 @@ object Form1: TForm1
       OnClick = Button5Click
     end
     object btnExecResult: TButton
-      Position.X = 273.000000000000000000
+      Position.X = 9.000000000000000000
       Position.Y = 35.000000000000000000
       TabOrder = 6
       Text = 'Exec+result'
       OnClick = btnExecResultClick
     end
     object TestFunc: TButton
-      Position.X = 624.000000000000000000
+      Position.X = 280.000000000000000000
       Position.Y = 35.000000000000000000
       Size.Width = 87.000000000000000000
       Size.Height = 22.000000000000000000
@@ -84,21 +84,21 @@ object Form1: TForm1
       OnClick = TestFuncClick
     end
     object TestFunc2: TButton
-      Position.X = 719.000000000000000000
+      Position.X = 375.000000000000000000
       Position.Y = 35.000000000000000000
       TabOrder = 8
       Text = 'TestFunc2'
       OnClick = TestFunc2Click
     end
-    object Button6: TButton
-      Position.X = 807.000000000000000000
+    object btnPathProperty: TButton
+      Position.X = 463.000000000000000000
       Position.Y = 35.000000000000000000
       TabOrder = 9
-      Text = 'Button6'
-      OnClick = Button6Click
+      Text = 'Path property'
+      OnClick = btnPathPropertyClick
     end
     object Button7: TButton
-      Position.X = 440.000000000000000000
+      Position.X = 96.000000000000000000
       Position.Y = 38.000000000000000000
       Size.Width = 90.000000000000000000
       Size.Height = 22.000000000000000000
@@ -108,11 +108,25 @@ object Form1: TForm1
       OnClick = Button7Click
     end
     object Integrations: TButton
-      Position.X = 954.000000000000000000
+      Position.X = 610.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 11
       Text = 'Integrations'
       OnClick = IntegrationsClick
+    end
+    object btnWebView: TButton
+      Position.X = 631.000000000000000000
+      Position.Y = 38.000000000000000000
+      TabOrder = 12
+      Text = 'Web view'
+      OnClick = btnWebViewClick
+    end
+    object btnCreateWebView: TButton
+      Position.X = 551.000000000000000000
+      Position.Y = 38.000000000000000000
+      TabOrder = 13
+      Text = 'Wv create'
+      OnClick = btnCreateWebViewClick
     end
   end
   object mmLog: TMemo
@@ -124,8 +138,8 @@ object Form1: TForm1
     Size.Height = 145.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 2
-    Viewport.Width = 1440.000000000000000000
-    Viewport.Height = 145.000000000000000000
+    Viewport.Width = 1436.000000000000000000
+    Viewport.Height = 141.000000000000000000
   end
   object Splitter1: TSplitter
     Align = Bottom
@@ -200,8 +214,8 @@ object Form1: TForm1
     Size.Height = 388.000000000000000000
     Size.PlatformDefault = False
     TabOrder = 10
-    Viewport.Width = 273.000000000000000000
-    Viewport.Height = 388.000000000000000000
+    Viewport.Width = 253.000000000000000000
+    Viewport.Height = 368.000000000000000000
   end
   object TabControl1: TTabControl
     Align = Client
@@ -248,10 +262,11 @@ object Form1: TForm1
           
             'const w = app.Environment.CreateWindow(Customer, app.Environment' +
             '.MainWindow);'
-          '//w.CreateFrame('#39'Projects'#39');'
-          'w.CreateFrame('#39'Customers'#39');'
+          '//w.CreateFrame('#39'Customers'#39');    // Delphi window'
+          'w.CreateFrame('#39'WebCustomer'#39'); // Webview window'
+          'w.Show();'
           'w.Bind(storage);'
-          'w.Show();')
+          '')
         StyledSettings = [Size, Style, FontColor]
         TextSettings.Font.Family = 'Fira Code'
         Align = Client
@@ -259,8 +274,8 @@ object Form1: TForm1
         Size.Height = 362.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 3
-        Viewport.Width = 1167.000000000000000000
-        Viewport.Height = 362.000000000000000000
+        Viewport.Width = 1163.000000000000000000
+        Viewport.Height = 358.000000000000000000
       end
     end
     object tsOpenProject: TTabItem
@@ -293,8 +308,8 @@ object Form1: TForm1
         Size.Height = 362.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 3
-        Viewport.Width = 1167.000000000000000000
-        Viewport.Height = 362.000000000000000000
+        Viewport.Width = 1163.000000000000000000
+        Viewport.Height = 358.000000000000000000
       end
     end
     object tsPolarion: TTabItem
@@ -333,8 +348,8 @@ object Form1: TForm1
         Size.Height = 362.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 3
-        Viewport.Width = 1167.000000000000000000
-        Viewport.Height = 362.000000000000000000
+        Viewport.Width = 1163.000000000000000000
+        Viewport.Height = 358.000000000000000000
       end
     end
     object tsPersons: TTabItem
@@ -370,8 +385,8 @@ object Form1: TForm1
         Size.Height = 362.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 3
-        Viewport.Width = 1167.000000000000000000
-        Viewport.Height = 362.000000000000000000
+        Viewport.Width = 1163.000000000000000000
+        Viewport.Height = 358.000000000000000000
       end
     end
     object tsCustomerEdit: TTabItem
@@ -505,8 +520,8 @@ object Form1: TForm1
         Size.Height = 362.000000000000000000
         Size.PlatformDefault = False
         TabOrder = 3
-        Viewport.Width = 1167.000000000000000000
-        Viewport.Height = 362.000000000000000000
+        Viewport.Width = 1147.000000000000000000
+        Viewport.Height = 358.000000000000000000
       end
     end
   end

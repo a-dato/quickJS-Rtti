@@ -42,7 +42,7 @@ type
     btnExecResult: TButton;
     TestFunc: TButton;
     TestFunc2: TButton;
-    Button6: TButton;
+    btnPathProperty: TButton;
     Button7: TButton;
     TabControl1: TTabControl;
     tsCustomers: TTabItem;
@@ -55,14 +55,18 @@ type
     Integrations: TButton;
     tsCustomerEdit: TTabItem;
     mmCustomersWeb: TMemo;
+    btnWebView: TButton;
+    btnCreateWebView: TButton;
     procedure acExecuteExecute(Sender: TObject);
+    procedure btnCreateWebViewClick(Sender: TObject);
     procedure btnProjectWindowClick(Sender: TObject);
     procedure btnExecResultClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
-    procedure Button6Click(Sender: TObject);
+    procedure btnPathPropertyClick(Sender: TObject);
+    procedure btnWebViewClick(Sender: TObject);
     procedure Button7Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure IntegrationsClick(Sender: TObject);
@@ -216,7 +220,8 @@ uses
   App.Config.intf, App.Windows.impl, App.Component.intf,
   ProjectSelection.frame, Task.impl, Task.intf,
   Person.frame,
-  Integrations.frame, App.FrameWithWindowFrame, App.WebFrameWithWindowFrame;
+  Integrations.frame, App.FrameWithWindowFrame, App.WebFrameWithWindowFrame,
+  WebViewTestForm, ADato.ObjectModel.Binders;
 
 {$R *.fmx}
 
@@ -254,6 +259,15 @@ begin
   var st := TStopWatch.StartNew;
   _context.eval(GetCode, '<eval>');
   mmLog.Lines.Add('done: ' + st.ElapsedMilliseconds.ToString + 'ms');
+end;
+
+procedure TForm1.btnCreateWebViewClick(Sender: TObject);
+begin
+  var t := _app.Config.TypeByName('Customer');
+  _app.Environment.CreateWindow(t, _app.Environment.MainWindow)
+    .CreateFrame('WebCustomer')
+      .Show(nil)
+        .Bind(_app.Storage['Customers']);
 end;
 
 procedure TForm1.btnExecResultClick(Sender: TObject);
@@ -363,7 +377,7 @@ begin
   end;
 end;
 
-procedure TForm1.Button6Click(Sender: TObject);
+procedure TForm1.btnPathPropertyClick(Sender: TObject);
 begin
   var ownerType := &Type.From<IProject>;
 
@@ -380,6 +394,50 @@ begin
   var o := pathprop.GetValue(project, []);
   if o = nil then;
 
+
+end;
+
+procedure TForm1.btnWebViewClick(Sender: TObject);
+
+  // Searches Parent and all its children (recursively) for a web frame
+  function FindWebFrame(const Parent: TFmxObject) : TWebFrameWithWindowFrameSupport;
+  begin
+    if Parent is TWebFrameWithWindowFrameSupport then
+      Exit(TWebFrameWithWindowFrameSupport(Parent));
+
+    if Parent.Children <> nil then
+      for var child in Parent.Children do
+      begin
+        Result := FindWebFrame(child);
+        if Result <> nil then
+          Exit;
+      end;
+
+    Result := nil;
+  end;
+
+begin
+  var webForm: TCommonCustomForm := nil;
+  var webFrame: TWebFrameWithWindowFrameSupport := nil;
+
+  for var i := 0 to Screen.FormCount - 1 do
+  begin
+    webFrame := FindWebFrame(Screen.Forms[i]);
+    if webFrame <> nil then
+    begin
+      webForm := Screen.Forms[i];
+      break;
+    end;
+  end;
+
+  if webFrame <> nil then
+  begin
+    webFrame.Label1.Text := 'Test';
+
+    var c := (webFrame as IComponent).Children;
+    var bind := c[0] as IControlWithBindingSupport;
+    bind.Value := 'Test';
+  end;
 
 end;
 

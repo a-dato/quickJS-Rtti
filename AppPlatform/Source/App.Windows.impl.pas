@@ -83,7 +83,7 @@ uses
   {$ELSE}
   FMX.Controls, FMX.Types, App.Component.FMX.impl
   {$ENDIF}
-  , App.Environment.impl;
+  , App.Environment.impl, System.Classes;
 
 // Wraps each control directly contained by Container in a TFmxComponent
 function GetChildComponents(const Parent: IComponent; Container: TObject) : List<IComponent>;
@@ -124,12 +124,14 @@ end;
 
 function TWindow.CreateFrame(const Name: string) : IWindow;
 begin
-  var wt: IWindowType;
-  if not _app.Config.TryGetWindowType(Name, wt) then
-    raise CException.Create(CString.Format('Frame not registered: {0}', Name));
+  TThread.Synchronize(nil, procedure begin
+    var wt: IWindowType;
+    if not _app.Config.TryGetWindowType(Name, wt) then
+      raise CException.Create(CString.Format('Frame not registered: {0}', Name));
 
-  var frame := wt.CreateFrame(Self);
-  set_Frame(frame);
+    var frame := wt.CreateFrame(Self);
+    set_Frame(frame);
+  end);
 
   Result := Self;
 end;
@@ -243,11 +245,9 @@ function TWindowFrameWrapper.WaitFor(CompletionProc: TProc) : Boolean;
 begin
   // Ready as soon as it is created
   if Assigned(CompletionProc) then
-  begin
     CompletionProc();
-    Result := False;
-  end else
-    Result := True;
+
+  Result := True;
 end;
 
 function TWindowFrameWrapper.get_Content: TObject;

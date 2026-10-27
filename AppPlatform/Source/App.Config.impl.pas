@@ -262,6 +262,8 @@ begin
   for var entry in _Types do
     if CString.Equals(entry.Key.Name, Name) then
       Exit(entry.Key);
+
+  raise ArgumentException.Create('Type ''' + Name + ''' is not a registered type');
 end;
 
 procedure TAppConfig.RegisterWindow(const Name: string; const CreateFunc: TFrameCreateFunc);

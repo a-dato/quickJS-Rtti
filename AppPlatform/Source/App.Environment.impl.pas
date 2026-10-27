@@ -104,13 +104,14 @@ end;
 
 function Environment.CreateWindow(const AType: &Type; const AOwner: IComponent) : IWindow;
 begin
-//  var cmp: TComponent := nil;
-//  if (AOwner <> nil) and not AOwner.TryAsType<TComponent>(cmp) then
-//    raise ArgumentException.Create('AOwner must be of type TComponent');
+  var wnd: IWindow := nil;
 
-  var f := _formClass.Create(nil);
-  var wnd: IWindow := TWindow.Create(AType, f);
-  _windows.Add(wnd);
+  TThread.Synchronize(nil, procedure begin
+    var f := _formClass.Create(nil);
+    wnd := TWindow.Create(AType, f);
+    _windows.Add(wnd);
+  end);
+
   Result := wnd;
 end;
 
@@ -313,8 +314,7 @@ begin
         var control_binding: IControlWithBindingSupport;
         var binder: IPropertyBinding;
         if Interfaces.Supports<IControlWithBindingSupport>(child, control_binding) then
-          continue
-          // binder := TGenericControlBinding.Create(control_binding)
+          binder := TGenericControlBinding.Create(control_binding)
         else
         begin
           binder := TPropertyBinding.CreateBindingByControl(TFMXObject(child.GetObject));
@@ -360,6 +360,7 @@ begin
       raise CException.Create('Data is invalid');
 
     model.Context := l;
+
     if l.Count > 0 then
       model.ObjectContext := l[0];
 
