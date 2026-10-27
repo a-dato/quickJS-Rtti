@@ -71,6 +71,10 @@ type
   public
   end;
 
+{$IFDEF DEBUG}
+var modelLock: IBaseInterface;
+{$ENDIF}
+
 implementation
 
 uses
@@ -365,9 +369,12 @@ begin
       model.ObjectContext := l[0];
 
     BindChildren(AType, children, model);
+
+    modelLock := model;
   end;
   {$ENDIF}
 end;
 
 end.
+
 
