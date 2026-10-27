@@ -72,6 +72,9 @@ type
     // Called from the web page (through ScriptGate) when the value of an element changes.
     // Key and Value are url encoded, Sequence orders the notifications.
     procedure ElementChanged(const Key, Value: string; Sequence: Integer);
+    // Called from the web page (through ScriptGate) when an element is clicked.
+    // Key is url encoded, see TWebComponent.MouseDownInPage for the other parameters.
+    procedure ElementMouseDown(const Key: string; Button, Shift, X, Y: Integer);
   end;
 
 implementation
@@ -248,19 +251,32 @@ end;
 
 procedure TWebView2Frame.WebBrowserDidFinishLoad(ASender: TObject);
 begin
-  ExecuteScript(TWebComponent.ChangeListenerScript(FScriptGate.Scheme, 'ElementChanged'));
+  ExecuteScript(TWebComponent.EventListenerScript(FScriptGate.Scheme, 'ElementChanged', 'ElementMouseDown'));
   RefreshChildren;
+end;
+
+// Returns the child with the given (url encoded) key, or nil
+function FindWebComponent(const Children: List<IComponent>; const EncodedKey: string) : TWebComponent;
+begin
+  var key := TNetEncoding.URL.Decode(EncodedKey);
+  for var c in Children do
+    if (c.GetObject is TWebComponent) and (TWebComponent(c.GetObject).Key = key) then
+      Exit(TWebComponent(c.GetObject));
+  Result := nil;
 end;
 
 procedure TWebView2Frame.ElementChanged(const Key, Value: string; Sequence: Integer);
 begin
-  var decodedKey := TNetEncoding.URL.Decode(Key);
-  for var c in FChildren do
-    if (c.GetObject is TWebComponent) and (TWebComponent(c.GetObject).Key = decodedKey) then
-    begin
-      TWebComponent(c.GetObject).ValueChangedInPage(TNetEncoding.URL.Decode(Value), Sequence);
-      Exit;
-    end;
+  var component := FindWebComponent(FChildren, Key);
+  if component <> nil then
+    component.ValueChangedInPage(TNetEncoding.URL.Decode(Value), Sequence);
+end;
+
+procedure TWebView2Frame.ElementMouseDown(const Key: string; Button, Shift, X, Y: Integer);
+begin
+  var component := FindWebComponent(FChildren, Key);
+  if component <> nil then
+    component.MouseDownInPage(Button, Shift, X, Y);
 end;
 
 end.

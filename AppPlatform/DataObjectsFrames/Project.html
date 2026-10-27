@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Project</title>
+  <style>
+    body { font-family: Segoe UI, sans-serif; margin: 16px; }
+    label { display: block; margin-top: 12px; }
+    input, select { width: 300px; }
+  </style>
+  <script>
+    // Fills the options of a drop down. Items is an array of strings, or of { value, text } objects.
+    // The current selection is kept when it is still in the list.
+    function setOptions(id, items) {
+      var select = document.getElementById(id);
+      if (!select) return;
+      var current = select.value;
+      select.length = 1; // keep the empty "(none)" option
+      items.forEach(function(item) {
+        var option = document.createElement("option");
+        option.value = typeof item === "object" ? item.value : item;
+        option.text = typeof item === "object" ? item.text : item;
+        select.add(option);
+      });
+      select.value = current;
+    }
+  </script>
+</head>
+<body>
+  <label for="IProject_ID">ID</label>
+  <input type="text" id="IProject_ID" name="IProject_ID">
+
+  <label for="IProject_Description">Description</label>
+  <input type="text" id="IProject_Description" name="IProject_Description">
+
+  <label for="IProject_Customer">Customer</label>
+  <select id="IProject_Customer" name="IProject_Customer">
+    <option value="">(none)</option>
+  </select>
+</body>
+</html>
