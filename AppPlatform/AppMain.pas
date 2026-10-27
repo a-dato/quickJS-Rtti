@@ -57,6 +57,7 @@ type
     mmCustomersWeb: TMemo;
     btnWebView: TButton;
     btnCreateWebView: TButton;
+    Button6: TButton;
     procedure acExecuteExecute(Sender: TObject);
     procedure btnCreateWebViewClick(Sender: TObject);
     procedure btnProjectWindowClick(Sender: TObject);
@@ -67,6 +68,7 @@ type
     procedure Button5Click(Sender: TObject);
     procedure btnPathPropertyClick(Sender: TObject);
     procedure btnWebViewClick(Sender: TObject);
+    procedure Button6Click(Sender: TObject);
     procedure Button7Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure IntegrationsClick(Sender: TObject);
@@ -441,6 +443,14 @@ begin
 
 end;
 
+procedure TForm1.Button6Click(Sender: TObject);
+begin
+  _app.Environment.CreateWindow(TProject.Type, _app.Environment.MainWindow)
+    .CreateFrame('WebProject')
+      .Show(nil)
+        .Bind(_app.Storage[TProject.TypeDescriptor.StorageName])
+end;
+
 procedure TForm1.Button7Click(Sender: TObject);
 begin
   var c := _app.Storage['Customers'][0];
@@ -478,6 +488,13 @@ begin
 
   _app.Config.RegisterWindow('Projects', function(const Window: IWindow) : IWindowFrame begin
     Result := TWindowFrameWrapper.Create(Window, TProjectFrame.Create(Window.Control as TComponent));
+  end);
+
+  _app.Config.RegisterWindow('WebProject', function(const Window: IWindow) : IWindowFrame begin
+    var frame := TWebView2Frame.Create(Window.Control as TComponent);
+    // The exe runs from Win64\<Config>, the page lives in DataObjectsFrames
+    frame.HTML := TFile.ReadAllText(TPath.GetFullPath(TPath.Combine(ExtractFilePath(ParamStr(0)), '..\..\DataObjectsFrames\Project.html')), TEncoding.UTF8);
+    Result := frame;
   end);
 
   _app.Config.RegisterWindow('ProjectSelection', function(const Window: IWindow) : IWindowFrame begin

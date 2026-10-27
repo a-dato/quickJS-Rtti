@@ -33,14 +33,14 @@ object Form1: TForm1
       OnClick = btnProjectWindowClick
     end
     object Button2: TButton
-      Position.X = 375.000000000000000000
+      Position.X = 471.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 2
       Text = 'Customer'
       OnClick = Button2Click
     end
     object Button3: TButton
-      Position.X = 280.000000000000000000
+      Position.X = 376.000000000000000000
       Position.Y = 8.000000000000000000
       Size.Width = 87.000000000000000000
       Size.Height = 22.000000000000000000
@@ -50,14 +50,14 @@ object Form1: TForm1
       OnClick = Button3Click
     end
     object Button4: TButton
-      Position.X = 194.000000000000000000
+      Position.X = 290.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 4
       Text = 'Designer'
       OnClick = Button4Click
     end
     object Button5: TButton
-      Position.X = 463.000000000000000000
+      Position.X = 559.000000000000000000
       Position.Y = 8.000000000000000000
       Size.Width = 131.000000000000000000
       Size.Height = 22.000000000000000000
@@ -74,7 +74,7 @@ object Form1: TForm1
       OnClick = btnExecResultClick
     end
     object TestFunc: TButton
-      Position.X = 280.000000000000000000
+      Position.X = 376.000000000000000000
       Position.Y = 35.000000000000000000
       Size.Width = 87.000000000000000000
       Size.Height = 22.000000000000000000
@@ -84,14 +84,14 @@ object Form1: TForm1
       OnClick = TestFuncClick
     end
     object TestFunc2: TButton
-      Position.X = 375.000000000000000000
+      Position.X = 471.000000000000000000
       Position.Y = 35.000000000000000000
       TabOrder = 8
       Text = 'TestFunc2'
       OnClick = TestFunc2Click
     end
     object btnPathProperty: TButton
-      Position.X = 463.000000000000000000
+      Position.X = 559.000000000000000000
       Position.Y = 35.000000000000000000
       TabOrder = 9
       Text = 'Path property'
@@ -108,25 +108,32 @@ object Form1: TForm1
       OnClick = Button7Click
     end
     object Integrations: TButton
-      Position.X = 610.000000000000000000
+      Position.X = 706.000000000000000000
       Position.Y = 8.000000000000000000
       TabOrder = 11
       Text = 'Integrations'
       OnClick = IntegrationsClick
     end
     object btnWebView: TButton
-      Position.X = 631.000000000000000000
+      Position.X = 727.000000000000000000
       Position.Y = 38.000000000000000000
       TabOrder = 12
       Text = 'Web view'
       OnClick = btnWebViewClick
     end
     object btnCreateWebView: TButton
-      Position.X = 551.000000000000000000
+      Position.X = 647.000000000000000000
       Position.Y = 38.000000000000000000
       TabOrder = 13
       Text = 'Wv create'
       OnClick = btnCreateWebViewClick
+    end
+    object Button6: TButton
+      Position.X = 194.000000000000000000
+      Position.Y = 8.000000000000000000
+      TabOrder = 14
+      Text = 'Project webv'
+      OnClick = Button6Click
     end
   end
   object mmLog: TMemo
