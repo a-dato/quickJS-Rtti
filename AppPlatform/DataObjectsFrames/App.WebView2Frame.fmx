@@ -1,4 +1,4 @@
-inherited WebFrameWithWindowFrameSupport: TWebFrameWithWindowFrameSupport
+inherited WebView2Frame: TWebView2Frame
   object WebBrowser1: TWebBrowser
     Align = Client
     Size.Width = 320.000000000000000000

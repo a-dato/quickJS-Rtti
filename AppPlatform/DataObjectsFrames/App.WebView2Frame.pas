@@ -1,4 +1,4 @@
-unit App.WebFrameWithWindowFrame;
+unit App.WebView2Frame;
 
 interface
 
@@ -18,7 +18,7 @@ type
     Alive: Boolean;
   end;
 
-  TWebFrameWithWindowFrameSupport = class(TFmxFrameWithWindowFrameSupport)
+  TWebView2Frame = class(TFmxFrameWithWindowFrameSupport)
     WebBrowser1: TWebBrowser;
     Layout1: TLayout;
     Label1: TLabel;
@@ -34,24 +34,16 @@ type
     FOnChildrenLoaded: TNotifyEvent;
     FReady: Boolean;
     FCompletionProcs: System.Generics.Collections.TList<TProc>;
+    FHtml: string;
 
     procedure WebBrowserDidFinishLoad(ASender: TObject);
+    procedure SetHtml(const Value: string);
     procedure ExecuteScript(const Script: string);
     procedure RunScript(const Script: string; const OnResult: TProc<string>);
     procedure RunNextScript;
     procedure SetReady;
 
     const WaitForTimeout = 30000; // ms
-
-    const Html =
-      '<!DOCTYPE html>' +
-      '<html>' +
-      '<head><meta charset="utf-8"><title>Customer</title></head>' +
-      '<body style="font-family: Segoe UI, sans-serif; margin: 16px;">' +
-      '  <label for="Customer_Name">Name</label><br>' +
-      '  <input type="text" id="Customer_Name" name="Customer_Name" style="width: 300px;">' +
-      '</body>' +
-      '</html>';
 
   protected
     // Returns a TWebComponent for each form element inside the html page,
@@ -71,6 +63,10 @@ type
     procedure RefreshChildren;
 
     property OnChildrenLoaded: TNotifyEvent read FOnChildrenLoaded write FOnChildrenLoaded;
+
+    // Source of the page shown in the frame. Setting it loads the page, the frame is
+    // ready (see WaitFor) once it has loaded. Without html the frame is ready immediately.
+    property HTML: string read FHtml write SetHtml;
 
   published
     // Called from the web page (through ScriptGate) when the value of an element changes.
@@ -97,9 +93,9 @@ begin
   end;
 end;
 
-{ TWebFrameWithWindowFrameSupport }
+{ TWebView2Frame }
 
-constructor TWebFrameWithWindowFrameSupport.Create(AOwner: TComponent);
+constructor TWebView2Frame.Create(AOwner: TComponent);
 begin
   inherited;
 
@@ -113,11 +109,31 @@ begin
 
   FScriptGate := TScriptGate.Create(Self, WebBrowser1, 'appframe');
   WebBrowser1.OnDidFinishLoad := WebBrowserDidFinishLoad;
-  // LoadFromStrings is ignored while WebView2 is still initializing, Navigate is not
-  WebBrowser1.Navigate(HtmlToDataUrl(Html));
+
+  // Nothing to load until HTML is set
+  FReady := True;
 end;
 
-destructor TWebFrameWithWindowFrameSupport.Destroy;
+procedure TWebView2Frame.SetHtml(const Value: string);
+begin
+  FHtml := Value;
+
+  // The elements of the previous page are gone
+  FChildren := CList<IComponent>.Create;
+
+  if FHtml = '' then
+  begin
+    WebBrowser1.Navigate('about:blank');
+    SetReady;
+    Exit;
+  end;
+
+  FReady := False;
+  // LoadFromStrings is ignored while WebView2 is still initializing, Navigate is not
+  WebBrowser1.Navigate(HtmlToDataUrl(FHtml));
+end;
+
+destructor TWebView2Frame.Destroy;
 begin
   FLifetime.Alive := False;
   FScriptQueue.Free;
@@ -125,12 +141,12 @@ begin
   inherited;
 end;
 
-procedure TWebFrameWithWindowFrameSupport.Button1Click(Sender: TObject);
+procedure TWebView2Frame.Button1Click(Sender: TObject);
 begin
 ;
 end;
 
-procedure TWebFrameWithWindowFrameSupport.SetReady;
+procedure TWebView2Frame.SetReady;
 begin
   if FReady then
     Exit;
@@ -143,7 +159,7 @@ begin
     proc();
 end;
 
-function TWebFrameWithWindowFrameSupport.WaitFor(CompletionProc: TProc) : Boolean;
+function TWebView2Frame.WaitFor(CompletionProc: TProc) : Boolean;
 begin
   var p := Parent;
   while (p <> nil) do
@@ -175,19 +191,19 @@ begin
   Result := FReady;
 end;
 
-procedure TWebFrameWithWindowFrameSupport.ExecuteScript(const Script: string);
+procedure TWebView2Frame.ExecuteScript(const Script: string);
 begin
   RunScript(Script, nil);
 end;
 
-procedure TWebFrameWithWindowFrameSupport.RunScript(const Script: string; const OnResult: TProc<string>);
+procedure TWebView2Frame.RunScript(const Script: string; const OnResult: TProc<string>);
 begin
   // ScriptGate keeps a single result callback for Edge, so scripts must run one at a time
   FScriptQueue.Enqueue(TPair<string, TProc<string>>.Create(Script, OnResult));
   RunNextScript;
 end;
 
-procedure TWebFrameWithWindowFrameSupport.RunNextScript;
+procedure TWebView2Frame.RunNextScript;
 begin
   if FScriptRunning or (FScriptQueue.Count = 0) then
     Exit;
@@ -213,12 +229,12 @@ begin
     end);
 end;
 
-function TWebFrameWithWindowFrameSupport.get_Children: List<IComponent>;
+function TWebView2Frame.get_Children: List<IComponent>;
 begin
   Result := FChildren;
 end;
 
-procedure TWebFrameWithWindowFrameSupport.RefreshChildren;
+procedure TWebView2Frame.RefreshChildren;
 begin
   RunScript(TWebComponent.CollectElementsScript,
     procedure(Json: string)
@@ -230,13 +246,13 @@ begin
     end);
 end;
 
-procedure TWebFrameWithWindowFrameSupport.WebBrowserDidFinishLoad(ASender: TObject);
+procedure TWebView2Frame.WebBrowserDidFinishLoad(ASender: TObject);
 begin
   ExecuteScript(TWebComponent.ChangeListenerScript(FScriptGate.Scheme, 'ElementChanged'));
   RefreshChildren;
 end;
 
-procedure TWebFrameWithWindowFrameSupport.ElementChanged(const Key, Value: string; Sequence: Integer);
+procedure TWebView2Frame.ElementChanged(const Key, Value: string; Sequence: Integer);
 begin
   var decodedKey := TNetEncoding.URL.Decode(Key);
   for var c in FChildren do

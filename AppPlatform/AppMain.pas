@@ -220,7 +220,7 @@ uses
   App.Config.intf, App.Windows.impl, App.Component.intf,
   ProjectSelection.frame, Task.impl, Task.intf,
   Person.frame,
-  Integrations.frame, App.FrameWithWindowFrame, App.WebFrameWithWindowFrame,
+  Integrations.frame, App.FrameWithWindowFrame, App.WebView2Frame,
   WebViewTestForm, ADato.ObjectModel.Binders;
 
 {$R *.fmx}
@@ -400,10 +400,10 @@ end;
 procedure TForm1.btnWebViewClick(Sender: TObject);
 
   // Searches Parent and all its children (recursively) for a web frame
-  function FindWebFrame(const Parent: TFmxObject) : TWebFrameWithWindowFrameSupport;
+  function FindWebFrame(const Parent: TFmxObject) : TWebView2Frame;
   begin
-    if Parent is TWebFrameWithWindowFrameSupport then
-      Exit(TWebFrameWithWindowFrameSupport(Parent));
+    if Parent is TWebView2Frame then
+      Exit(TWebView2Frame(Parent));
 
     if Parent.Children <> nil then
       for var child in Parent.Children do
@@ -418,7 +418,7 @@ procedure TForm1.btnWebViewClick(Sender: TObject);
 
 begin
   var webForm: TCommonCustomForm := nil;
-  var webFrame: TWebFrameWithWindowFrameSupport := nil;
+  var webFrame: TWebView2Frame := nil;
 
   for var i := 0 to Screen.FormCount - 1 do
   begin
@@ -491,7 +491,10 @@ begin
   end);
 
   _app.Config.RegisterWindow('WebCustomer', function(const Window: IWindow) : IWindowFrame begin
-    Result := TWebFrameWithWindowFrameSupport.Create(Window.Control as TComponent);
+    var frame := TWebView2Frame.Create(Window.Control as TComponent);
+    // The exe runs from Win64\<Config>, the page lives in DataObjectsFrames
+    frame.HTML := TFile.ReadAllText(TPath.GetFullPath(TPath.Combine(ExtractFilePath(ParamStr(0)), '..\..\DataObjectsFrames\Customer.html')), TEncoding.UTF8);
+    Result := frame;
   end);
 
   _app.Config.RegisterWindow('Customers', function(const Window: IWindow) : IWindowFrame begin

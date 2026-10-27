@@ -27,7 +27,7 @@ uses
   App.TypeMetadata in 'DataObjects\App.TypeMetadata.pas',
   BulkUpdate.intf in 'DataObjects\BulkUpdate.intf.pas',
   App.FrameWithWindowFrame in 'DataObjectsFrames\App.FrameWithWindowFrame.pas' {FmxFrameWithWindowFrameSupport: TFrame},
-  App.WebFrameWithWindowFrame in 'DataObjectsFrames\App.WebFrameWithWindowFrame.pas' {WebFrameWithWindowFrameSupport: TFrame},
+  App.WebView2Frame in 'DataObjectsFrames\App.WebView2Frame.pas' {WebView2Frame: TFrame},
   Customer.frame in 'DataObjectsFrames\Customer.frame.pas' {CustomerWindowFrame: TFrame},
   WebViewTestForm in 'WebViewTestForm.pas' {WebViewTest};
 
