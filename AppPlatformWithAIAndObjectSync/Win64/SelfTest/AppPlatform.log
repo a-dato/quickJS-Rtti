@@ -1,0 +1,2 @@
+14:26:55  Startup failed: Access violation at address 0000000000000000 in module 'AppPlatform.exe' (offset 0). Execution of address 0000000000000000
+14:26:55  Type IProject: storage 'Projects' with 10 objects; properties: ID, Description, Holidays, ChildProject, Tasks

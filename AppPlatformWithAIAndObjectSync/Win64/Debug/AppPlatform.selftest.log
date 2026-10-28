@@ -1,0 +1,41 @@
+﻿A started: True, load error: "", output: 
+B started: True, load error: "", output: 
+--- both windows start the AI app: A opened with project 3 from the Studio, B without
+A <- {"op":"run","action":"initialize"}
+A -> {"ok":true,"result":{"hasProject":true,"customers":[{"key":"0","name":"Acme Corp"},{"key":"1","name":"Globex"},{"key":"2","name":"Initech"},{"key":"3","name":"Umbrella Trading"}],"selectedKey":"0"}}
+B <- {"op":"run","action":"initialize"}
+B -> {"ok":true,"result":{"hasProject":true,"customers":[{"key":"0","name":"Acme Corp"},{"key":"1","name":"Globex"},{"key":"2","name":"Initech"},{"key":"3","name":"Umbrella Trading"}],"selectedKey":"0"}}
+A <- {"op":"open","object":"project"}
+A -> {"ok":true,"result":{"object":"project","type":"IProject","properties":{"Description":{"value":"Project 3","editable":true}}}}
+B <- {"op":"open","object":"project"}
+B -> {"ok":true,"result":{"object":"project","type":"IProject","properties":{"Description":{"value":"Project 0","editable":true}}}}
+A <- {"op":"open","object":"customer"}
+A -> {"ok":true,"result":{"object":"customer","type":"Customer","properties":{"Active":{"value":true,"editable":true},"Name":{"value":"Acme Corp","editable":true}}}}
+B <- {"op":"open","object":"customer"}
+B -> {"ok":true,"result":{"object":"customer","type":"Customer","properties":{"Active":{"value":true,"editable":true},"Name":{"value":"Acme Corp","editable":true}}}}
+--- A edits the project description (B shows project 0, so only the Studio would hear it)
+A <- {"op":"edit","object":"project","property":"Description","value":"Edited in the AI app"}
+A -> {"ok":true,"result":{"value":"Edited in the AI app","editable":true}}
+--- the Studio edits project 3: A must get a push
+studio edits {"object":"IProject:3","property":"Description","value":"Edited in the Studio"}
+  push to A: property {"object":"project","property":"Description","value":"Edited in the Studio","editable":true}
+--- A edits the customer name and active flag: B (same customer) must get pushes
+A <- {"op":"edit","object":"customer","property":"Name","value":"Acme (AI app)"}
+  push to B: property {"object":"customer","property":"Name","value":"Acme (AI app)","editable":true}
+A -> {"ok":true,"result":{"value":"Acme (AI app)","editable":true}}
+A <- {"op":"edit","object":"customer","property":"Active","value":false}
+  push to B: property {"object":"customer","property":"Active","value":false,"editable":true}
+A -> {"ok":true,"result":{"value":false,"editable":true}}
+--- B picks another customer and renames it; A keeps the first
+B <- {"op":"run","action":"selectCustomer","args":{"key":"1"}}
+  push to B: object {"object":"customer","type":"Customer","properties":{"Active":{"value":true,"editable":true},"Name":{"value":"Globex","editable":true}}}
+B -> {"ok":true,"result":{"key":"1"}}
+B <- {"op":"edit","object":"customer","property":"Name","value":"Globex (B)"}
+B -> {"ok":true,"result":{"value":"Globex (B)","editable":true}}
+--- A ticks read-only: its edit is refused
+A <- {"op":"run","action":"setProjectReadOnly","args":{"readOnly":true}}
+  push to A: object {"object":"project","type":"IProject","properties":{"Description":{"value":"Edited in the Studio","editable":false}}}
+A -> {"ok":true,"result":{"readOnly":true}}
+A <- {"op":"edit","object":"project","property":"Description","value":"refused?"}
+A -> {"ok":false,"error":"Description cannot be edited"}
+done

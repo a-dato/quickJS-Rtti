@@ -1,0 +1,10 @@
+﻿{
+  "type": "Person",
+  "storage": "People",
+  "objects": [
+    {
+      "ID": "54",
+      "Name": "Bashar"
+    }
+  ]
+}

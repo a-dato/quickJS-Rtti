@@ -1,0 +1,64 @@
+﻿unit App.Factory.intf;
+
+interface
+
+uses
+  System_,
+  System.SysUtils;
+
+type
+  ETypeNotSupported = Class(CException)
+
+  end;
+
+  EConstructorNotSupported = Class(CException)
+
+  end;
+
+  {$M+}
+  TCreatorFunc_0 = reference to function: CObject;
+  TCreatorFunc_1 = reference to function(const Param0: CObject) : CObject;
+  TCreatorFunc_2 = reference to function(const Param0: CObject; const Param1: CObject) : CObject;
+  TCreatorFunc_3 = reference to function(const Param0: CObject; const Param1: CObject; const Param2: CObject) : CObject;
+  TCreatorFunc_4 = reference to function(const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject) : CObject;
+  TCreatorFunc_5 = reference to function(const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject; const Param4: CObject) : CObject;
+
+  IAppFactory = interface(IBaseInterface)
+    ['{ED9DEEB4-F0FD-4996-8CF4-B8B817D2EFCB}']
+
+    procedure RegisterCollection(const AType: &Type; const Func: TCreatorFunc_0);   // Returns collection of AType (IList<T>, ICollection<T>)
+    function  CreateCollection(const AType: &Type) : CObject; overload;
+    function  TryCreateCollection(const AType: &Type; out AObject: CObject) : Boolean; overload;
+
+    procedure RegisterType(const AType: &Type; const Func: TCreatorFunc_0);
+    procedure RegisterType_1(const AType: &Type; const Func: TCreatorFunc_1);
+    procedure RegisterType_2(const AType: &Type; const Func: TCreatorFunc_2);
+    procedure RegisterType_3(const AType: &Type; const Func: TCreatorFunc_3);
+    procedure RegisterType_4(const AType: &Type; const Func: TCreatorFunc_4);
+    procedure RegisterType_5(const AType: &Type; const Func: TCreatorFunc_5);
+
+    {$IFDEF APP_PLATFORM_MD}
+    function GetConstructorParameterCount(const AType: &Type): Integer;
+    {$ENDIF}
+
+    function  CreateInstance(const AType: &Type) : CObject; overload;
+    function  CreateInstance(const AType: &Type; const Param0: CObject) : CObject; overload;
+    function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject) : CObject; overload;
+    function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject) : CObject; overload;
+    function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject) : CObject; overload;
+    function  CreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject; const Param4: CObject) : CObject; overload;
+
+    function  TryCreateInstance(const AType: &Type; out AObject: CObject) : Boolean; overload;
+    function  TryCreateInstance(const AType: &Type; const Param0: CObject; out AObject: CObject) : Boolean; overload;
+    function  TryCreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; out AObject: CObject) : Boolean; overload;
+    function  TryCreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; out AObject: CObject) : Boolean; overload;
+    function  TryCreateInstance(const AType: &Type; const Param0: CObject; const Param1: CObject; const Param2: CObject; const Param3: CObject; out AObject: CObject) : Boolean; overload;
+
+    function  NextID: Int64;
+    procedure ResetID(const Value: Int64);
+  end;
+
+implementation
+
+end.
+

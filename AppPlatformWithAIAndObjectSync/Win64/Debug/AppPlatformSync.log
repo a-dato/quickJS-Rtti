@@ -1,0 +1,8 @@
+11:41:04  Loading type scripts from D:\adato_quickJS\AppPlatformWithAIAndObjectSync\js\types
+11:41:04  Restored the saved state of 10 IProject objects
+11:41:04  Type IProject: storage 'Projects' with 10 objects; properties: ID, Description, Holidays, ChildProject, Tasks
+11:41:04  Type Address: no storage; properties: Street, Zip, City
+11:41:04  Type Customer: storage 'Customers' with 4 objects; properties: Name, Email, Active, Address
+11:41:04  Type Invoice: storage 'Invoices' with 1 objects; properties: Name, Project
+11:41:04  Type TrelloTask: storage 'TrelloTasks' with 43 objects; properties: Name, CardID, Description, URL, BoardID, Closed, ProjectID
+11:41:04  Type Weather: storage 'Weathers' with 1 objects; properties: Name, TemperatureC, HumidityPercent, WindKmh, WeatherCode, ObservedUTC, Source
