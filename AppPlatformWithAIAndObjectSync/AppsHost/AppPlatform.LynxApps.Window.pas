@@ -43,6 +43,7 @@ type
     procedure WindowClose(Sender: TObject; var Action: TCloseAction);
     procedure Unregister;
   public
+    constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
 
     // Opens (or brings to front) the window for Url; Width/Height in pixels, 0 = default.
@@ -93,6 +94,11 @@ begin
   _openWindows.Add(key, window);
   window.Init(Url, Width, Height);
   window.Show;
+end;
+
+constructor TAppPlatformLynxAppsWindow.Create(AOwner: TComponent);
+begin
+  inherited;
 end;
 
 destructor TAppPlatformLynxAppsWindow.Destroy;
