@@ -370,7 +370,9 @@ begin
 
     BindChildren(AType, children, model);
 
+    {$IFDEF DEBUG}
     modelLock := model;
+    {$ENDIF}
   end;
   {$ENDIF}
 end;
