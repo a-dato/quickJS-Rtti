@@ -1,0 +1,16 @@
+﻿{
+  "type": "Weather",
+  "storage": "Weathers",
+  "objects": [
+    {
+      "ID": "53",
+      "Name": "New York",
+      "TemperatureC": 12.6,
+      "HumidityPercent": 71,
+      "WindKmh": 12.7,
+      "WeatherCode": 0,
+      "ObservedUTC": "2026-10-15T11:00Z",
+      "Source": "Open-Meteo"
+    }
+  ]
+}

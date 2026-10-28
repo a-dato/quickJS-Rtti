@@ -1,0 +1,11 @@
+﻿{
+  "type": "Invoice",
+  "storage": "Invoices",
+  "objects": [
+    {
+      "ID": "9",
+      "Name": "First Invoice",
+      "Project": null
+    }
+  ]
+}

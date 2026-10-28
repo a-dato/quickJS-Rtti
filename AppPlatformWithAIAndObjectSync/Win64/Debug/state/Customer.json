@@ -1,0 +1,54 @@
+﻿{
+  "type": "Customer",
+  "storage": "Customers",
+  "objects": [
+    {
+      "ID": "1",
+      "Name": "Acme Corp",
+      "Email": "info@acme.example",
+      "Active": true,
+      "Address": {
+        "ID": "2",
+        "Street": "Main Street 1",
+        "Zip": "1011 AB",
+        "City": "Amsterdam"
+      }
+    },
+    {
+      "ID": "3",
+      "Name": "Globex",
+      "Email": "hello@globex.example",
+      "Active": true,
+      "Address": {
+        "ID": "4",
+        "Street": "Harbour 12",
+        "Zip": "3011 CD",
+        "City": "Rotterdam"
+      }
+    },
+    {
+      "ID": "5",
+      "Name": "Initech",
+      "Email": "office@initech.example",
+      "Active": false,
+      "Address": {
+        "ID": "6",
+        "Street": "Stationsplein 5",
+        "Zip": "3511 ED",
+        "City": "Utrecht"
+      }
+    },
+    {
+      "ID": "7",
+      "Name": "Umbrella Trading",
+      "Email": "sales@umbrella.example",
+      "Active": true,
+      "Address": {
+        "ID": "8",
+        "Street": "Kade 7",
+        "Zip": "2511 EF",
+        "City": "Den Haag"
+      }
+    }
+  ]
+}
